@@ -5,6 +5,7 @@ import {
   discoverSeries,
   searchMovies,
   searchSeries,
+  queryKeys,
   type DiscoverParams,
 } from '@/api/tmdbEndpoints'
 import { sanitizeQuery } from '@/lib/filterValidation'
@@ -26,23 +27,36 @@ function mergeResponses(
 
 export function useMovieSearch(query: string, filters: DiscoverParams, mediaType: SearchMediaType = 'movie') {
   const trimmed = sanitizeQuery(query)
+  const hasQuery = Boolean(trimmed)
+
+  const queryKey = (() => {
+    if (mediaType === 'series') {
+      return hasQuery ? queryKeys.searchSeries(trimmed, filters) : queryKeys.discoverSeries(filters)
+    }
+
+    if (mediaType === 'both') {
+      return hasQuery ? queryKeys.searchAll(trimmed, filters) : queryKeys.discoverAll(filters)
+    }
+
+    return hasQuery ? queryKeys.search(trimmed, filters) : queryKeys.discover(filters)
+  })()
 
   return useQuery({
-    queryKey: ['search', mediaType, trimmed, filters],
+    queryKey,
     queryFn: async () => {
       if (mediaType === 'series') {
-        return trimmed ? searchSeries(trimmed, filters) : discoverSeries(filters)
+        return hasQuery ? searchSeries(trimmed, filters) : discoverSeries(filters)
       }
 
       if (mediaType === 'both') {
         const [movies, series] = await Promise.all([
-          trimmed ? searchMovies(trimmed, filters) : discoverMovies(filters),
-          trimmed ? searchSeries(trimmed, filters) : discoverSeries(filters),
+          hasQuery ? searchMovies(trimmed, filters) : discoverMovies(filters),
+          hasQuery ? searchSeries(trimmed, filters) : discoverSeries(filters),
         ])
         return mergeResponses(movies, series)
       }
 
-      return trimmed ? searchMovies(trimmed, filters) : discoverMovies(filters)
+      return hasQuery ? searchMovies(trimmed, filters) : discoverMovies(filters)
     },
   })
 }

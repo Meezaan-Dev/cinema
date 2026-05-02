@@ -14,8 +14,8 @@ import {
 import { PickerControls } from '@/components/picker/PickerControls'
 import { MovieCard } from '@/components/movie/MovieCard'
 import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { MovieGridSkeleton } from '@/components/ui/Skeleton'
-import { StatusState } from '@/components/ui/StatusState'
 import { moodProfiles, type MoodKey } from '@/lib/constants'
 import { getErrorCopy } from '@/lib/errors'
 import {
@@ -51,7 +51,7 @@ export function PickerPage() {
         prompt: promptOverride ?? aiPrompt,
         genres: genres.data?.genres ?? [],
         watchlistTitles: watchlist.movies.map((movie) => movie.title),
-    }),
+      }),
     onSuccess: (plan) => {
       setAiPlan(plan)
     },
@@ -196,7 +196,7 @@ export function PickerPage() {
         </div>
         {discover.isLoading || referenceRecommendations.isLoading || referenceSearch.isLoading ? <MovieGridSkeleton count={10} /> : null}
         {!discover.isLoading && !referenceRecommendations.isLoading && !referenceSearch.isLoading && recommendationResults.length === 0 ? (
-          <StatusState title="No matching titles yet" message="Try a broader prompt, lower the rating, or choose any runtime." />
+          <EmptyState title="No matching titles yet" message="Try a broader prompt, lower the rating, or choose any runtime." />
         ) : null}
         {!discover.isLoading && !referenceRecommendations.isLoading && !referenceSearch.isLoading && recommendationResults.length > 0 ? (
           <div className="movie-grid">

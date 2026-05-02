@@ -40,7 +40,14 @@ export async function tmdbRequest<T>(
   }
 
   if (!response.ok) {
-    const code = response.status === 401 || response.status === 403 ? 'auth' : response.status === 404 ? 'not-found' : 'http'
+    const code =
+      response.status === 401 || response.status === 403
+        ? 'auth'
+        : response.status === 404
+          ? 'not-found'
+          : response.status === 429
+            ? 'rate-limit'
+            : 'http'
     throw new TmdbError(code, `TMDB request failed with status ${response.status}.`, response.status)
   }
 

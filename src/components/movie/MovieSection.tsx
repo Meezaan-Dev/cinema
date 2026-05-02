@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
 
 import { MovieCard } from './MovieCard'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { MovieGridSkeleton } from '@/components/ui/Skeleton'
-import { ErrorState, StatusState } from '@/components/ui/StatusState'
+import { ErrorState } from '@/components/ui/StatusState'
 import type { TmdbGenre, TmdbMovie } from '@/types/tmdb'
 import type { UserMovie } from '@/types/movie'
 
@@ -47,7 +48,7 @@ export function MovieSection({
       {isLoading ? <MovieGridSkeleton count={horizontal ? 6 : 10} /> : null}
       {isError ? <ErrorState error={error} onRetry={onRetry} /> : null}
       {!isLoading && !isError && movies?.length === 0 ? (
-        <StatusState title="No movies found" message="Try changing your filters or search phrase." />
+        <EmptyState title="No movies found" message="Try changing your filters or search phrase." />
       ) : null}
       {!isLoading && !isError && movies?.length ? (
         <div className={horizontal ? 'scroll-row' : 'movie-grid'}>
