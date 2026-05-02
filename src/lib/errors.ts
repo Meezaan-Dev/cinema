@@ -60,10 +60,10 @@ export function getErrorCopy(error: unknown) {
 
     if (error.code === 'rate-limit') {
       return {
-        title: 'AI search is rate-limited',
+        title: 'Request limit reached',
         message:
           error.message ||
-          'The AI provider returned a rate or quota error. The app will keep using TMDB filters; try again later or check your provider limits.',
+          'The service returned a rate or quota error. Wait a moment, then try again.',
       }
     }
 

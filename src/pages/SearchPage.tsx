@@ -6,8 +6,9 @@ import { useSearchParams } from 'react-router-dom'
 import { getGenres, queryKeys, type DiscoverParams } from '@/api/tmdbEndpoints'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { MovieCard } from '@/components/movie/MovieCard'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { MovieGridSkeleton } from '@/components/ui/Skeleton'
-import { ErrorState, StatusState } from '@/components/ui/StatusState'
+import { ErrorState } from '@/components/ui/StatusState'
 import {
   sanitizeGenre,
   sanitizeQuery,
@@ -74,7 +75,7 @@ export function SearchPage() {
             <span className="sr-only">Search movies and series</span>
             <Search className="pointer-events-none absolute left-5 top-1/2 size-5 -translate-y-1/2 text-slate-500" aria-hidden="true" />
             <input
-              className="field h-14 w-full rounded-2xl border-white/[0.08] bg-white/[0.055] pl-14 pr-4 text-base"
+              className="field h-14 w-full rounded-2xl border-white/[0.08] bg-white/[0.055] !pl-14 !pr-4 text-base"
               placeholder="Search movies or series, then refine the mood..."
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -86,11 +87,10 @@ export function SearchPage() {
                 key={option.value}
                 type="button"
                 onClick={() => setMediaType(option.value)}
-                className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300 lg:flex-none ${
-                  mediaType === option.value
-                    ? 'bg-white text-[#05070c]'
-                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                }`}
+                className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300 lg:flex-none ${mediaType === option.value
+                  ? 'bg-white text-[#05070c]'
+                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  }`}
               >
                 {option.label}
               </button>
@@ -118,7 +118,9 @@ export function SearchPage() {
       <div className="mt-8">
         {search.isLoading ? <MovieGridSkeleton count={12} /> : null}
         {search.isError ? <ErrorState error={search.error} onRetry={() => search.refetch()} /> : null}
-        {!search.isLoading && !search.isError && movies.length === 0 ? <StatusState title="No matches" message="Try a broader search, switch between movies and series, or lower the rating filter." /> : null}
+        {!search.isLoading && !search.isError && movies.length === 0 ? (
+          <EmptyState title="No matches" message="Try a broader search, switch between movies and series, or lower the rating filter." />
+        ) : null}
         {!search.isLoading && !search.isError && movies.length > 0 ? (
           <div className="movie-grid">
             {movies.map((movie) => (
