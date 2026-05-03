@@ -54,7 +54,7 @@ export function MovieSection({
         <div className={horizontal ? 'scroll-row' : 'movie-grid'}>
           {movies.map((movie) => (
             <MovieCard
-              key={movie.id}
+              key={`${movie.media_type ?? 'movie'}-${movie.id}`}
               movie={movie}
               genres={genres}
               saved={savedById?.get(movie.id)}

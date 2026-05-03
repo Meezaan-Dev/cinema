@@ -55,6 +55,34 @@ export const tmdbMovieDetailsSchema = tmdbMovieSchema.extend({
   status: z.string().catch(''),
 })
 
+export const tmdbSeasonSchema = z.object({
+  id: z.number().int(),
+  name: z.string().catch('Untitled season'),
+  overview: z.string().catch(''),
+  poster_path: nullablePathSchema,
+  air_date: z.string().nullable().catch('').transform((date) => date ?? ''),
+  episode_count: z.number().int().catch(0),
+  season_number: z.number().int().catch(0),
+})
+
+export const tmdbSeriesDetailsSchema = z.object({
+  id: z.number().int(),
+  name: z.string().catch('Untitled series'),
+  overview: z.string().catch(''),
+  poster_path: nullablePathSchema,
+  backdrop_path: nullablePathSchema,
+  first_air_date: z.string().catch(''),
+  vote_average: z.number().catch(0),
+  vote_count: z.number().catch(0),
+  popularity: z.number().catch(0),
+  genres: z.array(tmdbGenreSchema).catch([]),
+  status: z.string().catch(''),
+  number_of_seasons: z.number().int().catch(0),
+  number_of_episodes: z.number().int().catch(0),
+  seasons: z.array(tmdbSeasonSchema).catch([]),
+  media_type: z.literal('tv').catch('tv'),
+})
+
 export const tmdbCastMemberSchema = z.object({
   id: z.number().int(),
   name: z.string().catch('Unknown performer'),

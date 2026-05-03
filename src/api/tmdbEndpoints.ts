@@ -5,6 +5,7 @@ import {
   tmdbMovieDetailsSchema,
   tmdbMovieSchema,
   tmdbPagedResponseSchema,
+  tmdbSeriesDetailsSchema,
   tmdbSeriesSchema,
   tmdbVideosSchema,
 } from '@/types/schemas'
@@ -14,6 +15,7 @@ import type {
   TmdbMovie,
   TmdbMovieDetails,
   TmdbPagedResponse,
+  TmdbSeriesDetails,
   TmdbVideos,
 } from '@/types/tmdb'
 
@@ -41,6 +43,7 @@ export const queryKeys = {
   discoverAll: (filters: DiscoverParams) => ['all', 'discover', filters] as const,
   referenceSearch: (query: string) => ['movies', 'reference-search', query] as const,
   detail: (movieId: string | number) => ['movie', movieId] as const,
+  seriesDetail: (seriesId: string | number) => ['series', seriesId] as const,
   credits: (movieId: string | number) => ['movie', movieId, 'credits'] as const,
   videos: (movieId: string | number) => ['movie', movieId, 'videos'] as const,
   similar: (movieId: string | number) => ['movie', movieId, 'similar'] as const,
@@ -134,6 +137,10 @@ export function discoverSeries(filters: DiscoverParams = {}) {
 
 export function getMovieDetails(movieId: string | number) {
   return tmdbRequest<TmdbMovieDetails>(`/movie/${movieId}`, {}, tmdbMovieDetailsSchema)
+}
+
+export function getSeriesDetails(seriesId: string | number) {
+  return tmdbRequest<TmdbSeriesDetails>(`/tv/${seriesId}`, {}, tmdbSeriesDetailsSchema)
 }
 
 export function getMovieCredits(movieId: string | number) {
