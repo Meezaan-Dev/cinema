@@ -65,23 +65,27 @@ export const tmdbSeasonSchema = z.object({
   season_number: z.number().int().catch(0),
 })
 
-export const tmdbSeriesDetailsSchema = z.object({
-  id: z.number().int(),
-  name: z.string().catch('Untitled series'),
-  overview: z.string().catch(''),
-  poster_path: nullablePathSchema,
-  backdrop_path: nullablePathSchema,
-  first_air_date: z.string().catch(''),
-  vote_average: z.number().catch(0),
-  vote_count: z.number().catch(0),
-  popularity: z.number().catch(0),
-  genres: z.array(tmdbGenreSchema).catch([]),
-  status: z.string().catch(''),
-  number_of_seasons: z.number().int().catch(0),
-  number_of_episodes: z.number().int().catch(0),
-  seasons: z.array(tmdbSeasonSchema).catch([]),
-  media_type: z.literal('tv').catch('tv'),
-})
+export const tmdbSeriesDetailsSchema = z
+  .object({
+    id: z.number().int(),
+    name: z.string().catch('Untitled series'),
+    overview: z.string().catch(''),
+    poster_path: nullablePathSchema,
+    backdrop_path: nullablePathSchema,
+    first_air_date: z.string().catch(''),
+    vote_average: z.number().catch(0),
+    vote_count: z.number().catch(0),
+    popularity: z.number().catch(0),
+    genres: z.array(tmdbGenreSchema).catch([]),
+    status: z.string().catch(''),
+    number_of_seasons: z.number().int().catch(0),
+    number_of_episodes: z.number().int().catch(0),
+    seasons: z.array(tmdbSeasonSchema).catch([]),
+  })
+  .transform((series) => ({
+    ...series,
+    media_type: 'tv' as const,
+  }))
 
 export const tmdbCastMemberSchema = z.object({
   id: z.number().int(),
