@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { WATCHLIST_STORAGE_KEY } from '@/lib/constants'
 import { downloadCsv } from '@/lib/csv'
 import { readWatchlistStorage, sanitizeUserMovie, writeWatchlistStorage } from '@/lib/storage'
-import type { UserMovie } from '@/types/movie'
+import { getTmdbWatchlistKey, getWatchlistKey, type UserMovie } from '@/types/movie'
+import type { TmdbMovie } from '@/types/tmdb'
 
 export function useWatchlist() {
   const [movies, setMovies] = useState<UserMovie[]>(() => readWatchlistStorage(WATCHLIST_STORAGE_KEY))
@@ -12,29 +13,31 @@ export function useWatchlist() {
     writeWatchlistStorage(WATCHLIST_STORAGE_KEY, movies)
   }, [movies])
 
-  const byId = useMemo(() => new Map(movies.map((movie) => [movie.id, movie])), [movies])
+  const byKey = useMemo(() => new Map(movies.map((movie) => [getWatchlistKey(movie), movie])), [movies])
 
   function addMovie(movie: UserMovie) {
     const cleanMovie = sanitizeUserMovie(movie)
     if (!cleanMovie) return
 
     setMovies((current) =>
-      current.some((item) => item.id === cleanMovie.id)
+      current.some((item) => getWatchlistKey(item) === getWatchlistKey(cleanMovie))
         ? current
         : [{ ...cleanMovie, addedAt: new Date().toISOString() }, ...current],
     )
   }
 
-  function removeMovie(movieId: number) {
-    setMovies((current) => current.filter((movie) => movie.id !== movieId))
+  function removeMovie(movie: UserMovie) {
+    const key = getWatchlistKey(movie)
+    setMovies((current) => current.filter((item) => getWatchlistKey(item) !== key))
   }
 
-  function updateMovie(movieId: number, updates: Partial<UserMovie>) {
+  function updateMovie(movie: UserMovie, updates: Partial<UserMovie>) {
+    const key = getWatchlistKey(movie)
     setMovies((current) =>
-      current.map((movie) => {
-        if (movie.id !== movieId) return movie
-        const cleanMovie = sanitizeUserMovie({ ...movie, ...updates })
-        return cleanMovie ?? movie
+      current.map((item) => {
+        if (getWatchlistKey(item) !== key) return item
+        const cleanMovie = sanitizeUserMovie({ ...item, ...updates })
+        return cleanMovie ?? item
       }),
     )
   }
@@ -44,30 +47,38 @@ export function useWatchlist() {
     if (!cleanMovie) return
 
     setMovies((current) => {
-      const exists = current.some((item) => item.id === cleanMovie.id)
+      const key = getWatchlistKey(cleanMovie)
+      const exists = current.some((item) => getWatchlistKey(item) === key)
       if (!exists) return [{ ...cleanMovie, addedAt: new Date().toISOString() }, ...current]
-      return current.map((item) => (item.id === cleanMovie.id ? cleanMovie : item))
+      return current.map((item) => (getWatchlistKey(item) === key ? cleanMovie : item))
     })
   }
 
   function toggleWatched(movie: UserMovie) {
-    const savedMovie = byId.get(movie.id)
+    const savedMovie = byKey.get(getWatchlistKey(movie))
     upsertMovie(savedMovie ?? movie, { isWatched: !(savedMovie ?? movie).isWatched })
   }
 
   function toggleFavourite(movie: UserMovie) {
-    const savedMovie = byId.get(movie.id)
+    const savedMovie = byKey.get(getWatchlistKey(movie))
     upsertMovie(savedMovie ?? movie, { isFavourite: !(savedMovie ?? movie).isFavourite })
   }
 
   function setRating(movie: UserMovie, personalRating?: number) {
-    const savedMovie = byId.get(movie.id)
+    const savedMovie = byKey.get(getWatchlistKey(movie))
     upsertMovie(savedMovie ?? movie, { personalRating })
+  }
+
+  function getSaved(movie: TmdbMovie | UserMovie) {
+    return 'mediaType' in movie
+      ? byKey.get(getWatchlistKey(movie))
+      : byKey.get(getTmdbWatchlistKey(movie))
   }
 
   return {
     movies,
-    byId,
+    byKey,
+    getSaved,
     addMovie,
     removeMovie,
     updateMovie,
@@ -75,7 +86,7 @@ export function useWatchlist() {
     toggleWatched,
     toggleFavourite,
     setRating,
-    isSaved: (movieId: number) => byId.has(movieId),
+    isSaved: (movie: TmdbMovie | UserMovie) => Boolean(getSaved(movie)),
     exportCsv: () => downloadCsv(movies),
   }
 }

@@ -29,7 +29,7 @@ export function MovieCard({ movie, genres = [], saved, onAdd, compact }: MovieCa
   const releaseDate = isUserMovie(movie) ? movie.releaseDate : movie.release_date
   const voteAverage = isUserMovie(movie) ? movie.voteAverage : movie.vote_average
   const mediaType = isUserMovie(movie) ? movie.mediaType ?? 'movie' : movie.media_type ?? 'movie'
-  const detailsPath = mediaType === 'tv' ? `/search?q=${encodeURIComponent(title)}` : `/movie/${movie.id}`
+  const detailsPath = mediaType === 'tv' ? `/tv/${movie.id}` : `/movie/${movie.id}`
 
   return (
     <motion.article

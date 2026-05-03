@@ -96,7 +96,7 @@ export function PickerPage() {
   const referenceResults = referenceRecommendations.data?.results ?? []
   const baseRecommendationResults = referenceResults.length > 0 ? referenceResults : discover.data?.results ?? []
   const recommendationResults = baseRecommendationResults.filter((movie) => {
-    const savedMovie = watchlist.byId.get(movie.id)
+    const savedMovie = watchlist.getSaved(movie)
     if (safePreference === 'watched' && !savedMovie?.isWatched) return false
     if (safePreference === 'unwatched' && savedMovie?.isWatched) return false
     return true
@@ -205,7 +205,7 @@ export function PickerPage() {
                 key={`${movie.media_type ?? 'movie'}-${movie.id}`}
                 movie={movie}
                 genres={genres.data?.genres}
-                saved={watchlist.byId.get(movie.id)}
+                saved={watchlist.getSaved(movie)}
                 onAdd={watchlist.addMovie}
               />
             ))}

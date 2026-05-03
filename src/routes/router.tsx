@@ -7,6 +7,7 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PickerPage } from '@/pages/PickerPage'
 import { RouteErrorPage } from '@/pages/RouteErrorPage'
 import { SearchPage } from '@/pages/SearchPage'
+import { SeriesDetailPage } from '@/pages/SeriesDetailPage'
 import { WatchlistPage } from '@/pages/WatchlistPage'
 
 export const router = createBrowserRouter([
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'search', element: <SearchPage /> },
       { path: 'movie/:movieId', element: <MovieDetailPage /> },
+      { path: 'tv/:seriesId', element: <SeriesDetailPage /> },
       { path: 'watchlist', element: <WatchlistPage /> },
       { path: 'picker', element: <PickerPage /> },
       { path: '*', element: <NotFoundPage /> },

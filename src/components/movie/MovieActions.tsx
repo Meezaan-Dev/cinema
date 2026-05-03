@@ -8,7 +8,7 @@ type MovieActionsProps = {
   movie: UserMovie
   saved?: UserMovie
   onAdd: (movie: UserMovie) => void
-  onRemove: (movieId: number) => void
+  onRemove: (movie: UserMovie) => void
   onWatched: (movie: UserMovie) => void
   onFavourite: (movie: UserMovie) => void
   onRate: (movie: UserMovie, rating?: number) => void
@@ -21,7 +21,7 @@ export function MovieActions({ movie, saved, onAdd, onRemove, onWatched, onFavou
     <div className="rounded-3xl border border-white/[0.07] bg-white/[0.06] p-4 backdrop-blur-2xl">
       <div className="grid gap-3 sm:grid-cols-3">
         {saved ? (
-          <Button variant="danger" type="button" onClick={() => onRemove(movie.id)}>
+          <Button variant="danger" type="button" onClick={() => onRemove(current)}>
             <Trash2 className="size-4" aria-hidden="true" />
             Remove
           </Button>

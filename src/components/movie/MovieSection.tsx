@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { MovieGridSkeleton } from '@/components/ui/Skeleton'
 import { ErrorState } from '@/components/ui/StatusState'
 import type { TmdbGenre, TmdbMovie } from '@/types/tmdb'
-import type { UserMovie } from '@/types/movie'
+import { getTmdbWatchlistKey, type UserMovie } from '@/types/movie'
 
 type MovieSectionProps = {
   title: string
@@ -16,7 +16,7 @@ type MovieSectionProps = {
   error?: unknown
   onRetry?: () => void
   genres?: TmdbGenre[]
-  savedById?: Map<number, UserMovie>
+  savedByKey?: Map<string, UserMovie>
   onAdd?: (movie: UserMovie) => void
   horizontal?: boolean
 }
@@ -30,7 +30,7 @@ export function MovieSection({
   error,
   onRetry,
   genres,
-  savedById,
+  savedByKey,
   onAdd,
   horizontal,
 }: MovieSectionProps) {
@@ -54,10 +54,10 @@ export function MovieSection({
         <div className={horizontal ? 'scroll-row' : 'movie-grid'}>
           {movies.map((movie) => (
             <MovieCard
-              key={movie.id}
+              key={`${movie.media_type ?? 'movie'}-${movie.id}`}
               movie={movie}
               genres={genres}
-              saved={savedById?.get(movie.id)}
+              saved={savedByKey?.get(getTmdbWatchlistKey(movie))}
               onAdd={onAdd}
               compact={horizontal}
             />

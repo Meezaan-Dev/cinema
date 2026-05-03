@@ -1,5 +1,5 @@
 import { userMovieSchema, watchlistStorageSchema } from '@/types/schemas'
-import type { UserMovie } from '@/types/movie'
+import { getWatchlistKey, type UserMovie } from '@/types/movie'
 
 export function sanitizeUserMovie(movie: unknown): UserMovie | null {
   const parsed = userMovieSchema.safeParse(movie)
@@ -9,11 +9,15 @@ export function sanitizeUserMovie(movie: unknown): UserMovie | null {
 function sanitizeMovies(value: unknown) {
   if (!Array.isArray(value)) return []
 
-  const seen = new Set<number>()
+  const seen = new Set<string>()
   return value.reduce<UserMovie[]>((movies, item) => {
     const movie = sanitizeUserMovie(item)
-    if (!movie || seen.has(movie.id)) return movies
-    seen.add(movie.id)
+    if (!movie) return movies
+
+    const key = getWatchlistKey(movie)
+    if (seen.has(key)) return movies
+
+    seen.add(key)
     movies.push(movie)
     return movies
   }, [])

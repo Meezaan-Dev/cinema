@@ -22,7 +22,7 @@ export function MovieDetailPage() {
   const similar = useQuery({ queryKey: queryKeys.similar(movieId), queryFn: () => getSimilarMovies(movieId), enabled: isValidMovieId })
 
   const movie = details.data
-  const saved = movie ? watchlist.byId.get(movie.id) : undefined
+  const saved = movie ? watchlist.getSaved(movie) : undefined
   const trailer = videos.data?.results.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ?? videos.data?.results.find((video) => video.site === 'YouTube')
   const backdrop = imageUrl(movie?.backdrop_path, 'original')
 
@@ -118,7 +118,7 @@ export function MovieDetailPage() {
         </aside>
       </section>
 
-      <MovieSection title="Similar recommendations" movies={similar.data?.results.slice(0, 10)} isLoading={similar.isLoading} isError={similar.isError} error={similar.error} onRetry={() => similar.refetch()} savedById={watchlist.byId} onAdd={watchlist.addMovie} />
+      <MovieSection title="Similar recommendations" movies={similar.data?.results.slice(0, 10)} isLoading={similar.isLoading} isError={similar.isError} error={similar.error} onRetry={() => similar.refetch()} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} />
       <div className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
         <Link to="/search" className="text-sm font-medium text-slate-400 hover:text-white">Back to discovery</Link>
       </div>
