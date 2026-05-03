@@ -1,5 +1,7 @@
 import type { TmdbGenre, TmdbMovie, TmdbMovieDetails } from './tmdb'
 
+export type MediaType = 'movie' | 'tv'
+
 export type UserMovie = {
   id: number
   title: string
@@ -13,10 +15,18 @@ export type UserMovie = {
   isFavourite: boolean
   personalRating?: number
   notes?: string
-  mediaType?: 'movie' | 'tv'
+  mediaType?: MediaType
 }
 
 export type WatchPreference = 'any' | 'watched' | 'unwatched'
+
+export function getWatchlistKey(movie: { id: number; mediaType?: MediaType }) {
+  return `${movie.mediaType ?? 'movie'}:${movie.id}`
+}
+
+export function getTmdbWatchlistKey(movie: { id: number; media_type?: MediaType }) {
+  return `${movie.media_type ?? 'movie'}:${movie.id}`
+}
 
 export function toUserMovie(
   movie: TmdbMovie | TmdbMovieDetails,

@@ -124,7 +124,7 @@ export function SearchPage() {
         {!search.isLoading && !search.isError && movies.length > 0 ? (
           <div className="movie-grid">
             {movies.map((movie) => (
-              <MovieCard key={`${movie.media_type ?? 'movie'}-${movie.id}`} movie={movie} genres={genres.data?.genres} saved={watchlist.byId.get(movie.id)} onAdd={watchlist.addMovie} />
+              <MovieCard key={`${movie.media_type ?? 'movie'}-${movie.id}`} movie={movie} genres={genres.data?.genres} saved={watchlist.getSaved(movie)} onAdd={watchlist.addMovie} />
             ))}
           </div>
         ) : null}

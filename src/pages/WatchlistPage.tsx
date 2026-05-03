@@ -57,11 +57,11 @@ export function WatchlistPage() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
           <div className="movie-grid">
-            {movies.map((movie) => <MovieCard key={movie.id} movie={movie} saved={movie} />)}
+            {movies.map((movie) => <MovieCard key={`${movie.mediaType ?? 'movie'}-${movie.id}`} movie={movie} saved={movie} />)}
           </div>
           <aside className="space-y-3">
             {movies.slice(0, 6).map((movie) => (
-              <div key={movie.id} className="rounded-3xl border border-white/[0.07] bg-white/[0.045] p-4">
+              <div key={`${movie.mediaType ?? 'movie'}-${movie.id}`} className="rounded-3xl border border-white/[0.07] bg-white/[0.045] p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="font-semibold text-white">{movie.title}</h2>

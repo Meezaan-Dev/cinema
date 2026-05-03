@@ -77,11 +77,11 @@ export function HomePage() {
         </section>
       ) : null}
 
-      <MovieSection title="What's new in movies" eyebrow="Fresh arrivals" movies={newMovies.data?.results.slice(0, 12)} isLoading={newMovies.isLoading} isError={newMovies.isError} error={newMovies.error} onRetry={() => newMovies.refetch()} genres={genresQuery.data?.genres} savedById={watchlist.byId} onAdd={watchlist.addMovie} horizontal />
-      <MovieSection title="What's new in series" eyebrow="Now airing" movies={newSeries.data?.results.slice(0, 12)} isLoading={newSeries.isLoading} isError={newSeries.isError} error={newSeries.error} onRetry={() => newSeries.refetch()} genres={genresQuery.data?.genres} savedById={watchlist.byId} onAdd={watchlist.addMovie} horizontal />
-      <MovieSection title="Trending this week" eyebrow="Featured" movies={trending.data?.results.slice(0, 12)} isLoading={trending.isLoading} isError={trending.isError} error={trending.error} onRetry={() => trending.refetch()} genres={genresQuery.data?.genres} savedById={watchlist.byId} onAdd={watchlist.addMovie} horizontal />
-      <MovieSection title="Popular movies" eyebrow="Browse" movies={popular.data?.results.slice(0, 10)} isLoading={popular.isLoading} isError={popular.isError} error={popular.error} onRetry={() => popular.refetch()} genres={genresQuery.data?.genres} savedById={watchlist.byId} onAdd={watchlist.addMovie} />
-      <MovieSection title="Top rated" eyebrow="Critic signal" movies={topRated.data?.results.slice(0, 10)} isLoading={topRated.isLoading} isError={topRated.isError} error={topRated.error} onRetry={() => topRated.refetch()} genres={genresQuery.data?.genres} savedById={watchlist.byId} onAdd={watchlist.addMovie} />
+      <MovieSection title="What's new in movies" eyebrow="Fresh arrivals" movies={newMovies.data?.results.slice(0, 12)} isLoading={newMovies.isLoading} isError={newMovies.isError} error={newMovies.error} onRetry={() => newMovies.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} horizontal />
+      <MovieSection title="What's new in series" eyebrow="Now airing" movies={newSeries.data?.results.slice(0, 12)} isLoading={newSeries.isLoading} isError={newSeries.isError} error={newSeries.error} onRetry={() => newSeries.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} horizontal />
+      <MovieSection title="Trending this week" eyebrow="Featured" movies={trending.data?.results.slice(0, 12)} isLoading={trending.isLoading} isError={trending.isError} error={trending.error} onRetry={() => trending.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} horizontal />
+      <MovieSection title="Popular movies" eyebrow="Browse" movies={popular.data?.results.slice(0, 10)} isLoading={popular.isLoading} isError={popular.isError} error={popular.error} onRetry={() => popular.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} />
+      <MovieSection title="Top rated" eyebrow="Critic signal" movies={topRated.data?.results.slice(0, 10)} isLoading={topRated.isLoading} isError={topRated.isError} error={topRated.error} onRetry={() => topRated.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} />
     </>
   )
 }

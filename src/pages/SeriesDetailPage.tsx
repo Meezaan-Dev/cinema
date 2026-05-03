@@ -43,7 +43,6 @@ export function SeriesDetailPage() {
   })
 
   const series = details.data
-  const saved = series ? watchlist.byId.get(series.id) : undefined
   const backdrop = imageUrl(series?.backdrop_path, 'original')
 
   if (!isValidSeriesId) {
@@ -71,6 +70,7 @@ export function SeriesDetailPage() {
   }
 
   const userSeries = toUserSeries(series)
+  const saved = watchlist.getSaved(userSeries)
 
   return (
     <>
