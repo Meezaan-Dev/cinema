@@ -2,13 +2,16 @@ import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, ListVideo, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
+import { aiSummaryKeys, getAiSummary } from '@/api/aiSummaries'
 import { getSeriesDetails, queryKeys } from '@/api/tmdbEndpoints'
 import { MovieActions } from '@/components/movie/MovieActions'
 import { MoviePoster } from '@/components/movie/MoviePoster'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ErrorState, StatusState } from '@/components/ui/StatusState'
 import { formatRating, getYear, imageUrl } from '@/lib/formatters'
+import { useAuth } from '@/hooks/useAuth'
 import { useWatchlist } from '@/hooks/useWatchlist'
+import { useWatchlistPicker } from '@/hooks/useWatchlistPicker'
 import type { TmdbSeriesDetails } from '@/types/tmdb'
 import type { UserMovie } from '@/types/movie'
 
@@ -35,19 +38,36 @@ function displayDate(date: string) {
 export function SeriesDetailPage() {
   const { seriesId = '' } = useParams()
   const isValidSeriesId = /^\d+$/.test(seriesId)
+  const { user } = useAuth()
   const watchlist = useWatchlist()
+  const watchlistPicker = useWatchlistPicker()
   const details = useQuery({
     queryKey: queryKeys.seriesDetail(seriesId),
     queryFn: () => getSeriesDetails(seriesId),
     enabled: isValidSeriesId,
   })
-
   const series = details.data
+  const aiSummary = useQuery({
+    queryKey: aiSummaryKeys.summary('tv', seriesId),
+    queryFn: () =>
+      getAiSummary({
+        mediaType: 'tv',
+        tmdbId: series?.id ?? 0,
+        title: series?.name ?? '',
+        overview: series?.overview ?? '',
+        releaseDate: series?.first_air_date ?? '',
+        genres: series?.genres.map((genre) => genre.name) ?? [],
+        status: series?.status,
+      }),
+    enabled: Boolean(series),
+    retry: false,
+  })
+
   const backdrop = imageUrl(series?.backdrop_path, 'original')
 
   if (!isValidSeriesId) {
     return (
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
         <StatusState title="Series not found" message="Series URLs need a valid TMDB series ID." />
       </section>
     )
@@ -55,7 +75,7 @@ export function SeriesDetailPage() {
 
   if (details.isLoading) {
     return (
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
         <Skeleton className="h-[420px] w-full" />
       </section>
     )
@@ -63,22 +83,22 @@ export function SeriesDetailPage() {
 
   if (details.isError || !series) {
     return (
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
         <ErrorState error={details.error} onRetry={() => details.refetch()} />
       </section>
     )
   }
 
   const userSeries = toUserSeries(series)
-  const saved = watchlist.getSaved(userSeries)
+  const saved = user ? undefined : watchlist.getSaved(userSeries)
 
   return (
     <>
       <section className="relative overflow-hidden">
         {backdrop ? <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover opacity-48" /> : null}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,12,.5),#05070c_88%)]" />
-        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-16">
-          <MoviePoster path={series.poster_path} title={series.name} className="w-56 shadow-[0_24px_70px_rgba(0,0,0,.48)] sm:w-72 lg:w-full" size="w780" />
+        <div className="relative mx-auto grid max-w-7xl gap-6 px-3 py-8 sm:gap-8 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-16">
+          <MoviePoster path={series.poster_path} title={series.name} className="w-full shadow-[0_24px_70px_rgba(0,0,0,.48)] sm:w-72 lg:w-full" size="w780" />
           <div className="max-w-4xl self-end">
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-400">
               {getYear(series.first_air_date)} • {series.status || 'Status unknown'}
@@ -120,18 +140,24 @@ export function SeriesDetailPage() {
               <MovieActions
                 movie={userSeries}
                 saved={saved}
-                onAdd={watchlist.addMovie}
+                onAdd={watchlistPicker.open}
                 onRemove={watchlist.removeMovie}
                 onWatched={watchlist.toggleWatched}
                 onFavourite={watchlist.toggleFavourite}
                 onRate={watchlist.setRating}
+                aiSummary={aiSummary.data}
+                isAiSummaryLoading={aiSummary.isLoading}
+                aiSummaryError={aiSummary.error}
+                onAiSummaryRetry={() => {
+                  aiSummary.refetch()
+                }}
               />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
         <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Episode guide</p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">Seasons</h2>
@@ -156,7 +182,7 @@ export function SeriesDetailPage() {
         )}
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
+      <div className="mx-auto max-w-7xl px-3 pb-10 sm:px-6">
         <Link to="/search" className="text-sm font-medium text-slate-400 hover:text-white">Back to discovery</Link>
       </div>
     </>

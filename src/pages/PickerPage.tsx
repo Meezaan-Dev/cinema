@@ -25,7 +25,9 @@ import {
   sanitizeRuntime,
   sanitizeWatchPreference,
 } from '@/lib/filterValidation'
+import { useAuth } from '@/hooks/useAuth'
 import { useWatchlist } from '@/hooks/useWatchlist'
+import { useWatchlistPicker } from '@/hooks/useWatchlistPicker'
 import type { WatchPreference } from '@/types/movie'
 
 const recommendedSearches = [
@@ -35,7 +37,9 @@ const recommendedSearches = [
 ]
 
 export function PickerPage() {
+  const { user } = useAuth()
   const watchlist = useWatchlist()
+  const watchlistPicker = useWatchlistPicker()
   const [mood, setMood] = useState<MoodKey>('electric')
   const [genre, setGenre] = useState('')
   const [maxRuntime, setMaxRuntime] = useState('120')
@@ -104,7 +108,7 @@ export function PickerPage() {
   const aiErrorCopy = aiMutation.isError ? getErrorCopy(aiMutation.error) : null
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
       <div className="mb-6 max-w-3xl">
         <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-500">Smart recommendations</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white sm:text-6xl">Describe the vibe. We’ll find the titles.</h1>
@@ -205,8 +209,8 @@ export function PickerPage() {
                 key={`${movie.media_type ?? 'movie'}-${movie.id}`}
                 movie={movie}
                 genres={genres.data?.genres}
-                saved={watchlist.getSaved(movie)}
-                onAdd={watchlist.addMovie}
+                saved={user ? undefined : watchlist.getSaved(movie)}
+                onAdd={watchlistPicker.open}
               />
             ))}
           </div>

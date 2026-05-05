@@ -15,13 +15,17 @@ import {
 import { Button } from '@/components/ui/Button'
 import { MovieSection } from '@/components/movie/MovieSection'
 import { ErrorState } from '@/components/ui/StatusState'
+import { useAuth } from '@/hooks/useAuth'
+import { useWatchlistPicker } from '@/hooks/useWatchlistPicker'
 import { imageUrl } from '@/lib/formatters'
 import { useWatchlist } from '@/hooks/useWatchlist'
 
 export function HomePage() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
+  const { user } = useAuth()
   const watchlist = useWatchlist()
+  const watchlistPicker = useWatchlistPicker()
   const genresQuery = useQuery({ queryKey: queryKeys.genres, queryFn: getGenres })
   const trending = useQuery({ queryKey: queryKeys.trending, queryFn: getTrendingMovies })
   const newMovies = useQuery({ queryKey: queryKeys.newMovies, queryFn: getNewMovies })
@@ -43,7 +47,7 @@ export function HomePage() {
         {heroImage ? <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-48" /> : null}
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#05070c_0%,rgba(5,7,12,.92)_36%,rgba(5,7,12,.42)_72%,rgba(5,7,12,.78)_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#05070c] to-transparent" />
-        <div className="relative mx-auto grid min-h-[72svh] max-w-7xl content-end px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:items-end">
+        <div className="relative mx-auto grid min-h-[72svh] max-w-7xl content-end px-3 py-14 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:items-end">
           <div className="max-w-3xl">
             <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-400">Movie discovery, with taste memory</p>
             <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-[0.95] tracking-tight text-white sm:text-7xl">
@@ -72,16 +76,16 @@ export function HomePage() {
       </section>
 
       {trending.isError ? (
-        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
           <ErrorState error={trending.error} onRetry={() => trending.refetch()} />
         </section>
       ) : null}
 
-      <MovieSection title="What's new in movies" eyebrow="Fresh arrivals" movies={newMovies.data?.results.slice(0, 12)} isLoading={newMovies.isLoading} isError={newMovies.isError} error={newMovies.error} onRetry={() => newMovies.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} horizontal />
-      <MovieSection title="What's new in series" eyebrow="Now airing" movies={newSeries.data?.results.slice(0, 12)} isLoading={newSeries.isLoading} isError={newSeries.isError} error={newSeries.error} onRetry={() => newSeries.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} horizontal />
-      <MovieSection title="Trending this week" eyebrow="Featured" movies={trending.data?.results.slice(0, 12)} isLoading={trending.isLoading} isError={trending.isError} error={trending.error} onRetry={() => trending.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} horizontal />
-      <MovieSection title="Popular movies" eyebrow="Browse" movies={popular.data?.results.slice(0, 10)} isLoading={popular.isLoading} isError={popular.isError} error={popular.error} onRetry={() => popular.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} />
-      <MovieSection title="Top rated" eyebrow="Critic signal" movies={topRated.data?.results.slice(0, 10)} isLoading={topRated.isLoading} isError={topRated.isError} error={topRated.error} onRetry={() => topRated.refetch()} genres={genresQuery.data?.genres} savedByKey={watchlist.byKey} onAdd={watchlist.addMovie} />
+      <MovieSection title="What's new in movies" eyebrow="Fresh arrivals" movies={newMovies.data?.results.slice(0, 12)} isLoading={newMovies.isLoading} isError={newMovies.isError} error={newMovies.error} onRetry={() => newMovies.refetch()} genres={genresQuery.data?.genres} savedByKey={user ? undefined : watchlist.byKey} onAdd={watchlistPicker.open} horizontal />
+      <MovieSection title="What's new in series" eyebrow="Now airing" movies={newSeries.data?.results.slice(0, 12)} isLoading={newSeries.isLoading} isError={newSeries.isError} error={newSeries.error} onRetry={() => newSeries.refetch()} genres={genresQuery.data?.genres} savedByKey={user ? undefined : watchlist.byKey} onAdd={watchlistPicker.open} horizontal />
+      <MovieSection title="Trending this week" eyebrow="Featured" movies={trending.data?.results.slice(0, 12)} isLoading={trending.isLoading} isError={trending.isError} error={trending.error} onRetry={() => trending.refetch()} genres={genresQuery.data?.genres} savedByKey={user ? undefined : watchlist.byKey} onAdd={watchlistPicker.open} horizontal />
+      <MovieSection title="Popular movies" eyebrow="Browse" movies={popular.data?.results.slice(0, 10)} isLoading={popular.isLoading} isError={popular.isError} error={popular.error} onRetry={() => popular.refetch()} genres={genresQuery.data?.genres} savedByKey={user ? undefined : watchlist.byKey} onAdd={watchlistPicker.open} />
+      <MovieSection title="Top rated" eyebrow="Critic signal" movies={topRated.data?.results.slice(0, 10)} isLoading={topRated.isLoading} isError={topRated.isError} error={topRated.error} onRetry={() => topRated.refetch()} genres={genresQuery.data?.genres} savedByKey={user ? undefined : watchlist.byKey} onAdd={watchlistPicker.open} />
     </>
   )
 }

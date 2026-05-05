@@ -35,7 +35,7 @@ export function MovieSection({
   horizontal,
 }: MovieSectionProps) {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
+    <section className="mx-auto max-w-7xl px-3 py-9 sm:px-6">
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
           {eyebrow ? <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{eyebrow}</p> : null}

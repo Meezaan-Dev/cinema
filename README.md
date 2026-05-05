@@ -30,6 +30,9 @@ Add screenshots here after running the app locally.
 - Export watchlist data to CSV
 - Use the Tonight Picker to get a focused recommendation
 - Use Gemini-powered vibe search, for example: “I want to watch a movie with the same vibe as Top Gun”
+- Generate spoiler-safe AI decision summaries on detail pages
+- Sign in with Google to create shareable, collaborative watchlists
+- Keep watched/to-watch status, favourites, and ratings personal inside shared lists
 - Loading, empty, error, retry, and image fallback states
 
 ## Setup
@@ -49,11 +52,16 @@ VITE_TMDB_BASE_URL=https://api.themoviedb.org/3
 VITE_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
 GEMINI_API_KEY=your_server_side_gemini_key
 GEMINI_MODEL=gemini-2.5-flash-lite
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_server_side_supabase_service_role_key
 ```
 
 Restart the dev server after changing environment variables. `GEMINI_API_KEY` is intentionally not prefixed with `VITE_`; it must stay server-side and is used by the `/api/ai-recommendation` endpoint.
 
-The AI endpoint is implemented as a serverless API route and Vite dev middleware. Get a Gemini API key from Google AI Studio, add it to `.env`, then restart `npm run dev`.
+The AI endpoints are implemented as serverless API routes and Vite dev middleware. Get a Gemini API key from Google AI Studio, add it to `.env`, then restart `npm run dev`.
+
+Supabase is optional for browsing, local watchlists, and AI summaries. Add the Supabase variables and run the SQL in `supabase/migrations/001_core_watchlists.sql` to enable Google auth, cloud watchlists, invite links, collaboration, and cached AI summaries.
 
 ## Scripts
 

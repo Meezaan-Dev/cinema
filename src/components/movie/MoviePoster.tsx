@@ -26,7 +26,7 @@ export function MoviePoster({ path, title, className, size = 'w500' }: MoviePost
     <img
       src={src}
       alt={`${title} poster`}
-      className={cn('aspect-[2/3] rounded-2xl object-cover', className)}
+      className={cn('aspect-[2/3] rounded-2xl bg-white/[0.055] object-contain', className)}
       loading="lazy"
     />
   )

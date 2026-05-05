@@ -5,7 +5,7 @@ import { StatusState } from '@/components/ui/StatusState'
 
 export function NotFoundPage() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+    <section className="mx-auto max-w-7xl px-3 py-16 sm:px-6">
       <StatusState
         title="Page not found"
         message="That screen is not part of Absolute Cinema. Head home or search for a movie instead."

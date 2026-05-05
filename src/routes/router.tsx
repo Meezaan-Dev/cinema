@@ -1,7 +1,9 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { Navigate, createBrowserRouter } from 'react-router-dom'
 
 import { AppLayout } from '@/components/layout/AppLayout'
+import { CloudWatchlistDetailPage } from '@/pages/CloudWatchlistDetailPage'
 import { HomePage } from '@/pages/HomePage'
+import { JoinWatchlistPage } from '@/pages/JoinWatchlistPage'
 import { MovieDetailPage } from '@/pages/MovieDetailPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PickerPage } from '@/pages/PickerPage'
@@ -20,7 +22,10 @@ export const router = createBrowserRouter([
       { path: 'search', element: <SearchPage /> },
       { path: 'movie/:movieId', element: <MovieDetailPage /> },
       { path: 'tv/:seriesId', element: <SeriesDetailPage /> },
-      { path: 'watchlist', element: <WatchlistPage /> },
+      { path: 'watchlist', element: <Navigate to="/watchlists" replace /> },
+      { path: 'watchlists', element: <WatchlistPage /> },
+      { path: 'watchlists/:watchlistId', element: <CloudWatchlistDetailPage /> },
+      { path: 'join/:inviteToken', element: <JoinWatchlistPage /> },
       { path: 'picker', element: <PickerPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

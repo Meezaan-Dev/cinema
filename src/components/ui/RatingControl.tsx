@@ -9,7 +9,7 @@ type RatingControlProps = {
 
 export function RatingControl({ value, onChange }: RatingControlProps) {
   return (
-    <div className="flex items-center gap-1" aria-label="Personal rating">
+    <div className="flex flex-wrap items-center gap-1" aria-label="Personal rating">
       {Array.from({ length: 5 }).map((_, index) => {
         const rating = index + 1
         const active = Boolean(value && value >= rating)

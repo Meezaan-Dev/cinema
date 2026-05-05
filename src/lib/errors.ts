@@ -7,6 +7,7 @@ export type AppErrorCode =
   | 'auth'
   | 'invalid-json'
   | 'invalid-data'
+  | 'configuration'
   | 'unknown'
 
 export class AppError extends Error {
@@ -71,6 +72,13 @@ export function getErrorCopy(error: unknown) {
       return {
         title: 'Data unavailable',
         message: 'TMDB returned data in an unexpected format. Try again in a moment.',
+      }
+    }
+
+    if (error.code === 'configuration') {
+      return {
+        title: 'Configuration needed',
+        message: error.message,
       }
     }
   }
