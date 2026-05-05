@@ -63,8 +63,12 @@ export function CloudWatchlistDetailPage() {
   async function copyInviteLink() {
     if (!list) return
     const shareUrl = `${window.location.origin}/join/${list.inviteToken}`
-    await navigator.clipboard.writeText(shareUrl)
-    setCopyState('Copied')
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setCopyState('Copied')
+    } catch {
+      setCopyState('Copy failed')
+    }
     window.setTimeout(() => setCopyState('Copy link'), 1800)
   }
 

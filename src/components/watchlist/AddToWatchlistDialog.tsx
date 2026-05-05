@@ -14,20 +14,22 @@ type AddToWatchlistDialogProps = {
 }
 
 export function AddToWatchlistDialog({ movie, onClose }: AddToWatchlistDialogProps) {
+  if (!movie) return null
+
+  return <AddToWatchlistDialogContent key={`${movie.mediaType}-${movie.tmdbId}`} movie={movie} onClose={onClose} />
+}
+
+function AddToWatchlistDialogContent({ movie, onClose }: { movie: WatchlistMovieInput; onClose: () => void }) {
   const { authConfigured, user, signInWithGoogle } = useAuth()
   const localWatchlist = useWatchlist()
   const cloud = useAddToCloudWatchlist(movie)
   const [newListName, setNewListName] = useState('')
   const [message, setMessage] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
-  const isOpen = Boolean(movie)
-  const localMovie = useMemo(() => (movie ? watchlistMovieToUserMovie(movie) : null), [movie])
-  const localSaved = localMovie ? localWatchlist.isSaved(localMovie) : false
-
-  if (!isOpen || !movie || !localMovie) return null
+  const localMovie = useMemo(() => watchlistMovieToUserMovie(movie), [movie])
+  const localSaved = localWatchlist.isSaved(localMovie)
 
   async function saveLocally() {
-    if (!localMovie) return
     localWatchlist.addMovie(localMovie)
     setMessage('Saved in this browser.')
   }
