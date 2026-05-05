@@ -63,6 +63,22 @@ The AI endpoints are implemented as serverless API routes and Vite dev middlewar
 
 Supabase is optional for browsing, local watchlists, and AI summaries. Add the Supabase variables and run the SQL in `supabase/migrations/001_core_watchlists.sql` to enable Google auth, cloud watchlists, invite links, collaboration, and cached AI summaries.
 
+### Supabase auth redirects
+
+In Supabase, open Authentication > URL Configuration:
+
+- Set Site URL to the production app URL, for example `https://your-domain.com`.
+- Add Redirect URLs for every app origin that can start auth:
+  - `https://your-domain.com/**`
+  - `https://*-your-vercel-team.vercel.app/**` for Vercel previews
+  - `http://localhost:5173/**` and `http://127.0.0.1:5173/**` for local Vite dev
+
+If Vite starts on another port, for example `5174`, add that exact localhost/127.0.0.1 port as well.
+
+If Google sign-in sends production users to `localhost`, Supabase is falling back to the Site URL or rejecting the app-provided redirect URL because the production URL is not allow-listed.
+
+In Google Cloud OAuth settings, keep the authorized redirect URI as the Supabase callback URL from Authentication > Sign In / Providers > Google, for example `https://your-project.supabase.co/auth/v1/callback`.
+
 ## Scripts
 
 ```bash

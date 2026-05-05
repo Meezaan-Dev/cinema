@@ -21,6 +21,10 @@ async function ensureProfile(nextSession: Session | null) {
   })
 }
 
+function getAuthRedirectTo() {
+  return `${window.location.origin}${window.location.pathname}${window.location.search}`
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(isSupabaseConfigured)
@@ -65,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.href,
+            redirectTo: getAuthRedirectTo(),
           },
         })
 
