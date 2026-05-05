@@ -40,7 +40,7 @@ export function MovieCard({ movie, genres = [], saved, onAdd, compact }: MovieCa
       className="group"
     >
       <Link to={detailsPath} className="block rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-300">
-        <div className="relative overflow-hidden rounded-2xl bg-white/[0.055] shadow-[0_16px_48px_rgba(0,0,0,0.32)] ring-1 ring-white/[0.055] transition duration-300 group-hover:-translate-y-1 group-hover:ring-white/20">
+        <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-white/[0.055] shadow-[0_16px_48px_rgba(0,0,0,0.32)] ring-1 ring-white/[0.055] transition duration-300 group-hover:-translate-y-1 group-hover:ring-white/20">
           <MoviePoster path={posterPath} title={title} className="w-full transition duration-500 group-hover:scale-[1.035]" />
           <div className="absolute left-2 top-2 flex gap-1">
             {userMovie?.isWatched ? (
@@ -66,7 +66,7 @@ export function MovieCard({ movie, genres = [], saved, onAdd, compact }: MovieCa
         </div>
       </Link>
       <div className={cn('mt-3 space-y-1', compact && 'mt-2')}>
-        <h3 className="line-clamp-2 text-sm font-medium leading-snug text-white">{title}</h3>
+        <h3 className="line-clamp-2 min-h-9 text-sm font-medium leading-snug text-white">{title}</h3>
         <p className="text-xs text-slate-500">{getYear(releaseDate)}</p>
         {onAdd && !saved && !isUserMovie(movie) ? (
           <Button

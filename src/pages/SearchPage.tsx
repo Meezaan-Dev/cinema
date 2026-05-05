@@ -17,8 +17,10 @@ import {
   sanitizeYear,
 } from '@/lib/filterValidation'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useAuth } from '@/hooks/useAuth'
 import { useMovieSearch, type SearchMediaType } from '@/hooks/useMovieSearch'
 import { useWatchlist } from '@/hooks/useWatchlist'
+import { useWatchlistPicker } from '@/hooks/useWatchlistPicker'
 
 const mediaTypeOptions: Array<{ value: SearchMediaType; label: string }> = [
   { value: 'both', label: 'All' },
@@ -37,7 +39,9 @@ export function SearchPage() {
     sortBy: 'popularity.desc',
   })
   const debouncedQuery = useDebounce(sanitizeQuery(query))
+  const { user } = useAuth()
   const watchlist = useWatchlist()
+  const watchlistPicker = useWatchlistPicker()
   const genres = useQuery({ queryKey: queryKeys.genres, queryFn: getGenres })
   const safeFilters = useMemo(
     () => ({
@@ -64,7 +68,7 @@ export function SearchPage() {
   }, [search.data?.results, debouncedQuery, safeFilters])
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
       <div className="mb-6 max-w-3xl">
         <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-500">Search TMDB</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">Find your next obsession.</h1>
@@ -124,7 +128,7 @@ export function SearchPage() {
         {!search.isLoading && !search.isError && movies.length > 0 ? (
           <div className="movie-grid">
             {movies.map((movie) => (
-              <MovieCard key={`${movie.media_type ?? 'movie'}-${movie.id}`} movie={movie} genres={genres.data?.genres} saved={watchlist.getSaved(movie)} onAdd={watchlist.addMovie} />
+              <MovieCard key={`${movie.media_type ?? 'movie'}-${movie.id}`} movie={movie} genres={genres.data?.genres} saved={user ? undefined : watchlist.getSaved(movie)} onAdd={watchlistPicker.open} />
             ))}
           </div>
         ) : null}

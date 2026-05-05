@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom'
 
+import { AuthProvider } from '@/components/auth/AuthProvider'
+import { WatchlistPickerProvider } from '@/components/watchlist/WatchlistPickerProvider'
 import { AppError } from '@/lib/errors'
 import { router } from '@/routes/router'
 
@@ -23,7 +25,11 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <WatchlistPickerProvider>
+          <RouterProvider router={router} />
+        </WatchlistPickerProvider>
+      </AuthProvider>
     </QueryClientProvider>
   )
 }

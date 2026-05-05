@@ -5,6 +5,7 @@ import path from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import aiRecommendationHandler from './api/ai-recommendation'
+import aiSummaryHandler from './api/ai-summary'
 
 async function readJsonBody(req: IncomingMessage) {
   const chunks: Buffer[] = []
@@ -23,11 +24,17 @@ async function readJsonBody(req: IncomingMessage) {
   }
 }
 
-function aiRecommendationDevApi(): Plugin {
+type DevApiResponse = {
+  status: (code: number) => DevApiResponse
+  json: (payload: unknown) => void
+  setHeader: (name: string, value: string) => void
+}
+
+function createJsonDevApi(pathname: string, handler: (req: { method?: string; body?: unknown }, res: DevApiResponse) => Promise<void>): Plugin {
   return {
-    name: 'absolute-cinema-ai-dev-api',
+    name: `absolute-cinema-dev-api-${pathname}`,
     configureServer(server: ViteDevServer) {
-      server.middlewares.use('/api/ai-recommendation', async (req: IncomingMessage, res: ServerResponse) => {
+      server.middlewares.use(pathname, async (req: IncomingMessage, res: ServerResponse) => {
         const body = await readJsonBody(req)
 
         const response = {
@@ -47,14 +54,14 @@ function aiRecommendationDevApi(): Plugin {
         }
 
         try {
-          await aiRecommendationHandler({ method: req.method, body }, response)
+          await handler({ method: req.method, body }, response)
         } catch (error) {
-          console.error('Local AI API route failed', error)
+          console.error(`Local API route failed: ${pathname}`, error)
           if (!res.headersSent) {
             res.statusCode = 500
             res.setHeader('Content-Type', 'application/json')
           }
-          res.end(JSON.stringify({ error: 'Local AI API route failed.' }))
+          res.end(JSON.stringify({ error: 'Local API route failed.' }))
         }
       })
     },
@@ -66,9 +73,16 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   process.env.GEMINI_API_KEY ||= env.GEMINI_API_KEY
   process.env.GEMINI_MODEL ||= env.GEMINI_MODEL
+  process.env.SUPABASE_URL ||= env.SUPABASE_URL || env.VITE_SUPABASE_URL
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||= env.SUPABASE_SERVICE_ROLE_KEY
 
   return {
-    plugins: [react(), tailwindcss(), aiRecommendationDevApi()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      createJsonDevApi('/api/ai-recommendation', aiRecommendationHandler),
+      createJsonDevApi('/api/ai-summary', aiSummaryHandler),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

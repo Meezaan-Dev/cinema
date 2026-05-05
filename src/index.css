@@ -87,6 +87,12 @@ img {
   gap: 1.1rem;
 }
 
+@media (max-width: 380px) {
+  .movie-grid {
+    gap: 0.85rem;
+  }
+}
+
 @media (min-width: 640px) {
   .movie-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -103,7 +109,7 @@ img {
 .scroll-row {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(158px, 204px);
+  grid-auto-columns: minmax(146px, 204px);
   gap: 1.15rem;
   overflow-x: auto;
   padding-bottom: 1rem;
