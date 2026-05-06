@@ -4,6 +4,7 @@ import {
   addMovieToCloudWatchlist,
   cloudWatchlistKeys,
   createCloudWatchlist,
+  deleteCloudWatchlist,
   deleteCloudWatchlistItem,
   getCloudMoviePresence,
   getCloudWatchlistDetail,
@@ -41,12 +42,23 @@ export function useCloudWatchlists() {
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (watchlistId: string) => deleteCloudWatchlist(watchlistId, userId),
+    onSuccess: (_data, watchlistId) => {
+      queryClient.invalidateQueries({ queryKey: cloudWatchlistKeys.lists(userId) })
+      queryClient.removeQueries({ queryKey: cloudWatchlistKeys.detail(watchlistId, userId) })
+    },
+  })
+
   return {
     ...query,
     createWatchlist: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     importLocalMovies: importMutation.mutateAsync,
     isImporting: importMutation.isPending,
+    deleteWatchlist: deleteMutation.mutateAsync,
+    deletingWatchlistId: deleteMutation.isPending ? deleteMutation.variables : undefined,
+    isDeleting: deleteMutation.isPending,
   }
 }
 
@@ -95,11 +107,21 @@ export function useCloudWatchlistDetail(watchlistId: string | undefined) {
     onSuccess: invalidate,
   })
 
+  const deleteWatchlistMutation = useMutation({
+    mutationFn: () => deleteCloudWatchlist(watchlistId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cloudWatchlistKeys.lists(userId) })
+      queryClient.removeQueries({ queryKey: cloudWatchlistKeys.detail(watchlistId, userId) })
+    },
+  })
+
   return {
     ...query,
     saveState: saveStateMutation.mutateAsync,
     hideForMe: hideMutation.mutateAsync,
     removeGlobally: deleteMutation.mutateAsync,
+    deleteWatchlist: deleteWatchlistMutation.mutateAsync,
+    isDeletingWatchlist: deleteWatchlistMutation.isPending,
     isUpdating: saveStateMutation.isPending || hideMutation.isPending || deleteMutation.isPending,
   }
 }

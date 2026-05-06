@@ -1,12 +1,11 @@
-import { Cloud, Download, Heart, Loader2, Plus } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Cloud, Download, Heart, Loader2, Plus, Trash2 } from 'lucide-react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
 import { MovieCard } from '@/components/movie/MovieCard'
 import { Button } from '@/components/ui/Button'
 import { RatingControl } from '@/components/ui/RatingControl'
-import { StatusState } from '@/components/ui/StatusState'
-import { ErrorState } from '@/components/ui/StatusState'
+import { ErrorState, StatusState } from '@/components/ui/StatusState'
 import { WatchlistDecisionGuide } from '@/components/watchlist/WatchlistDecisionGuide'
 import { useAuth } from '@/hooks/useAuth'
 import { useCloudWatchlists } from '@/hooks/useCloudWatchlists'
@@ -27,6 +26,7 @@ export function WatchlistPage() {
   const [newListName, setNewListName] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [dismissedImports, setDismissedImports] = useState<Set<string>>(() => new Set())
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
 
   const movies = useMemo(() => {
     return [...watchlist.movies]
@@ -42,10 +42,21 @@ export function WatchlistPage() {
     : false
   const showImportPrompt = Boolean(user && watchlist.movies.length > 0 && !importDismissed)
 
-  async function createWatchlist() {
+  async function createWatchlist(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     if (!newListName.trim()) return
     await cloud.createWatchlist(newListName)
     setNewListName('')
+  }
+
+  async function deleteWatchlist(listId: string) {
+    if (confirmingDeleteId !== listId) {
+      setConfirmingDeleteId(listId)
+      return
+    }
+
+    await cloud.deleteWatchlist(listId)
+    setConfirmingDeleteId(null)
   }
 
   async function importLocal() {
@@ -81,19 +92,19 @@ export function WatchlistPage() {
               Create playlist-style movie and series lists, share invite links, and keep your watched status personal.
             </p>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+          <form className="grid w-full gap-2 sm:grid-cols-[minmax(0,18rem)_auto] lg:w-auto" onSubmit={createWatchlist}>
             <input
-              className="field sm:w-72"
+              className="field min-h-12"
               value={newListName}
               onChange={(event) => setNewListName(event.target.value)}
               placeholder="Movie night shortlist"
               maxLength={80}
             />
-            <Button type="button" variant="primary" onClick={createWatchlist} disabled={cloud.isCreating || !newListName.trim()}>
+            <Button type="submit" variant="primary" className="min-h-12 w-full whitespace-nowrap px-4 sm:w-auto" disabled={cloud.isCreating || !newListName.trim()}>
               {cloud.isCreating ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
-              New list
+              New watchlist
             </Button>
-          </div>
+          </form>
         </div>
 
         {showImportPrompt ? (
@@ -123,19 +134,45 @@ export function WatchlistPage() {
         ) : null}
         {!cloud.isLoading && !cloud.isError && cloud.data?.length ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {cloud.data.map((list) => (
-              <Link
-                key={list.id}
-                to={`/watchlists/${list.id}`}
-                className="rounded-3xl border border-white/[0.07] bg-white/[0.045] p-5 transition hover:border-white/20 hover:bg-white/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
-              >
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{list.role}</p>
-                <h2 className="mt-2 line-clamp-2 text-2xl font-semibold tracking-tight text-white">{list.name}</h2>
-                <p className="mt-4 text-sm text-slate-400">
-                  {list.itemCount} {list.itemCount === 1 ? 'title' : 'titles'} saved
-                </p>
-              </Link>
-            ))}
+            {cloud.data.map((list) => {
+              const isConfirmingDelete = confirmingDeleteId === list.id
+              const isDeleting = cloud.deletingWatchlistId === list.id
+
+              return (
+                <article
+                  key={list.id}
+                  className="rounded-3xl border border-white/[0.07] bg-white/[0.045] p-5 transition hover:border-white/20 hover:bg-white/[0.07]"
+                >
+                  <Link
+                    to={`/watchlists/${list.id}`}
+                    className="block rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+                    onFocus={() => setConfirmingDeleteId(null)}
+                  >
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{list.role}</p>
+                    <h2 className="mt-2 line-clamp-2 text-2xl font-semibold tracking-tight text-white">{list.name}</h2>
+                  </Link>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm text-slate-400">
+                      {list.itemCount} {list.itemCount === 1 ? 'title' : 'titles'} saved
+                    </p>
+                    {list.role === 'owner' ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isConfirmingDelete ? 'danger' : 'ghost'}
+                        className="shrink-0"
+                        onClick={() => deleteWatchlist(list.id)}
+                        disabled={cloud.isDeleting}
+                        aria-label={`Delete ${list.name}`}
+                      >
+                        {isDeleting ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />}
+                        {isConfirmingDelete ? 'Confirm' : 'Delete'}
+                      </Button>
+                    ) : null}
+                  </div>
+                </article>
+              )
+            })}
           </div>
         ) : null}
       </section>

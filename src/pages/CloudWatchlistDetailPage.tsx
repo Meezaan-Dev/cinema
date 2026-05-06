@@ -1,6 +1,6 @@
 import { Check, Copy, Download, Heart, Loader2, Trash2, UserMinus } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { MovieCard } from '@/components/movie/MovieCard'
 import { Button } from '@/components/ui/Button'
@@ -22,11 +22,13 @@ function itemStatus(item: CloudWatchlistItem) {
 
 export function CloudWatchlistDetailPage() {
   const { watchlistId = '' } = useParams()
+  const navigate = useNavigate()
   const { authConfigured, user, signInWithGoogle } = useAuth()
   const detail = useCloudWatchlistDetail(watchlistId)
   const [filter, setFilter] = useState<CloudFilter>('all')
   const [sort, setSort] = useState<CloudSort>('addedAt')
   const [copyState, setCopyState] = useState('Copy link')
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const list = detail.data
 
   const items = useMemo(() => {
@@ -108,6 +110,17 @@ export function CloudWatchlistDetailPage() {
     await detail.hideForMe(item)
   }
 
+  async function deleteWatchlist() {
+    if (!list || list.role !== 'owner') return
+    if (!isConfirmingDelete) {
+      setIsConfirmingDelete(true)
+      return
+    }
+
+    await detail.deleteWatchlist()
+    navigate('/watchlists')
+  }
+
   function exportCsv() {
     if (!list) return
     downloadCsv(items.map(cloudItemToUserMovie), `${list.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'watchlist'}.csv`)
@@ -142,6 +155,12 @@ export function CloudWatchlistDetailPage() {
             <Copy className="size-4" aria-hidden="true" />
             {copyState}
           </Button>
+          {list?.role === 'owner' ? (
+            <Button type="button" variant="danger" onClick={deleteWatchlist} disabled={detail.isDeletingWatchlist}>
+              {detail.isDeletingWatchlist ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />}
+              {isConfirmingDelete ? 'Confirm delete' : 'Delete list'}
+            </Button>
+          ) : null}
         </div>
       </div>
 

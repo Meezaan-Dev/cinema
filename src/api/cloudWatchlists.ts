@@ -218,6 +218,28 @@ export async function createCloudWatchlist(name: string, userId: string | undefi
   return mapWatchlist(data as WatchlistRow, 'owner')
 }
 
+export async function deleteCloudWatchlist(watchlistId: string | undefined, userId: string | undefined) {
+  const currentUserId = requireUser(userId)
+  if (!watchlistId) {
+    throw new AppError('not-found', 'Choose a watchlist first.')
+  }
+
+  const client = getSupabaseClient()
+  const { data, error } = await client
+    .from('watchlists')
+    .delete()
+    .eq('id', watchlistId)
+    .eq('owner_id', currentUserId)
+    .select('id')
+    .maybeSingle()
+
+  toCloudError(error, 'Could not delete this watchlist.')
+
+  if (!data) {
+    throw new AppError('http', 'Only the owner can delete this watchlist.')
+  }
+}
+
 export async function getCloudWatchlistDetail(
   watchlistId: string | undefined,
   userId: string | undefined,
