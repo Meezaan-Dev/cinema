@@ -10,6 +10,7 @@ import { MovieSection } from '@/components/movie/MovieSection'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ErrorState, StatusState } from '@/components/ui/StatusState'
 import { formatRating, formatRuntime, getYear, imageUrl } from '@/lib/formatters'
+import { parsePositiveIntegerParam } from '@/lib/routeParams'
 import { useAuth } from '@/hooks/useAuth'
 import { useWatchlist } from '@/hooks/useWatchlist'
 import { useWatchlistPicker } from '@/hooks/useWatchlistPicker'
@@ -17,17 +18,18 @@ import { toUserMovie } from '@/types/movie'
 
 export function MovieDetailPage() {
   const { movieId = '' } = useParams()
-  const isValidMovieId = /^\d+$/.test(movieId)
+  const movieTmdbId = parsePositiveIntegerParam(movieId)
+  const isValidMovieId = movieTmdbId !== null
   const { user } = useAuth()
   const watchlist = useWatchlist()
   const watchlistPicker = useWatchlistPicker()
-  const details = useQuery({ queryKey: queryKeys.detail(movieId), queryFn: () => getMovieDetails(movieId), enabled: isValidMovieId })
-  const credits = useQuery({ queryKey: queryKeys.credits(movieId), queryFn: () => getMovieCredits(movieId), enabled: isValidMovieId })
-  const videos = useQuery({ queryKey: queryKeys.videos(movieId), queryFn: () => getMovieVideos(movieId), enabled: isValidMovieId })
-  const similar = useQuery({ queryKey: queryKeys.similar(movieId), queryFn: () => getSimilarMovies(movieId), enabled: isValidMovieId })
+  const details = useQuery({ queryKey: queryKeys.detail(movieTmdbId ?? movieId), queryFn: () => getMovieDetails(movieTmdbId ?? ''), enabled: isValidMovieId })
+  const credits = useQuery({ queryKey: queryKeys.credits(movieTmdbId ?? movieId), queryFn: () => getMovieCredits(movieTmdbId ?? ''), enabled: isValidMovieId })
+  const videos = useQuery({ queryKey: queryKeys.videos(movieTmdbId ?? movieId), queryFn: () => getMovieVideos(movieTmdbId ?? ''), enabled: isValidMovieId })
+  const similar = useQuery({ queryKey: queryKeys.similar(movieTmdbId ?? movieId), queryFn: () => getSimilarMovies(movieTmdbId ?? ''), enabled: isValidMovieId })
   const movie = details.data
   const aiSummary = useQuery({
-    queryKey: aiSummaryKeys.summary('movie', movieId),
+    queryKey: aiSummaryKeys.summary('movie', movieTmdbId ?? movieId),
     queryFn: () =>
       getAiSummary({
         mediaType: 'movie',

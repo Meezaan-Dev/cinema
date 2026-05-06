@@ -80,6 +80,46 @@ function sanitizeListName(name: string) {
   return cleanName
 }
 
+function sanitizeText(value: unknown, maxLength: number) {
+  return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, maxLength) : ''
+}
+
+function sanitizeNullablePath(value: unknown) {
+  const clean = sanitizeText(value, 200)
+  return clean || null
+}
+
+function sanitizeVoteAverage(value: unknown) {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? Math.min(10, Math.max(0, numeric)) : 0
+}
+
+function sanitizeGenres(value: unknown) {
+  if (!Array.isArray(value)) return []
+
+  const seen = new Set<string>()
+  const genres: string[] = []
+
+  for (const item of value.slice(0, 12)) {
+    const genre = sanitizeText(item, 60)
+    if (!genre || seen.has(genre)) continue
+    seen.add(genre)
+    genres.push(genre)
+  }
+
+  return genres
+}
+
+function sanitizeWatchStatus(value: unknown): WatchStatus {
+  return value === 'watched' ? 'watched' : 'to_watch'
+}
+
+function sanitizePersonalRating(value: unknown) {
+  if (value === undefined || value === null) return null
+  const numeric = Number(value)
+  return Number.isInteger(numeric) && numeric >= 1 && numeric <= 5 ? numeric : null
+}
+
 function mapWatchlist(row: WatchlistRow, role: WatchlistRole, itemCount = 0): CloudWatchlist {
   return {
     id: row.id,
@@ -128,17 +168,27 @@ function mapItem(row: ItemRow, state?: CloudWatchlistItemState): CloudWatchlistI
 }
 
 function itemPayload(watchlistId: string, movie: WatchlistMovieInput, userId: string) {
+  const tmdbId = Number(movie.tmdbId)
+  if (!Number.isInteger(tmdbId) || tmdbId <= 0) {
+    throw new AppError('invalid-data', 'This title is missing a valid TMDB ID.')
+  }
+
+  const title = sanitizeText(movie.title, 180)
+  if (!title) {
+    throw new AppError('invalid-data', 'This title is missing a name.')
+  }
+
   return {
     watchlist_id: watchlistId,
-    tmdb_id: movie.tmdbId,
-    media_type: movie.mediaType,
-    title: movie.title,
-    overview: movie.overview,
-    poster_path: movie.posterPath,
-    backdrop_path: movie.backdropPath,
-    release_date: movie.releaseDate,
-    vote_average: movie.voteAverage,
-    genres: movie.genres,
+    tmdb_id: tmdbId,
+    media_type: movie.mediaType === 'tv' ? 'tv' : 'movie',
+    title,
+    overview: sanitizeText(movie.overview, 1200),
+    poster_path: sanitizeNullablePath(movie.posterPath),
+    backdrop_path: sanitizeNullablePath(movie.backdropPath),
+    release_date: sanitizeText(movie.releaseDate, 40),
+    vote_average: sanitizeVoteAverage(movie.voteAverage),
+    genres: sanitizeGenres(movie.genres),
     added_by: userId,
   }
 }
@@ -147,11 +197,11 @@ function statePayload(itemId: string, userId: string, state: Partial<CloudWatchl
   return {
     item_id: itemId,
     user_id: userId,
-    status: state.status ?? 'to_watch',
+    status: sanitizeWatchStatus(state.status),
     is_favourite: state.isFavourite ?? false,
-    personal_rating: state.personalRating ?? null,
-    notes: state.notes ?? null,
-    hidden_at: state.hiddenAt ?? null,
+    personal_rating: sanitizePersonalRating(state.personalRating),
+    notes: state.notes === undefined || state.notes === null ? null : sanitizeText(state.notes, 1000),
+    hidden_at: state.hiddenAt ? sanitizeText(state.hiddenAt, 40) : null,
   }
 }
 
