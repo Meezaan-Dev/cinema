@@ -1,10 +1,11 @@
 # Absolute Cinema
 
-Absolute Cinema is a polished React SPA for discovering movies with the real TMDB API. It combines trending, popular, search, detail, watchlist, personal ratings, favourites, CSV export, and a “What Should I Watch Tonight?” picker into a portfolio-ready dark cinematic product.
+Absolute Cinema is a polished React SPA for discovering movies with the real TMDB API. It combines trending, popular, search, detail, watchlist, personal ratings, favourites, CSV export, and a “What Should I Watch Tonight?” picker.
 
 ## Screenshots
 
-Add screenshots here after running the app locally.
+<img width="1467" height="954" alt="Screenshot 2026-05-06 at 12 34 21" src="https://github.com/user-attachments/assets/ac88ddce-8c06-43ec-82d7-50af77217227" />
+
 
 ## Tech Stack
 
@@ -119,10 +120,3 @@ Smoke-test these flows locally or in a preview deploy:
 - Invite link join flow
 - AI summary on detail pages
 - AI recommendation from the picker/search experience
-
-## Future Improvements
-
-- Notes and custom lists
-- More nuanced recommendation scoring
-- Import/export backups
-- Playwright visual smoke tests
