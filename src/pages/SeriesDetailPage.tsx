@@ -9,6 +9,7 @@ import { MoviePoster } from '@/components/movie/MoviePoster'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ErrorState, StatusState } from '@/components/ui/StatusState'
 import { formatRating, getYear, imageUrl } from '@/lib/formatters'
+import { parsePositiveIntegerParam } from '@/lib/routeParams'
 import { useAuth } from '@/hooks/useAuth'
 import { useWatchlist } from '@/hooks/useWatchlist'
 import { useWatchlistPicker } from '@/hooks/useWatchlistPicker'
@@ -37,18 +38,19 @@ function displayDate(date: string) {
 
 export function SeriesDetailPage() {
   const { seriesId = '' } = useParams()
-  const isValidSeriesId = /^\d+$/.test(seriesId)
+  const seriesTmdbId = parsePositiveIntegerParam(seriesId)
+  const isValidSeriesId = seriesTmdbId !== null
   const { user } = useAuth()
   const watchlist = useWatchlist()
   const watchlistPicker = useWatchlistPicker()
   const details = useQuery({
-    queryKey: queryKeys.seriesDetail(seriesId),
-    queryFn: () => getSeriesDetails(seriesId),
+    queryKey: queryKeys.seriesDetail(seriesTmdbId ?? seriesId),
+    queryFn: () => getSeriesDetails(seriesTmdbId ?? ''),
     enabled: isValidSeriesId,
   })
   const series = details.data
   const aiSummary = useQuery({
-    queryKey: aiSummaryKeys.summary('tv', seriesId),
+    queryKey: aiSummaryKeys.summary('tv', seriesTmdbId ?? seriesId),
     queryFn: () =>
       getAiSummary({
         mediaType: 'tv',

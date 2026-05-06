@@ -1,18 +1,20 @@
-type ApiRequest = {
-  method?: string
-  body?: unknown
-}
-
-type ApiResponse = {
-  status: (code: number) => ApiResponse
-  json: (body: unknown) => void
-  setHeader: (name: string, value: string) => void
-}
+import { aiRecommendationPlanSchema } from '../src/types/ai'
+import {
+  cleanString,
+  cleanStringArray,
+  extractGeminiText,
+  getGeminiPublicError,
+  parseGeminiJson,
+  parseJsonRequestBody,
+  shortLogBody,
+  type ApiRequest,
+  type ApiResponse,
+} from './serverUtils'
 
 type RequestBody = {
   prompt?: string
-  genres?: Array<{ id: number; name: string }>
-  watchlistTitles?: string[]
+  genres?: unknown
+  watchlistTitles?: unknown
 }
 
 const responseSchema = {
@@ -33,68 +35,15 @@ const responseSchema = {
   required: ['mediaType', 'genreIds', 'minRating', 'maxRuntime', 'sortBy', 'referenceTitle', 'vibeTags', 'reason'],
 }
 
-function parseBody(body: unknown): RequestBody {
-  if (typeof body === 'string') {
-    try {
-      return JSON.parse(body) as RequestBody
-    } catch {
-      return {}
-    }
-  }
+function normalizeGenres(value: unknown) {
+  if (!Array.isArray(value)) return []
+  if (value.length > 80) return null
 
-  return typeof body === 'object' && body !== null ? (body as RequestBody) : {}
-}
-
-function extractGeminiText(response: unknown) {
-  const candidates = (response as { candidates?: unknown })?.candidates
-  if (!Array.isArray(candidates)) return null
-
-  for (const candidate of candidates) {
-    const parts = (candidate as { content?: { parts?: unknown } })?.content?.parts
-    if (!Array.isArray(parts)) continue
-
-    for (const part of parts) {
-      const text = (part as { text?: unknown })?.text
-      if (typeof text === 'string') return text
-    }
-  }
-
-  return null
-}
-
-function getGeminiPublicError(errorText: string) {
-  try {
-    const parsed = JSON.parse(errorText) as {
-      error?: { message?: unknown; status?: unknown; code?: unknown }
-    }
-    const message = typeof parsed.error?.message === 'string' ? parsed.error.message : ''
-    const status = typeof parsed.error?.status === 'string' ? parsed.error.status : ''
-    const code = typeof parsed.error?.code === 'number' ? String(parsed.error.code) : ''
-
-    if (status.includes('RESOURCE_EXHAUSTED') || message.toLowerCase().includes('quota')) {
-      return {
-        code: status || code || 'resource_exhausted',
-        detail: 'Gemini says this key has hit a quota or free-tier limit. Wait for the quota window to reset or check Google AI Studio limits.',
-      }
-    }
-
-    if (status.includes('PERMISSION_DENIED') || status.includes('UNAUTHENTICATED')) {
-      return {
-        code: status || code || 'gemini_auth_error',
-        detail: 'Gemini rejected the API key. Check that GEMINI_API_KEY is valid and enabled for the Gemini API.',
-      }
-    }
-
-    return {
-      code: status || code || 'gemini_error',
-      detail: message.slice(0, 240) || 'Gemini rejected the recommendation request.',
-    }
-  } catch {
-    return {
-      code: 'gemini_error',
-      detail: 'Gemini rejected the recommendation request.',
-    }
-  }
+  return value.slice(0, 40).flatMap((genre) => {
+    const id = Number((genre as { id?: unknown })?.id)
+    const name = cleanString((genre as { name?: unknown })?.name, 80)
+    return Number.isInteger(id) && id > 0 && name ? [{ id, name }] : []
+  })
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -105,21 +54,41 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
+  const parsedBody = parseJsonRequestBody<RequestBody>(req.body)
+  if (!parsedBody.ok) {
+    res.status(parsedBody.status).json({ error: parsedBody.error })
+    return
+  }
+
+  const prompt = cleanString(parsedBody.data.prompt, 500)
+  if (!prompt) {
+    res.status(400).json({ error: 'Prompt is required.' })
+    return
+  }
+
+  if (typeof parsedBody.data.prompt === 'string' && parsedBody.data.prompt.trim().length > 500) {
+    res.status(400).json({ error: 'Prompt must be 500 characters or fewer.' })
+    return
+  }
+
+  const genres = normalizeGenres(parsedBody.data.genres)
+  if (!genres) {
+    res.status(400).json({ error: 'Genre payload is too large.' })
+    return
+  }
+
+  if (Array.isArray(parsedBody.data.watchlistTitles) && parsedBody.data.watchlistTitles.length > 60) {
+    res.status(400).json({ error: 'Watchlist title payload is too large.' })
+    return
+  }
+
+  const watchlistTitles = cleanStringArray(parsedBody.data.watchlistTitles, 30, 160)
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     res.status(501).json({ error: 'GEMINI_API_KEY is not configured on the server.' })
     return
   }
 
-  const body = parseBody(req.body)
-  const prompt = body.prompt?.trim().slice(0, 500)
-  if (!prompt) {
-    res.status(400).json({ error: 'Prompt is required.' })
-    return
-  }
-
-  const genres = (body.genres ?? []).slice(0, 40)
-  const watchlistTitles = (body.watchlistTitles ?? []).slice(0, 30)
   const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
 
@@ -161,10 +130,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   if (!geminiResponse.ok) {
     const errorText = await geminiResponse.text()
-    const publicError = getGeminiPublicError(errorText)
+    const publicError = getGeminiPublicError(errorText, 'Gemini rejected the recommendation request.')
     console.error('Gemini recommendation request failed', {
       status: geminiResponse.status,
-      body: errorText.slice(0, 1000),
+      body: shortLogBody(errorText),
     })
     res.status(geminiResponse.status).json({
       error: 'Gemini request failed.',
@@ -180,9 +149,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  try {
-    res.status(200).json(JSON.parse(outputText))
-  } catch {
-    res.status(502).json({ error: 'Gemini returned invalid structured output.' })
+  const parsedOutput = parseGeminiJson(outputText, aiRecommendationPlanSchema)
+  if (!parsedOutput.ok) {
+    res.status(parsedOutput.status).json({ error: parsedOutput.error })
+    return
   }
+
+  res.status(200).json(parsedOutput.data)
 }

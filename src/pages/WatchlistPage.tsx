@@ -10,6 +10,7 @@ import { WatchlistDecisionGuide } from '@/components/watchlist/WatchlistDecision
 import { useAuth } from '@/hooks/useAuth'
 import { useCloudWatchlists } from '@/hooks/useCloudWatchlists'
 import { getYear } from '@/lib/formatters'
+import { readLocalStorageValue, writeLocalStorageValue } from '@/lib/storage'
 import { useWatchlist } from '@/hooks/useWatchlist'
 
 type WatchFilter = 'all' | 'watched' | 'unwatched'
@@ -38,7 +39,7 @@ export function WatchlistPage() {
       })
   }, [filter, sort, watchlist.movies])
   const importDismissed = user
-    ? dismissedImports.has(user.id) || window.localStorage.getItem(importDismissedKey(user.id)) === '1'
+    ? dismissedImports.has(user.id) || readLocalStorageValue(importDismissedKey(user.id)) === '1'
     : false
   const showImportPrompt = Boolean(user && watchlist.movies.length > 0 && !importDismissed)
 
@@ -62,13 +63,13 @@ export function WatchlistPage() {
   async function importLocal() {
     if (!user) return
     await cloud.importLocalMovies(watchlist.movies)
-    window.localStorage.setItem(importDismissedKey(user.id), '1')
+    writeLocalStorageValue(importDismissedKey(user.id), '1')
     setDismissedImports((current) => new Set(current).add(user.id))
   }
 
   function dismissImport() {
     if (!user) return
-    window.localStorage.setItem(importDismissedKey(user.id), '1')
+    writeLocalStorageValue(importDismissedKey(user.id), '1')
     setDismissedImports((current) => new Set(current).add(user.id))
   }
 

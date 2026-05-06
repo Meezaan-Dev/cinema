@@ -15,6 +15,8 @@ Add screenshots here after running the app locally.
 - shadcn-style UI primitives
 - Framer Motion
 - TMDB API
+- Supabase Auth and Postgres for shared watchlists
+- Gemini API for server-side AI recommendations and summaries
 - localStorage
 - Custom CSV export utility
 
@@ -85,12 +87,41 @@ In Google Cloud OAuth settings, keep the authorized redirect URI as the Supabase
 npm run dev
 npm run build
 npm run lint
+npm run test
 npm run preview
 ```
 
+## Operational Notes
+
+- `VITE_TMDB_API_KEY` is required for movie and series discovery. The TMDB base URL and image base URL have safe defaults, but can be overridden with `VITE_TMDB_BASE_URL` and `VITE_TMDB_IMAGE_BASE_URL`.
+- Supabase is optional. Without Supabase variables, browsing, local watchlists, CSV export, and TMDB-backed detail pages still work. Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to enable shared watchlists, Google auth, invite links, and cached AI summaries.
+- Run the SQL migrations in `supabase/migrations/` when provisioning a new Supabase project. `001_core_watchlists.sql` creates the core schema, RLS policies, auth/profile hooks, invite RPC, and AI summary cache. `002_owner_read_policy.sql` keeps owner read access explicit.
+- AI routes live in `/api/ai-recommendation` and `/api/ai-summary`. They use `GEMINI_API_KEY` server-side only, validate Gemini JSON before returning it, and degrade with user-safe errors when quota, auth, or malformed output occurs.
+- Third-party failure modes to expect: TMDB network/rate-limit errors, Gemini quota or key errors, Supabase auth redirect misconfiguration, and browser storage quota/security failures. The app should show recoverable UI states for these instead of crashing.
+
+## Maintenance Checklist
+
+Before leaving the code untouched for a while, run:
+
+```bash
+npm run lint
+npm run test
+npm run build
+npm audit --omit=dev
+```
+
+Smoke-test these flows locally or in a preview deploy:
+
+- Search and filter movies/series
+- Movie and series detail pages
+- Local watchlist add/remove/rate/export
+- Cloud watchlist create/delete/import
+- Invite link join flow
+- AI summary on detail pages
+- AI recommendation from the picker/search experience
+
 ## Future Improvements
 
-- User accounts and multi-device sync
 - Notes and custom lists
 - More nuanced recommendation scoring
 - Import/export backups

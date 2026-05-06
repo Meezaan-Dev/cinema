@@ -34,6 +34,7 @@ function createJsonDevApi(pathname: string, handler: (req: { method?: string; bo
   return {
     name: `absolute-cinema-dev-api-${pathname}`,
     configureServer(server: ViteDevServer) {
+      // Mirrors Vercel serverless JSON routes during local Vite dev.
       server.middlewares.use(pathname, async (req: IncomingMessage, res: ServerResponse) => {
         const body = await readJsonBody(req)
 
@@ -87,6 +88,9 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+    },
+    build: {
+      chunkSizeWarningLimit: 600,
     },
   }
 })

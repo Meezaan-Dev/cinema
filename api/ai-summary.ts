@@ -1,15 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
-type ApiRequest = {
-  method?: string
-  body?: unknown
-}
-
-type ApiResponse = {
-  status: (code: number) => ApiResponse
-  json: (body: unknown) => void
-  setHeader: (name: string, value: string) => void
-}
+import { aiSummarySchema } from '../src/types/ai'
+import {
+  cleanString,
+  cleanStringArray,
+  extractGeminiText,
+  getGeminiPublicError,
+  parseGeminiJson,
+  parseJsonRequestBody,
+  shortLogBody,
+  type ApiRequest,
+  type ApiResponse,
+} from './serverUtils'
 
 type SummaryRequest = {
   mediaType?: string
@@ -35,70 +37,6 @@ const responseSchema = {
   required: ['takeaway', 'bestFor', 'skipIf', 'tone', 'pacing', 'spoilerFree'],
 }
 
-function parseBody(body: unknown): SummaryRequest {
-  if (typeof body === 'string') {
-    try {
-      return JSON.parse(body) as SummaryRequest
-    } catch {
-      return {}
-    }
-  }
-
-  return typeof body === 'object' && body !== null ? (body as SummaryRequest) : {}
-}
-
-function extractGeminiText(response: unknown) {
-  const candidates = (response as { candidates?: unknown })?.candidates
-  if (!Array.isArray(candidates)) return null
-
-  for (const candidate of candidates) {
-    const parts = (candidate as { content?: { parts?: unknown } })?.content?.parts
-    if (!Array.isArray(parts)) continue
-
-    for (const part of parts) {
-      const text = (part as { text?: unknown })?.text
-      if (typeof text === 'string') return text
-    }
-  }
-
-  return null
-}
-
-function getGeminiPublicError(errorText: string) {
-  try {
-    const parsed = JSON.parse(errorText) as {
-      error?: { message?: unknown; status?: unknown; code?: unknown }
-    }
-    const message = typeof parsed.error?.message === 'string' ? parsed.error.message : ''
-    const status = typeof parsed.error?.status === 'string' ? parsed.error.status : ''
-    const code = typeof parsed.error?.code === 'number' ? String(parsed.error.code) : ''
-
-    if (status.includes('RESOURCE_EXHAUSTED') || message.toLowerCase().includes('quota')) {
-      return {
-        code: status || code || 'resource_exhausted',
-        detail: 'Gemini says this key has hit a quota or free-tier limit. Wait for the quota window to reset or check Google AI Studio limits.',
-      }
-    }
-
-    if (status.includes('PERMISSION_DENIED') || status.includes('UNAUTHENTICATED')) {
-      return {
-        code: status || code || 'gemini_auth_error',
-        detail: 'Gemini rejected the API key. Check that GEMINI_API_KEY is valid and enabled for the Gemini API.',
-      }
-    }
-
-    return {
-      code: status || code || 'gemini_error',
-      detail: message.slice(0, 240) || 'Gemini rejected the summary request.',
-    }
-  } catch {
-    return {
-      code: 'gemini_error',
-      detail: 'Gemini rejected the summary request.',
-    }
-  }
-}
-
 function getServerSupabase() {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -116,7 +54,7 @@ function getServerSupabase() {
 function normalizeRequest(body: SummaryRequest) {
   const mediaType = body.mediaType === 'tv' ? 'tv' : 'movie'
   const tmdbId = Number(body.tmdbId)
-  const title = body.title?.trim().slice(0, 160) ?? ''
+  const title = cleanString(body.title, 160)
 
   if (!Number.isInteger(tmdbId) || tmdbId <= 0 || !title) {
     return null
@@ -126,11 +64,11 @@ function normalizeRequest(body: SummaryRequest) {
     mediaType,
     tmdbId,
     title,
-    overview: body.overview?.trim().slice(0, 1200) ?? '',
-    releaseDate: body.releaseDate?.trim().slice(0, 40) ?? '',
-    genres: (body.genres ?? []).slice(0, 8),
+    overview: cleanString(body.overview, 1200),
+    releaseDate: cleanString(body.releaseDate, 40),
+    genres: cleanStringArray(body.genres, 8, 80),
     runtime: typeof body.runtime === 'number' ? body.runtime : null,
-    status: body.status?.trim().slice(0, 80) ?? '',
+    status: cleanString(body.status, 80),
   }
 }
 
@@ -142,7 +80,18 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  const input = normalizeRequest(parseBody(req.body))
+  const parsedBody = parseJsonRequestBody<SummaryRequest>(req.body)
+  if (!parsedBody.ok) {
+    res.status(parsedBody.status).json({ error: parsedBody.error })
+    return
+  }
+
+  if (Array.isArray(parsedBody.data.genres) && parsedBody.data.genres.length > 24) {
+    res.status(400).json({ error: 'Genre payload is too large.' })
+    return
+  }
+
+  const input = normalizeRequest(parsedBody.data)
   if (!input) {
     res.status(400).json({ error: 'A valid TMDB title payload is required.' })
     return
@@ -159,8 +108,9 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       .eq('tmdb_id', input.tmdbId)
       .maybeSingle()
 
-    if (!error && data?.summary && typeof data.summary === 'object') {
-      res.status(200).json(data.summary)
+    const cached = aiSummarySchema.safeParse(data?.summary)
+    if (!error && cached.success) {
+      res.status(200).json(cached.data)
       return
     }
   }
@@ -215,10 +165,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   if (!geminiResponse.ok) {
     const errorText = await geminiResponse.text()
-    const publicError = getGeminiPublicError(errorText)
+    const publicError = getGeminiPublicError(errorText, 'Gemini rejected the summary request.')
     console.error('Gemini summary request failed', {
       status: geminiResponse.status,
-      body: errorText.slice(0, 1000),
+      body: shortLogBody(errorText),
     })
     res.status(geminiResponse.status).json({
       error: 'Gemini request failed.',
@@ -234,24 +184,24 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  try {
-    const summary = JSON.parse(outputText) as unknown
-
-    if (supabase) {
-      await supabase.from('ai_summaries').upsert(
-        {
-          media_type: input.mediaType,
-          tmdb_id: input.tmdbId,
-          title: input.title,
-          summary,
-          model,
-        },
-        { onConflict: 'media_type,tmdb_id' },
-      )
-    }
-
-    res.status(200).json(summary)
-  } catch {
-    res.status(502).json({ error: 'Gemini returned invalid structured output.' })
+  const parsedOutput = parseGeminiJson(outputText, aiSummarySchema)
+  if (!parsedOutput.ok) {
+    res.status(parsedOutput.status).json({ error: parsedOutput.error })
+    return
   }
+
+  if (supabase) {
+    await supabase.from('ai_summaries').upsert(
+      {
+        media_type: input.mediaType,
+        tmdb_id: input.tmdbId,
+        title: input.title,
+        summary: parsedOutput.data,
+        model,
+      },
+      { onConflict: 'media_type,tmdb_id' },
+    )
+  }
+
+  res.status(200).json(parsedOutput.data)
 }

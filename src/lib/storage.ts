@@ -1,6 +1,27 @@
 import { userMovieSchema, watchlistStorageSchema } from '@/types/schemas'
 import { getWatchlistKey, type UserMovie } from '@/types/movie'
 
+export function readLocalStorageValue(key: string) {
+  if (typeof window === 'undefined') return null
+
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+export function writeLocalStorageValue(key: string, value: string) {
+  if (typeof window === 'undefined') return false
+
+  try {
+    window.localStorage.setItem(key, value)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function sanitizeUserMovie(movie: unknown): UserMovie | null {
   const parsed = userMovieSchema.safeParse(movie)
   return parsed.success ? parsed.data : null
@@ -27,7 +48,7 @@ export function readWatchlistStorage(key: string): UserMovie[] {
   if (typeof window === 'undefined') return []
 
   try {
-    const item = window.localStorage.getItem(key)
+    const item = readLocalStorageValue(key)
     if (!item) return []
 
     const parsed: unknown = JSON.parse(item)
@@ -53,5 +74,5 @@ export function readWatchlistStorage(key: string): UserMovie[] {
 export function writeWatchlistStorage(key: string, movies: UserMovie[]) {
   if (typeof window === 'undefined') return
   const cleanMovies = sanitizeMovies(movies)
-  window.localStorage.setItem(key, JSON.stringify({ version: 1, movies: cleanMovies }))
+  writeLocalStorageValue(key, JSON.stringify({ version: 1, movies: cleanMovies }))
 }
