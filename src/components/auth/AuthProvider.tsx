@@ -33,7 +33,7 @@ async function ensureUserProfile(user: FirebaseUser | null) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null)
-  const [isLoading, setIsLoading] = useState(isFirebaseConfigured)
+  const [authLoading, setAuthLoading] = useState(isFirebaseConfigured)
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setUser(authUser ?? null)
-      setIsLoading(false)
+      setAuthLoading(false)
       await ensureUserProfile(authUser)
     })
 
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       authConfigured: isFirebaseConfigured,
-      isLoading,
+      isLoading: authLoading,
       user,
       signInWithGoogle: async () => {
         if (!isFirebaseConfigured) {
@@ -68,7 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await signInWithPopup(auth, provider)
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-          const firebaseError = error as (FirebaseError & { customData?: unknown }) | null
+          const firebaseError =
+            typeof error === 'object' && error !== null && 'code' in error
+              ? (error as FirebaseError)
+              : null
 
           // Log detailed error info for debugging
           console.error('🔥 Firebase Sign-In Error:', {
@@ -103,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
     }),
-    [isLoading, user],
+    [authLoading, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
