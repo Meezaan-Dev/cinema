@@ -68,7 +68,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await signInWithPopup(auth, provider)
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-          throw new AppError('auth', errorMessage)
+          
+          // Log detailed error info for debugging
+          console.error('🔥 Firebase Sign-In Error:', {
+            message: errorMessage,
+            code: (error as any)?.code,
+            customData: (error as any)?.customData,
+            fullError: error,
+          })
+          
+          // Provide helpful error messages based on error type
+          let userMessage = errorMessage
+          if (errorMessage.includes('CONFIGURATION_NOT_FOUND')) {
+            userMessage = 'Firebase configuration error. Please check your API key and Firebase Console settings. See FIREBASE_TROUBLESHOOTING.md for help.'
+          } else if (errorMessage.includes('auth/operation-not-allowed')) {
+            userMessage = 'Google Sign-In is not enabled in Firebase Console. Enable it in Authentication > Sign-in methods.'
+          } else if (errorMessage.includes('auth/popup-closed-by-user')) {
+            userMessage = 'Sign-in was cancelled. Please try again.'
+          }
+          
+          throw new AppError('auth', userMessage)
         }
       },
       signOut: async () => {

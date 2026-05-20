@@ -28,6 +28,19 @@ export const isFirebaseConfigured = Boolean(
     firebaseConfig.appId,
 )
 
+// Log Firebase configuration status (redact sensitive parts)
+if (typeof window !== 'undefined') {
+  console.log('🔥 Firebase Configuration:', {
+    configured: isFirebaseConfigured,
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+    apiKeyLength: firebaseConfig.apiKey?.length || 0,
+    appId: firebaseConfig.appId,
+    environment: import.meta.env.MODE,
+    emulatorEnabled: import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true',
+  })
+}
+
 let firebaseApp: ReturnType<typeof initializeApp> | null = null
 let auth: Auth | null = null
 let db: Firestore | null = null
