@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { FirebaseError } from 'firebase/app'
 import {
   signInWithPopup,
   signOut as firebaseSignOut,
@@ -36,7 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
-      setIsLoading(false)
       return
     }
 
@@ -68,12 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await signInWithPopup(auth, provider)
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-          
+          const firebaseError = error as (FirebaseError & { customData?: unknown }) | null
+
           // Log detailed error info for debugging
           console.error('🔥 Firebase Sign-In Error:', {
             message: errorMessage,
-            code: (error as any)?.code,
-            customData: (error as any)?.customData,
+            code: firebaseError?.code,
+            customData: firebaseError?.customData,
             fullError: error,
           })
           

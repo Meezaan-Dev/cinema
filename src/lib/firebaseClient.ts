@@ -41,14 +41,13 @@ if (typeof window !== 'undefined') {
   })
 }
 
-let firebaseApp: ReturnType<typeof initializeApp> | null = null
 let auth: Auth | null = null
 let db: Firestore | null = null
 
 if (isFirebaseConfigured) {
-  firebaseApp = initializeApp(firebaseConfig)
-  auth = getAuth(firebaseApp)
-  db = getFirestore(firebaseApp)
+  const app = initializeApp(firebaseConfig)
+  auth = getAuth(app)
+  db = getFirestore(app)
 
   // Connect to emulators in development if specified
   if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
@@ -58,7 +57,7 @@ if (isFirebaseConfigured) {
     if (authEmulatorUrl) {
       try {
         connectAuthEmulator(auth, authEmulatorUrl, { disableWarnings: true })
-      } catch (e) {
+      } catch {
         // Already connected or error
       }
     }
@@ -67,7 +66,7 @@ if (isFirebaseConfigured) {
       try {
         const [host, port] = firestoreEmulatorHost.split(':')
         connectFirestoreEmulator(db, host, Number(port))
-      } catch (e) {
+      } catch {
         // Already connected or error
       }
     }
