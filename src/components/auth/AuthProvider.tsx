@@ -7,29 +7,10 @@ import {
   onAuthStateChanged,
   type User as FirebaseUser,
 } from 'firebase/auth'
-import { doc, setDoc, Timestamp } from 'firebase/firestore'
 
 import { AppError } from '@/lib/errors'
 import { AuthContext, type AuthContextValue } from '@/lib/authContext'
-import { isFirebaseConfigured, getAuth_Client, getFirebaseDB } from '@/lib/firebaseClient'
-
-async function ensureUserProfile(user: FirebaseUser | null) {
-  if (!user || !isFirebaseConfigured) return
-
-  const db = getFirebaseDB()
-  const userDocRef = doc(db, 'users', user.uid)
-
-  await setDoc(
-    userDocRef,
-    {
-      email: user.email,
-      displayName: user.displayName || '',
-      photoURL: user.photoURL || null,
-      updatedAt: Timestamp.now(),
-    },
-    { merge: true },
-  )
-}
+import { isFirebaseConfigured, getAuth_Client } from '@/lib/firebaseClient'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null)
@@ -45,7 +26,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setUser(authUser ?? null)
       setAuthLoading(false)
-      await ensureUserProfile(authUser)
     })
 
     return () => unsubscribe()

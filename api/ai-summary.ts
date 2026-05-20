@@ -1,7 +1,5 @@
-import { initializeApp, cert } from 'firebase-admin/app'
-import { getFirestore } from 'firebase-admin/firestore'
-
 import { aiSummarySchema } from '../src/types/ai'
+import { getFirebaseAdminServices } from './firebaseAdmin'
 import {
   cleanString,
   cleanStringArray,
@@ -38,32 +36,8 @@ const responseSchema = {
   required: ['takeaway', 'bestFor', 'skipIf', 'tone', 'pacing', 'spoilerFree'],
 }
 
-let firebaseApp: ReturnType<typeof initializeApp> | null = null
-let db: ReturnType<typeof getFirestore> | null = null
-
 function getFirebaseDb() {
-  if (!firebaseApp) {
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
-    const projectId = process.env.FIREBASE_PROJECT_ID
-
-    if (!serviceAccountKey || !projectId) {
-      return null
-    }
-
-    try {
-      const serviceAccount = JSON.parse(serviceAccountKey)
-      firebaseApp = initializeApp({
-        credential: cert(serviceAccount),
-        projectId,
-      })
-      db = getFirestore(firebaseApp)
-    } catch (error) {
-      console.error('Failed to initialize Firebase:', error)
-      return null
-    }
-  }
-
-  return db
+  return getFirebaseAdminServices()?.db ?? null
 }
 
 function normalizeRequest(body: SummaryRequest) {
@@ -225,4 +199,3 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   res.status(200).json(parsedOutput.data)
 }
-

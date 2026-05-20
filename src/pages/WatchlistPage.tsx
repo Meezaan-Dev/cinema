@@ -28,6 +28,7 @@ export function WatchlistPage() {
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [dismissedImports, setDismissedImports] = useState<Set<string>>(() => new Set())
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
+  const [cloudMessage, setCloudMessage] = useState('')
 
   const movies = useMemo(() => {
     return [...watchlist.movies]
@@ -46,8 +47,14 @@ export function WatchlistPage() {
   async function createWatchlist(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!newListName.trim()) return
-    await cloud.createWatchlist(newListName)
-    setNewListName('')
+    setCloudMessage('')
+    try {
+      await cloud.createWatchlist(newListName)
+      setNewListName('')
+      setCloudMessage('Watchlist created.')
+    } catch {
+      // React Query stores the error for display below.
+    }
   }
 
   async function deleteWatchlist(listId: string) {
@@ -56,15 +63,27 @@ export function WatchlistPage() {
       return
     }
 
-    await cloud.deleteWatchlist(listId)
-    setConfirmingDeleteId(null)
+    setCloudMessage('')
+    try {
+      await cloud.deleteWatchlist(listId)
+      setConfirmingDeleteId(null)
+      setCloudMessage('Watchlist deleted.')
+    } catch {
+      // React Query stores the error for display below.
+    }
   }
 
   async function importLocal() {
     if (!user) return
-    await cloud.importLocalMovies(watchlist.movies)
-    writeLocalStorageValue(importDismissedKey(user.uid), '1')
-    setDismissedImports((current) => new Set(current).add(user.uid))
+    setCloudMessage('')
+    try {
+      await cloud.importLocalMovies(watchlist.movies)
+      writeLocalStorageValue(importDismissedKey(user.uid), '1')
+      setDismissedImports((current) => new Set(current).add(user.uid))
+      setCloudMessage('Local titles imported.')
+    } catch {
+      // React Query stores the error for display below.
+    }
   }
 
   function dismissImport() {
@@ -128,12 +147,18 @@ export function WatchlistPage() {
           </div>
         ) : null}
 
-        {cloud.isError ? <ErrorState error={cloud.error} onRetry={() => cloud.refetch()} /> : null}
+        {cloudMessage ? <p className="mb-5 rounded-2xl bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">{cloudMessage}</p> : null}
+        {!cloud.isCreating && !cloud.isImporting && !cloud.isDeleting && cloud.error ? <ErrorState error={cloud.error} onRetry={() => cloud.refetch()} /> : null}
         {cloud.isLoading ? <StatusState title="Loading watchlists" message="Fetching your shared shelves..." /> : null}
-        {!cloud.isLoading && !cloud.isError && cloud.data?.length === 0 ? (
+        {!cloud.isLoading && cloud.isRefreshing ? (
+          <div className="mb-5 rounded-2xl border border-sky-300/20 bg-sky-300/10 px-4 py-3 text-sm text-sky-100">
+            Syncing watchlists...
+          </div>
+        ) : null}
+        {!cloud.isLoading && !cloud.hasBlockingError && cloud.data?.length === 0 ? (
           <StatusState title="No cloud watchlists yet" message="Create a list, then add movies or series from search and detail pages." />
         ) : null}
-        {!cloud.isLoading && !cloud.isError && cloud.data?.length ? (
+        {!cloud.isLoading && !cloud.hasBlockingError && cloud.data?.length ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {cloud.data.map((list) => {
               const isConfirmingDelete = confirmingDeleteId === list.id

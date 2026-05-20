@@ -56,7 +56,7 @@ This project has been migrated from Supabase (PostgreSQL + Auth) to Firebase (Fi
 #### `watchlist_items`
 ```
 {
-  id: string
+  id: string (`{watchlistId}_{mediaType}_{tmdbId}`)
   watchlistId: string
   tmdbId: number
   mediaType: 'movie' | 'tv'
@@ -137,6 +137,7 @@ FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
 1. Go to Firebase Console → Project Settings → Service Accounts
 2. Click "Generate New Private Key"
 3. Copy the JSON content as `FIREBASE_SERVICE_ACCOUNT_KEY` env variable
+4. Configure both `FIREBASE_PROJECT_ID` and `FIREBASE_SERVICE_ACCOUNT_KEY` anywhere `/api/*` routes run. Invite joins and AI summary caching use Firebase Admin on the server.
 
 ### 4. Firestore Security Rules
 
@@ -161,26 +162,31 @@ service cloud.firestore {
     // Watchlists (owner/editor access)
     match /watchlists/{listId} {
       allow read: if hasWatchlistAccess(listId);
-      allow write: if resource.data.ownerId == request.auth.uid;
+      allow create: if request.resource.data.ownerId == request.auth.uid;
+      allow update: if resource.data.ownerId == request.auth.uid;
       allow delete: if resource.data.ownerId == request.auth.uid;
     }
 
     // Watchlist members
     match /watchlist_members/{document=**} {
-      allow read: if canAccessWatchlist(document);
+      allow read: if resource.data.userId == request.auth.uid || isWatchlistOwner(document);
       allow write: if isWatchlistOwner(document);
     }
 
     // Watchlist items
     match /watchlist_items/{itemId} {
-      allow read: if hasWatchlistAccess(itemId);
-      allow write: if canEditWatchlist(itemId);
+      allow read: if canReadItem();
+      allow create: if hasWatchlistAccess(request.resource.data.watchlistId);
+      allow update: if canReadItem();
+      allow delete: if isItemOwner();
     }
 
     // Item states (user-specific)
     match /watchlist_item_states/{stateId} {
-      allow read: if stateId.split('_')[1] == request.auth.uid;
-      allow write: if stateId.split('_')[1] == request.auth.uid;
+      allow read: if resource.data.userId == request.auth.uid || isStateItemOwner(resource.data.itemId);
+      allow create: if request.resource.data.userId == request.auth.uid;
+      allow update: if resource.data.userId == request.auth.uid;
+      allow delete: if resource.data.userId == request.auth.uid || isStateItemOwner(resource.data.itemId);
     }
 
     // Helper functions
@@ -199,13 +205,23 @@ service cloud.firestore {
       return ownerId == request.auth.uid;
     }
 
-    function canEditWatchlist(itemId) {
+    function canReadItem() {
+      return hasWatchlistAccess(resource.data.watchlistId);
+    }
+
+    function isItemOwner() {
+      return get(/databases/{database}/documents/watchlists/$(resource.data.watchlistId)).data.ownerId == request.auth.uid;
+    }
+
+    function isStateItemOwner(itemId) {
       let item = get(/databases/{database}/documents/watchlist_items/$(itemId)).data;
-      return hasWatchlistAccess(item.watchlistId);
+      return get(/databases/{database}/documents/watchlists/$(item.watchlistId)).data.ownerId == request.auth.uid;
     }
   }
 }
 ```
+
+Invite links are joined through `POST /api/join-watchlist`, which verifies the Firebase ID token with Firebase Admin and creates the membership server-side. Keep `watchlists` member-restricted; do not make invite-token queries public from the browser.
 
 ### 5. Create Firestore Indexes (if needed)
 
@@ -242,6 +258,8 @@ await addMovieToCloudWatchlist(watchlistId, movie, userId)
 await saveCloudItemState(itemId, userId, state)
 await joinCloudWatchlist(inviteToken, userId)
 ```
+
+Cloud watchlist listing, creation, and invite joins call server routes with the signed-in user's Firebase ID token. `/api/list-watchlists` reads the user's memberships, `/api/create-watchlist` creates the list and owner membership together, and `/api/join-watchlist` creates or reactivates invite memberships.
 
 ## Migration Checklist
 

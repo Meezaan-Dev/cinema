@@ -88,9 +88,9 @@ npm run preview
 ## Operational Notes
 
 - `VITE_TMDB_API_KEY` is required for movie and series discovery. The TMDB base URL and image base URL have safe defaults, but can be overridden with `VITE_TMDB_BASE_URL` and `VITE_TMDB_IMAGE_BASE_URL`.
-- Firebase is optional. Without Firebase variables, browsing, local watchlists, CSV export, and TMDB-backed detail pages still work. Add Firebase variables to enable shared watchlists, Google auth, invite links, and cached AI summaries.
+- Firebase is optional. Without Firebase variables, browsing, local watchlists, CSV export, and TMDB-backed detail pages still work. Add client Firebase variables for shared watchlists and Google auth; add server Firebase variables for invite joins and cached AI summaries.
 - Set up Firebase project, enable Firestore and Google Auth. Deploy Firestore security rules from [FIREBASE_MIGRATION.md](./FIREBASE_MIGRATION.md).
-- AI routes live in `/api/ai-recommendation` and `/api/ai-summary`. They use `GEMINI_API_KEY` server-side only, validate Gemini JSON before returning it, and degrade with user-safe errors when quota, auth, or malformed output occurs.
+- API routes live in `/api/ai-recommendation`, `/api/ai-summary`, `/api/create-watchlist`, `/api/join-watchlist`, and `/api/list-watchlists`. They keep `GEMINI_API_KEY` and Firebase service account credentials server-side only.
 - Third-party failure modes to expect: TMDB network/rate-limit errors, Gemini quota or key errors, Firebase auth misconfiguration, and browser storage quota/security failures. The app should show recoverable UI states for these instead of crashing.
 
 ## Maintenance Checklist

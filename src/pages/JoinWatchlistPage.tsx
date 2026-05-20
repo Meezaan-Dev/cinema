@@ -26,7 +26,7 @@ export function JoinWatchlistPage() {
   if (!authConfigured) {
     return (
       <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
-        <StatusState title="Cloud watchlists need Supabase" message="Add Supabase environment variables before invite links can be used." />
+        <StatusState title="Cloud watchlists need Firebase" message="Add Firebase environment variables before invite links can be used." />
       </section>
     )
   }
