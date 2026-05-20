@@ -21,7 +21,7 @@ import type { CloudWatchlistItem, CloudWatchlistItemState, WatchlistMovieInput }
 export function useCloudWatchlists() {
   const { user, authConfigured } = useAuth()
   const queryClient = useQueryClient()
-  const userId = user?.id
+  const userId = user?.uid
   const query = useQuery({
     queryKey: cloudWatchlistKeys.lists(userId),
     queryFn: () => listCloudWatchlists(userId),
@@ -65,7 +65,7 @@ export function useCloudWatchlists() {
 export function useCloudWatchlistDetail(watchlistId: string | undefined) {
   const { user, authConfigured } = useAuth()
   const queryClient = useQueryClient()
-  const userId = user?.id
+  const userId = user?.uid
   const query = useQuery({
     queryKey: cloudWatchlistKeys.detail(watchlistId, userId),
     queryFn: () => getCloudWatchlistDetail(watchlistId, userId),
@@ -129,7 +129,7 @@ export function useCloudWatchlistDetail(watchlistId: string | undefined) {
 export function useAddToCloudWatchlist(movie: WatchlistMovieInput | null) {
   const { user, authConfigured } = useAuth()
   const queryClient = useQueryClient()
-  const userId = user?.id
+  const userId = user?.uid
   const listsQuery = useQuery({
     queryKey: cloudWatchlistKeys.lists(userId),
     queryFn: () => listCloudWatchlists(userId),
@@ -187,7 +187,7 @@ export function useAddToCloudWatchlist(movie: WatchlistMovieInput | null) {
 export function useJoinCloudWatchlist(inviteToken: string | undefined) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const userId = user?.id
+  const userId = user?.uid
 
   return useMutation({
     mutationFn: () => joinCloudWatchlist(inviteToken ?? '', userId),

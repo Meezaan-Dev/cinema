@@ -1,5 +1,17 @@
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  Timestamp,
+} from 'firebase/firestore'
 import { AppError } from '@/lib/errors'
-import { getSupabaseClient } from '@/lib/supabaseClient'
+import { getFirebaseDB } from '@/lib/firebaseClient'
 import type { UserMovie } from '@/types/movie'
 import {
   type CloudWatchlist,
@@ -12,89 +24,95 @@ import {
   toWatchlistMovieInput,
 } from '@/types/watchlist'
 
-type WatchlistRow = {
+type FirestoreWatchlist = {
   id: string
   name: string
   description: string | null
-  owner_id: string
-  invite_token: string
-  created_at: string
-  updated_at: string
+  ownerId: string
+  inviteToken: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 
-type MembershipRow = {
-  watchlist_id: string
-  user_id: string
+type FirestoreMembership = {
+  watchlistId: string
+  userId: string
   role: WatchlistRole
-  joined_at: string
-  left_at: string | null
+  joinedAt: Timestamp
+  leftAt: Timestamp | null
 }
 
-type ItemRow = {
+type FirestoreItem = {
   id: string
-  watchlist_id: string
-  tmdb_id: number
-  media_type: 'movie' | 'tv'
+  watchlistId: string
+  tmdbId: number
+  mediaType: 'movie' | 'tv'
   title: string
   overview: string
-  poster_path: string | null
-  backdrop_path: string | null
-  release_date: string
-  vote_average: number
+  posterPath: string | null
+  backdropPath: string | null
+  releaseDate: string
+  voteAverage: number
   genres: string[] | null
-  added_by: string | null
-  created_at: string
-  updated_at: string
+  addedBy: string | null
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 
-type StateRow = {
-  item_id: string
-  user_id: string
+type FirestoreState = {
+  itemId: string
+  userId: string
   status: WatchStatus
-  is_favourite: boolean
-  personal_rating: number | null
+  isFavourite: boolean
+  personalRating: number | null
   notes: string | null
-  hidden_at: string | null
-  updated_at: string
+  hiddenAt: string | null
+  updatedAt: Timestamp
 }
 
-function requireUser(userId: string | undefined) {
+function generateId(): string {
+  return Math.random().toString(36).substr(2, 9)
+}
+
+function generateInviteToken(): string {
+  return Math.random().toString(36).substr(2, 12)
+}
+
+function requireUser(userId: string | undefined): string {
   if (!userId) {
     throw new AppError('auth', 'Sign in with Google to use shared watchlists.')
   }
-
   return userId
 }
 
-function toCloudError(error: { message?: string } | null, fallback: string) {
+function toCloudError(error: Error | null | undefined, fallback: string) {
   if (!error) return
   throw new AppError('http', error.message ? `${fallback} ${error.message}` : fallback)
 }
 
-function sanitizeListName(name: string) {
+function sanitizeListName(name: string): string {
   const cleanName = name.trim().replace(/\s+/g, ' ').slice(0, 80)
   if (!cleanName) {
     throw new AppError('invalid-data', 'Give this watchlist a name first.')
   }
-
   return cleanName
 }
 
-function sanitizeText(value: unknown, maxLength: number) {
+function sanitizeText(value: unknown, maxLength: number): string {
   return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, maxLength) : ''
 }
 
-function sanitizeNullablePath(value: unknown) {
+function sanitizeNullablePath(value: unknown): string | null {
   const clean = sanitizeText(value, 200)
   return clean || null
 }
 
-function sanitizeVoteAverage(value: unknown) {
+function sanitizeVoteAverage(value: unknown): number {
   const numeric = Number(value)
   return Number.isFinite(numeric) ? Math.min(10, Math.max(0, numeric)) : 0
 }
 
-function sanitizeGenres(value: unknown) {
+function sanitizeGenres(value: unknown): string[] {
   if (!Array.isArray(value)) return []
 
   const seen = new Set<string>()
@@ -114,55 +132,59 @@ function sanitizeWatchStatus(value: unknown): WatchStatus {
   return value === 'watched' ? 'watched' : 'to_watch'
 }
 
-function sanitizePersonalRating(value: unknown) {
+function sanitizePersonalRating(value: unknown): number | null {
   if (value === undefined || value === null) return null
   const numeric = Number(value)
   return Number.isInteger(numeric) && numeric >= 1 && numeric <= 5 ? numeric : null
 }
 
-function mapWatchlist(row: WatchlistRow, role: WatchlistRole, itemCount = 0): CloudWatchlist {
+function mapWatchlist(
+  data: FirestoreWatchlist,
+  role: WatchlistRole,
+  itemCount = 0,
+): CloudWatchlist {
   return {
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    ownerId: row.owner_id,
-    inviteToken: row.invite_token,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    ownerId: data.ownerId,
+    inviteToken: data.inviteToken,
+    createdAt: data.createdAt.toDate().toISOString(),
+    updatedAt: data.updatedAt.toDate().toISOString(),
     role,
     itemCount,
   }
 }
 
-function mapState(row: StateRow): CloudWatchlistItemState {
+function mapState(data: FirestoreState): CloudWatchlistItemState {
   return {
-    itemId: row.item_id,
-    userId: row.user_id,
-    status: row.status,
-    isFavourite: row.is_favourite,
-    personalRating: row.personal_rating ?? undefined,
-    notes: row.notes ?? undefined,
-    hiddenAt: row.hidden_at ?? undefined,
-    updatedAt: row.updated_at,
+    itemId: data.itemId,
+    userId: data.userId,
+    status: data.status,
+    isFavourite: data.isFavourite,
+    personalRating: data.personalRating ?? undefined,
+    notes: data.notes ?? undefined,
+    hiddenAt: data.hiddenAt ?? undefined,
+    updatedAt: data.updatedAt.toDate().toISOString(),
   }
 }
 
-function mapItem(row: ItemRow, state?: CloudWatchlistItemState): CloudWatchlistItem {
+function mapItem(data: FirestoreItem, state?: CloudWatchlistItemState): CloudWatchlistItem {
   return {
-    id: row.id,
-    watchlistId: row.watchlist_id,
-    tmdbId: row.tmdb_id,
-    mediaType: row.media_type,
-    title: row.title,
-    overview: row.overview,
-    posterPath: row.poster_path,
-    backdropPath: row.backdrop_path,
-    releaseDate: row.release_date,
-    voteAverage: Number(row.vote_average),
-    genres: row.genres ?? [],
-    addedBy: row.added_by,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: data.id,
+    watchlistId: data.watchlistId,
+    tmdbId: data.tmdbId,
+    mediaType: data.mediaType,
+    title: data.title,
+    overview: data.overview,
+    posterPath: data.posterPath,
+    backdropPath: data.backdropPath,
+    releaseDate: data.releaseDate,
+    voteAverage: Number(data.voteAverage),
+    genres: data.genres ?? [],
+    addedBy: data.addedBy,
+    createdAt: data.createdAt.toDate().toISOString(),
+    updatedAt: data.updatedAt.toDate().toISOString(),
     state,
   }
 }
@@ -179,29 +201,32 @@ function itemPayload(watchlistId: string, movie: WatchlistMovieInput, userId: st
   }
 
   return {
-    watchlist_id: watchlistId,
-    tmdb_id: tmdbId,
-    media_type: movie.mediaType === 'tv' ? 'tv' : 'movie',
+    watchlistId,
+    tmdbId,
+    mediaType: movie.mediaType === 'tv' ? 'tv' : ('movie' as const),
     title,
     overview: sanitizeText(movie.overview, 1200),
-    poster_path: sanitizeNullablePath(movie.posterPath),
-    backdrop_path: sanitizeNullablePath(movie.backdropPath),
-    release_date: sanitizeText(movie.releaseDate, 40),
-    vote_average: sanitizeVoteAverage(movie.voteAverage),
+    posterPath: sanitizeNullablePath(movie.posterPath),
+    backdropPath: sanitizeNullablePath(movie.backdropPath),
+    releaseDate: sanitizeText(movie.releaseDate, 40),
+    voteAverage: sanitizeVoteAverage(movie.voteAverage),
     genres: sanitizeGenres(movie.genres),
-    added_by: userId,
+    addedBy: userId,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   }
 }
 
 function statePayload(itemId: string, userId: string, state: Partial<CloudWatchlistItemState>) {
   return {
-    item_id: itemId,
-    user_id: userId,
+    itemId,
+    userId,
     status: sanitizeWatchStatus(state.status),
-    is_favourite: state.isFavourite ?? false,
-    personal_rating: sanitizePersonalRating(state.personalRating),
+    isFavourite: state.isFavourite ?? false,
+    personalRating: sanitizePersonalRating(state.personalRating),
     notes: state.notes === undefined || state.notes === null ? null : sanitizeText(state.notes, 1000),
-    hidden_at: state.hiddenAt ? sanitizeText(state.hiddenAt, 40) : null,
+    hiddenAt: state.hiddenAt ? sanitizeText(state.hiddenAt, 40) : null,
+    updatedAt: Timestamp.now(),
   }
 }
 
@@ -214,79 +239,113 @@ export const cloudWatchlistKeys = {
 
 export async function listCloudWatchlists(userId: string | undefined): Promise<CloudWatchlist[]> {
   const currentUserId = requireUser(userId)
-  const client = getSupabaseClient()
-  const { data: memberships, error: membershipError } = await client
-    .from('watchlist_members')
-    .select('watchlist_id,user_id,role,joined_at,left_at')
-    .eq('user_id', currentUserId)
-    .is('left_at', null)
+  const db = getFirebaseDB()
 
-  toCloudError(membershipError, 'Could not load your watchlists.')
+  try {
+    const membershipsQuery = query(
+      collection(db, 'watchlist_members'),
+      where('userId', '==', currentUserId),
+      where('leftAt', '==', null),
+    )
 
-  const activeMemberships = (memberships ?? []) as MembershipRow[]
-  const watchlistIds = activeMemberships.map((membership) => membership.watchlist_id)
-  if (watchlistIds.length === 0) return []
+    const membershipSnapshots = await getDocs(membershipsQuery)
+    const memberships = membershipSnapshots.docs.map((doc) => doc.data() as FirestoreMembership)
+    const watchlistIds = memberships.map((m) => m.watchlistId)
 
-  const { data: watchlists, error: watchlistError } = await client
-    .from('watchlists')
-    .select('id,name,description,owner_id,invite_token,created_at,updated_at')
-    .in('id', watchlistIds)
-    .order('updated_at', { ascending: false })
+    if (watchlistIds.length === 0) return []
 
-  toCloudError(watchlistError, 'Could not load watchlist details.')
+    const watchlists: CloudWatchlist[] = []
 
-  const { data: items, error: itemsError } = await client
-    .from('watchlist_items')
-    .select('id,watchlist_id')
-    .in('watchlist_id', watchlistIds)
+    for (const watchlistId of watchlistIds) {
+      const watchlistDoc = await getDoc(doc(db, 'watchlists', watchlistId))
+      if (!watchlistDoc.exists()) continue
 
-  toCloudError(itemsError, 'Could not load watchlist counts.')
+      const watchlistData = watchlistDoc.data() as FirestoreWatchlist
+      const membership = memberships.find((m) => m.watchlistId === watchlistId)
 
-  const roleByList = new Map(activeMemberships.map((membership) => [membership.watchlist_id, membership.role]))
-  const counts = new Map<string, number>()
-  for (const item of items ?? []) {
-    const watchlistId = (item as { watchlist_id: string }).watchlist_id
-    counts.set(watchlistId, (counts.get(watchlistId) ?? 0) + 1)
+      const itemsQuery = query(
+        collection(db, 'watchlist_items'),
+        where('watchlistId', '==', watchlistId),
+      )
+      const itemSnapshots = await getDocs(itemsQuery)
+      const itemCount = itemSnapshots.size
+
+      watchlists.push(mapWatchlist(watchlistData, membership?.role ?? 'editor', itemCount))
+    }
+
+    return watchlists.sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    )
+  } catch (error) {
+    toCloudError(error instanceof Error ? error : null, 'Could not load your watchlists.')
+    return []
   }
-
-  return ((watchlists ?? []) as WatchlistRow[]).map((watchlist) =>
-    mapWatchlist(watchlist, roleByList.get(watchlist.id) ?? 'editor', counts.get(watchlist.id) ?? 0),
-  )
 }
 
-export async function createCloudWatchlist(name: string, userId: string | undefined) {
+export async function createCloudWatchlist(name: string, userId: string | undefined): Promise<CloudWatchlist> {
   const currentUserId = requireUser(userId)
-  const client = getSupabaseClient()
-  const { data, error } = await client
-    .from('watchlists')
-    .insert({ name: sanitizeListName(name), owner_id: currentUserId })
-    .select('id,name,description,owner_id,invite_token,created_at,updated_at')
-    .single()
+  const db = getFirebaseDB()
 
-  toCloudError(error, 'Could not create the watchlist.')
+  try {
+    const watchlistId = generateId()
+    const inviteToken = generateInviteToken()
 
-  return mapWatchlist(data as WatchlistRow, 'owner')
+    const watchlistData: FirestoreWatchlist = {
+      id: watchlistId,
+      name: sanitizeListName(name),
+      description: null,
+      ownerId: currentUserId,
+      inviteToken,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    }
+
+    await setDoc(doc(db, 'watchlists', watchlistId), watchlistData)
+
+    // Add owner as member
+    await setDoc(doc(db, 'watchlist_members', `${watchlistId}_${currentUserId}`), {
+      watchlistId,
+      userId: currentUserId,
+      role: 'owner' as const,
+      joinedAt: Timestamp.now(),
+      leftAt: null,
+    })
+
+    return mapWatchlist(watchlistData, 'owner')
+  } catch (error) {
+    toCloudError(error instanceof Error ? error : null, 'Could not create the watchlist.')
+    throw error
+  }
 }
 
-export async function deleteCloudWatchlist(watchlistId: string | undefined, userId: string | undefined) {
+export async function deleteCloudWatchlist(
+  watchlistId: string | undefined,
+  userId: string | undefined,
+): Promise<void> {
   const currentUserId = requireUser(userId)
   if (!watchlistId) {
     throw new AppError('not-found', 'Choose a watchlist first.')
   }
 
-  const client = getSupabaseClient()
-  const { data, error } = await client
-    .from('watchlists')
-    .delete()
-    .eq('id', watchlistId)
-    .eq('owner_id', currentUserId)
-    .select('id')
-    .maybeSingle()
+  const db = getFirebaseDB()
 
-  toCloudError(error, 'Could not delete this watchlist.')
+  try {
+    const watchlistDoc = await getDoc(doc(db, 'watchlists', watchlistId))
 
-  if (!data) {
-    throw new AppError('http', 'Only the owner can delete this watchlist.')
+    if (!watchlistDoc.exists()) {
+      throw new AppError('not-found', 'This watchlist does not exist.')
+    }
+
+    const watchlistData = watchlistDoc.data() as FirestoreWatchlist
+
+    if (watchlistData.ownerId !== currentUserId) {
+      throw new AppError('http', 'Only the owner can delete this watchlist.')
+    }
+
+    await deleteDoc(doc(db, 'watchlists', watchlistId))
+  } catch (error) {
+    if (error instanceof AppError) throw error
+    toCloudError(error instanceof Error ? error : null, 'Could not delete this watchlist.')
   }
 }
 
@@ -299,60 +358,67 @@ export async function getCloudWatchlistDetail(
     throw new AppError('not-found', 'Choose a watchlist first.')
   }
 
-  const client = getSupabaseClient()
-  const { data: watchlist, error: watchlistError } = await client
-    .from('watchlists')
-    .select('id,name,description,owner_id,invite_token,created_at,updated_at')
-    .eq('id', watchlistId)
-    .single()
+  const db = getFirebaseDB()
 
-  toCloudError(watchlistError, 'Could not load this watchlist.')
+  try {
+    const watchlistDoc = await getDoc(doc(db, 'watchlists', watchlistId))
 
-  const { data: membership, error: membershipError } = await client
-    .from('watchlist_members')
-    .select('watchlist_id,user_id,role,joined_at,left_at')
-    .eq('watchlist_id', watchlistId)
-    .eq('user_id', currentUserId)
-    .is('left_at', null)
-    .single()
-
-  toCloudError(membershipError, 'You are not a member of this watchlist.')
-
-  const { data: itemRows, error: itemError } = await client
-    .from('watchlist_items')
-    .select(
-      'id,watchlist_id,tmdb_id,media_type,title,overview,poster_path,backdrop_path,release_date,vote_average,genres,added_by,created_at,updated_at',
-    )
-    .eq('watchlist_id', watchlistId)
-    .order('created_at', { ascending: false })
-
-  toCloudError(itemError, 'Could not load watchlist titles.')
-
-  const items = (itemRows ?? []) as ItemRow[]
-  const itemIds = items.map((item) => item.id)
-  const statesByItem = new Map<string, CloudWatchlistItemState>()
-
-  if (itemIds.length > 0) {
-    const { data: stateRows, error: stateError } = await client
-      .from('watchlist_item_user_states')
-      .select('item_id,user_id,status,is_favourite,personal_rating,notes,hidden_at,updated_at')
-      .eq('user_id', currentUserId)
-      .in('item_id', itemIds)
-
-    toCloudError(stateError, 'Could not load your watch state.')
-
-    for (const state of (stateRows ?? []) as StateRow[]) {
-      statesByItem.set(state.item_id, mapState(state))
+    if (!watchlistDoc.exists()) {
+      throw new AppError('not-found', 'This watchlist does not exist.')
     }
-  }
 
-  const visibleItems = items
-    .map((item) => mapItem(item, statesByItem.get(item.id)))
-    .filter((item) => !item.state?.hiddenAt)
+    const watchlistData = watchlistDoc.data() as FirestoreWatchlist
 
-  return {
-    ...mapWatchlist(watchlist as WatchlistRow, (membership as MembershipRow).role, visibleItems.length),
-    items: visibleItems,
+    const membershipDoc = await getDoc(
+      doc(db, 'watchlist_members', `${watchlistId}_${currentUserId}`),
+    )
+
+    if (!membershipDoc.exists() || (membershipDoc.data() as FirestoreMembership).leftAt !== null) {
+      throw new AppError('http', 'You are not a member of this watchlist.')
+    }
+
+    const membership = membershipDoc.data() as FirestoreMembership
+
+    const itemsQuery = query(
+      collection(db, 'watchlist_items'),
+      where('watchlistId', '==', watchlistId),
+      orderBy('createdAt', 'desc'),
+    )
+
+    const itemSnapshots = await getDocs(itemsQuery)
+    const items = itemSnapshots.docs.map((d) => d.data() as FirestoreItem)
+    const itemIds = items.map((item) => item.id)
+
+    const statesByItem = new Map<string, CloudWatchlistItemState>()
+
+    if (itemIds.length > 0) {
+      const statesQuery = query(
+        collection(db, 'watchlist_item_states'),
+        where('userId', '==', currentUserId),
+      )
+
+      const stateSnapshots = await getDocs(statesQuery)
+      const states = stateSnapshots.docs
+        .map((d) => d.data() as FirestoreState)
+        .filter((state) => itemIds.includes(state.itemId))
+
+      for (const state of states) {
+        statesByItem.set(state.itemId, mapState(state))
+      }
+    }
+
+    const visibleItems = items
+      .map((item) => mapItem(item, statesByItem.get(item.id)))
+      .filter((item) => !item.state?.hiddenAt)
+
+    return {
+      ...mapWatchlist(watchlistData, membership.role, visibleItems.length),
+      items: visibleItems,
+    }
+  } catch (error) {
+    if (error instanceof AppError) throw error
+    toCloudError(error instanceof Error ? error : null, 'Could not load this watchlist.')
+    throw error
   }
 }
 
@@ -361,77 +427,95 @@ export async function getCloudMoviePresence(
   movie: WatchlistMovieInput,
 ): Promise<Set<string>> {
   const currentUserId = requireUser(userId)
-  const client = getSupabaseClient()
-  const lists = await listCloudWatchlists(currentUserId)
-  const watchlistIds = lists.map((list) => list.id)
-  if (watchlistIds.length === 0) return new Set()
+  const db = getFirebaseDB()
 
-  const { data, error } = await client
-    .from('watchlist_items')
-    .select('watchlist_id')
-    .in('watchlist_id', watchlistIds)
-    .eq('tmdb_id', movie.tmdbId)
-    .eq('media_type', movie.mediaType)
+  try {
+    const lists = await listCloudWatchlists(currentUserId)
+    const watchlistIds = lists.map((list) => list.id)
+    if (watchlistIds.length === 0) return new Set()
 
-  toCloudError(error, 'Could not check where this title is saved.')
+    const itemsQuery = query(
+      collection(db, 'watchlist_items'),
+      where('tmdbId', '==', movie.tmdbId),
+      where('mediaType', '==', movie.mediaType),
+    )
 
-  return new Set((data ?? []).map((item) => (item as { watchlist_id: string }).watchlist_id))
+    const itemSnapshots = await getDocs(itemsQuery)
+    const items = itemSnapshots.docs.map((d) => d.data() as FirestoreItem)
+
+    return new Set(
+      items.filter((item) => watchlistIds.includes(item.watchlistId)).map((item) => item.watchlistId),
+    )
+  } catch (error) {
+    toCloudError(error instanceof Error ? error : null, 'Could not check where this title is saved.')
+    return new Set()
+  }
 }
 
 export async function addMovieToCloudWatchlist(
   watchlistId: string,
   movie: WatchlistMovieInput | UserMovie,
   userId: string | undefined,
-) {
+): Promise<CloudWatchlistItem> {
   const currentUserId = requireUser(userId)
-  const client = getSupabaseClient()
-  const watchlistMovie = toWatchlistMovieInput(movie)
-  const { data, error } = await client
-    .from('watchlist_items')
-    .upsert(itemPayload(watchlistId, watchlistMovie, currentUserId), {
-      onConflict: 'watchlist_id,media_type,tmdb_id',
+  const db = getFirebaseDB()
+
+  try {
+    const watchlistMovie = toWatchlistMovieInput(movie)
+    const itemId = generateId()
+
+    const itemData = {
+      id: itemId,
+      ...itemPayload(watchlistId, watchlistMovie, currentUserId),
+    }
+
+    await setDoc(doc(db, 'watchlist_items', itemId), itemData)
+
+    const item = mapItem(itemData as FirestoreItem)
+    await saveCloudItemState(item.id, currentUserId, {
+      itemId: item.id,
+      userId: currentUserId,
+      status: 'to_watch',
+      isFavourite: false,
+      hiddenAt: undefined,
+      updatedAt: new Date().toISOString(),
     })
-    .select(
-      'id,watchlist_id,tmdb_id,media_type,title,overview,poster_path,backdrop_path,release_date,vote_average,genres,added_by,created_at,updated_at',
-    )
-    .single()
 
-  toCloudError(error, 'Could not add this title.')
-
-  const item = mapItem(data as ItemRow)
-  await saveCloudItemState(item.id, currentUserId, {
-    itemId: item.id,
-    userId: currentUserId,
-    status: 'to_watch',
-    isFavourite: false,
-    hiddenAt: undefined,
-    updatedAt: new Date().toISOString(),
-  })
-
-  return item
+    return item
+  } catch (error) {
+    if (error instanceof AppError) throw error
+    toCloudError(error instanceof Error ? error : null, 'Could not add this title.')
+    throw error
+  }
 }
 
 export async function saveCloudItemState(
   itemId: string,
   userId: string | undefined,
   state: Partial<CloudWatchlistItemState>,
-) {
+): Promise<CloudWatchlistItemState> {
   const currentUserId = requireUser(userId)
-  const client = getSupabaseClient()
-  const { data, error } = await client
-    .from('watchlist_item_user_states')
-    .upsert(statePayload(itemId, currentUserId, state), {
-      onConflict: 'item_id,user_id',
-    })
-    .select('item_id,user_id,status,is_favourite,personal_rating,notes,hidden_at,updated_at')
-    .single()
+  const db = getFirebaseDB()
 
-  toCloudError(error, 'Could not update your watch state.')
+  try {
+    const stateId = `${itemId}_${currentUserId}`
+    const stateData = {
+      ...statePayload(itemId, currentUserId, state),
+    }
 
-  return mapState(data as StateRow)
+    await setDoc(doc(db, 'watchlist_item_states', stateId), stateData, { merge: true })
+
+    return mapState(stateData as FirestoreState)
+  } catch (error) {
+    toCloudError(error instanceof Error ? error : null, 'Could not update your watch state.')
+    throw error
+  }
 }
 
-export async function hideCloudItemForUser(item: CloudWatchlistItem, userId: string | undefined) {
+export async function hideCloudItemForUser(
+  item: CloudWatchlistItem,
+  userId: string | undefined,
+): Promise<CloudWatchlistItemState> {
   return saveCloudItemState(item.id, userId, {
     itemId: item.id,
     userId: userId ?? '',
@@ -444,29 +528,60 @@ export async function hideCloudItemForUser(item: CloudWatchlistItem, userId: str
   })
 }
 
-export async function deleteCloudWatchlistItem(itemId: string) {
-  const client = getSupabaseClient()
-  const { error } = await client.from('watchlist_items').delete().eq('id', itemId)
-  toCloudError(error, 'Could not remove this title for everyone.')
-}
+export async function deleteCloudWatchlistItem(itemId: string): Promise<void> {
+  const db = getFirebaseDB()
 
-export async function joinCloudWatchlist(inviteToken: string, userId: string | undefined) {
-  requireUser(userId)
-  const client = getSupabaseClient()
-  const { data, error } = await client.rpc('join_watchlist_by_token', {
-    invite_token_value: inviteToken,
-  })
-
-  toCloudError(error, 'Could not join this watchlist.')
-
-  if (typeof data !== 'string') {
-    throw new AppError('invalid-data', 'The invite link returned an unexpected response.')
+  try {
+    await deleteDoc(doc(db, 'watchlist_items', itemId))
+  } catch (error) {
+    toCloudError(error instanceof Error ? error : null, 'Could not remove this title for everyone.')
   }
-
-  return data
 }
 
-export async function importLocalMoviesToCloud(userId: string | undefined, movies: UserMovie[]) {
+export async function joinCloudWatchlist(inviteToken: string, userId: string | undefined): Promise<string> {
+  const currentUserId = requireUser(userId)
+  const db = getFirebaseDB()
+
+  try {
+    const watchlistsQuery = query(
+      collection(db, 'watchlists'),
+      where('inviteToken', '==', inviteToken),
+    )
+
+    const watchlistSnapshots = await getDocs(watchlistsQuery)
+
+    if (watchlistSnapshots.empty) {
+      throw new AppError('invalid-data', 'The invite link is invalid or has expired.')
+    }
+
+    const watchlistDoc = watchlistSnapshots.docs[0]
+    const watchlistId = watchlistDoc.id
+
+    // Add user as member
+    await setDoc(
+      doc(db, 'watchlist_members', `${watchlistId}_${currentUserId}`),
+      {
+        watchlistId,
+        userId: currentUserId,
+        role: 'editor' as const,
+        joinedAt: Timestamp.now(),
+        leftAt: null,
+      },
+      { merge: true },
+    )
+
+    return watchlistId
+  } catch (error) {
+    if (error instanceof AppError) throw error
+    toCloudError(error instanceof Error ? error : null, 'Could not join this watchlist.')
+    throw error
+  }
+}
+
+export async function importLocalMoviesToCloud(
+  userId: string | undefined,
+  movies: UserMovie[],
+): Promise<CloudWatchlist> {
   const watchlist = await createCloudWatchlist('Imported from this browser', userId)
 
   for (const movie of movies) {

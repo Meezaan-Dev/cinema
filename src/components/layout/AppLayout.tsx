@@ -16,17 +16,14 @@ const links = [
 
 function getUserDisplayName(user: ReturnType<typeof useAuth>['user']) {
   if (!user) return ''
-  const metadata = user.user_metadata
 
-  if (typeof metadata.full_name === 'string' && metadata.full_name.trim()) return metadata.full_name
-  if (typeof metadata.name === 'string' && metadata.name.trim()) return metadata.name
+  if (user.displayName && user.displayName.trim()) return user.displayName
   if (user.email) return user.email
   return 'Signed-in user'
 }
 
 function getAvatarUrl(user: ReturnType<typeof useAuth>['user']) {
-  const avatarUrl = user?.user_metadata.avatar_url
-  return typeof avatarUrl === 'string' && avatarUrl ? avatarUrl : null
+  return user?.photoURL ? user.photoURL : null
 }
 
 function getInitial(displayName: string) {
