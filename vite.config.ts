@@ -92,5 +92,12 @@ export default defineConfig(({ mode }) => {
     build: {
       chunkSizeWarningLimit: 600,
     },
+    server: {
+      headers: {
+        // Allow Firebase Auth popups to work properly
+        // Firebase signInWithPopup() requires access to window.closed on the popup
+        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      },
+    },
   }
 })

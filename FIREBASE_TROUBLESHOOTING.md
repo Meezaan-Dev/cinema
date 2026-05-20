@@ -1,6 +1,6 @@
 # Firebase Authentication Error - Troubleshooting Guide
 
-## Error: CONFIGURATION_NOT_FOUND
+## Error 1: CONFIGURATION_NOT_FOUND
 
 **Error Message:**
 ```
@@ -209,6 +209,83 @@ If the above doesn't work, your Firebase project setup might be corrupted:
 5. Copy ALL environment variables from the setup wizard
 6. Replace `.env` values with fresh credentials
 7. Restart dev server
+
+---
+
+## Error 2: Cross-Origin-Opener-Policy (COOP) Blocks window.closed
+
+**Error Message:**
+```
+Cross-Origin-Opener-Policy policy would block the window.closed call.
+```
+
+This error occurs when the server sends a strict `Cross-Origin-Opener-Policy` header that prevents Firebase's popup authentication from working.
+
+### Root Cause
+
+Firebase's `signInWithPopup()` opens a popup window for authentication and then checks `window.closed` to verify the popup was closed. If the COOP header is set to `same-origin` (default), the browser blocks this check as a security measure.
+
+### ✅ Solution: Relax COOP Header for Popups
+
+Firebase Auth requires the COOP header to allow popups. This has already been configured:
+
+**Development** (`vite.config.ts`):
+```typescript
+server: {
+  headers: {
+    'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+  },
+}
+```
+
+**Production** (`vercel.json`):
+```json
+"headers": [
+  {
+    "source": "/(.*)",
+    "headers": [
+      {
+        "key": "Cross-Origin-Opener-Policy",
+        "value": "same-origin-allow-popups"
+      }
+    ]
+  }
+]
+```
+
+### What This Does
+
+- `same-origin-allow-popups`: Allows popups and cross-origin openers to be opened without restricting `window.closed` access
+- Maintains security (same-origin restriction) while enabling Firebase Auth
+- Works with any authentication provider using popups
+
+### Verify It's Fixed
+
+1. **Restart dev server:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Clear browser cache:**
+   - Chrome: DevTools → Application → Clear site data
+   - Firefox: Inspect → Storage → Delete All
+   - Safari: Develop → Empty Web Caches
+
+3. **Try signing in again**
+   - Click Google Sign-In button
+   - Popup should open without COOP errors
+   - After authenticating, popup should close smoothly
+
+### If Error Persists
+
+1. **Hard refresh** (Ctrl+Shift+R or Cmd+Shift+R)
+2. **Check browser console** for any remaining errors
+3. **Verify headers** are being sent:
+   - DevTools → Network tab → Click any request
+   - Look for response header: `cross-origin-opener-policy: same-origin-allow-popups`
+4. **Check Vercel deployment:**
+   - If deployed, verify `vercel.json` headers are configured
+   - Wait 5 minutes for cache invalidation after push
 
 ---
 
