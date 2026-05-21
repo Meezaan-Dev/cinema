@@ -12,6 +12,12 @@ import getWatchlistHandler from './api/get-watchlist'
 import joinWatchlistHandler from './api/join-watchlist'
 import listWatchlistsHandler from './api/list-watchlists'
 
+function setProcessEnvFromVite(name: string, value: string | undefined) {
+  if (!process.env[name] && value) {
+    process.env[name] = value
+  }
+}
+
 async function readJsonBody(req: IncomingMessage) {
   const chunks: Buffer[] = []
 
@@ -77,13 +83,13 @@ function createJsonDevApi(pathname: string, handler: (req: { method?: string; bo
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  process.env.GEMINI_API_KEY ||= env.GEMINI_API_KEY
-  process.env.GEMINI_MODEL ||= env.GEMINI_MODEL
-  process.env.FIREBASE_PROJECT_ID ||= env.FIREBASE_PROJECT_ID || env.VITE_FIREBASE_PROJECT_ID
-  process.env.FIREBASE_SERVICE_ACCOUNT_KEY ||= env.FIREBASE_SERVICE_ACCOUNT_KEY
-  process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 ||= env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64
-  process.env.FIREBASE_SERVICE_ACCOUNT_FILE ||= env.FIREBASE_SERVICE_ACCOUNT_FILE
-  process.env.GOOGLE_APPLICATION_CREDENTIALS ||= env.GOOGLE_APPLICATION_CREDENTIALS
+  setProcessEnvFromVite('GEMINI_API_KEY', env.GEMINI_API_KEY)
+  setProcessEnvFromVite('GEMINI_MODEL', env.GEMINI_MODEL)
+  setProcessEnvFromVite('FIREBASE_PROJECT_ID', env.FIREBASE_PROJECT_ID || env.VITE_FIREBASE_PROJECT_ID)
+  setProcessEnvFromVite('FIREBASE_SERVICE_ACCOUNT_KEY', env.FIREBASE_SERVICE_ACCOUNT_KEY)
+  setProcessEnvFromVite('FIREBASE_SERVICE_ACCOUNT_KEY_BASE64', env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64)
+  setProcessEnvFromVite('FIREBASE_SERVICE_ACCOUNT_FILE', env.FIREBASE_SERVICE_ACCOUNT_FILE)
+  setProcessEnvFromVite('GOOGLE_APPLICATION_CREDENTIALS', env.GOOGLE_APPLICATION_CREDENTIALS)
 
   return {
     plugins: [

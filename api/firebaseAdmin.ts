@@ -11,27 +11,30 @@ type FirebaseAdminServices = {
 
 let services: FirebaseAdminServices | null = null
 
+function getOptionalEnv(name: string) {
+  const value = process.env[name]?.trim()
+  return value && value !== 'undefined' && value !== 'null' ? value : ''
+}
+
 function getProjectId() {
   return (
-    process.env.FIREBASE_PROJECT_ID ||
-    process.env.VITE_FIREBASE_PROJECT_ID ||
-    process.env.GOOGLE_CLOUD_PROJECT ||
-    process.env.GCLOUD_PROJECT ||
+    getOptionalEnv('FIREBASE_PROJECT_ID') ||
+    getOptionalEnv('VITE_FIREBASE_PROJECT_ID') ||
+    getOptionalEnv('GOOGLE_CLOUD_PROJECT') ||
+    getOptionalEnv('GCLOUD_PROJECT') ||
     ''
   )
 }
 
 function parseServiceAccountKey() {
-  const keyPath = process.env.FIREBASE_SERVICE_ACCOUNT_FILE
-  const rawKey =
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY ||
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 ||
-    (keyPath ? readFileSync(keyPath, 'utf8') : '')
+  const keyPath = getOptionalEnv('FIREBASE_SERVICE_ACCOUNT_FILE')
+  const rawJsonKey = getOptionalEnv('FIREBASE_SERVICE_ACCOUNT_KEY')
+  const base64Key = getOptionalEnv('FIREBASE_SERVICE_ACCOUNT_KEY_BASE64')
+  const fileKey = keyPath ? readFileSync(keyPath, 'utf8') : ''
+  const rawKey = rawJsonKey || base64Key || fileKey
   if (!rawKey) return null
 
-  const json = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64
-    ? Buffer.from(rawKey, 'base64').toString('utf8')
-    : rawKey
+  const json = rawJsonKey || fileKey ? rawKey : Buffer.from(rawKey, 'base64').toString('utf8')
 
   const parsed = JSON.parse(json) as Record<string, unknown>
   if (typeof parsed.private_key === 'string') {
