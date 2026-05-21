@@ -21,7 +21,7 @@ import type { CloudWatchlistItem, CloudWatchlistItemState, WatchlistMovieInput }
 export function useCloudWatchlists() {
   const { user, authConfigured } = useAuth()
   const queryClient = useQueryClient()
-  const userId = user?.id
+  const userId = user?.uid
   const query = useQuery({
     queryKey: cloudWatchlistKeys.lists(userId),
     queryFn: () => listCloudWatchlists(userId),
@@ -49,9 +49,14 @@ export function useCloudWatchlists() {
       queryClient.removeQueries({ queryKey: cloudWatchlistKeys.detail(watchlistId, userId) })
     },
   })
+  const hasBlockingError = query.isError && !query.data
 
   return {
     ...query,
+    error: createMutation.error ?? importMutation.error ?? deleteMutation.error ?? (hasBlockingError ? query.error : null),
+    isError: query.isError || createMutation.isError || importMutation.isError || deleteMutation.isError,
+    hasBlockingError,
+    isRefreshing: query.isFetching && Boolean(query.data),
     createWatchlist: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     importLocalMovies: importMutation.mutateAsync,
@@ -65,7 +70,7 @@ export function useCloudWatchlists() {
 export function useCloudWatchlistDetail(watchlistId: string | undefined) {
   const { user, authConfigured } = useAuth()
   const queryClient = useQueryClient()
-  const userId = user?.id
+  const userId = user?.uid
   const query = useQuery({
     queryKey: cloudWatchlistKeys.detail(watchlistId, userId),
     queryFn: () => getCloudWatchlistDetail(watchlistId, userId),
@@ -117,6 +122,8 @@ export function useCloudWatchlistDetail(watchlistId: string | undefined) {
 
   return {
     ...query,
+    hasBlockingError: query.isError && !query.data,
+    isRefreshing: query.isFetching && Boolean(query.data),
     saveState: saveStateMutation.mutateAsync,
     hideForMe: hideMutation.mutateAsync,
     removeGlobally: deleteMutation.mutateAsync,
@@ -129,16 +136,17 @@ export function useCloudWatchlistDetail(watchlistId: string | undefined) {
 export function useAddToCloudWatchlist(movie: WatchlistMovieInput | null) {
   const { user, authConfigured } = useAuth()
   const queryClient = useQueryClient()
-  const userId = user?.id
+  const userId = user?.uid
+  const presenceKey = movie
+    ? cloudWatchlistKeys.presence(userId, movie.mediaType, movie.tmdbId)
+    : cloudWatchlistKeys.presence(userId, 'movie', 0)
   const listsQuery = useQuery({
     queryKey: cloudWatchlistKeys.lists(userId),
     queryFn: () => listCloudWatchlists(userId),
     enabled: Boolean(authConfigured && userId && movie),
   })
   const presenceQuery = useQuery({
-    queryKey: movie
-      ? cloudWatchlistKeys.presence(userId, movie.mediaType, movie.tmdbId)
-      : cloudWatchlistKeys.presence(userId, 'movie', 0),
+    queryKey: presenceKey,
     queryFn: () => getCloudMoviePresence(userId, movie as WatchlistMovieInput),
     enabled: Boolean(authConfigured && userId && movie),
   })
@@ -147,13 +155,14 @@ export function useAddToCloudWatchlist(movie: WatchlistMovieInput | null) {
     mutationFn: ({ watchlistId, targetMovie }: { watchlistId: string; targetMovie: WatchlistMovieInput }) =>
       addMovieToCloudWatchlist(watchlistId, targetMovie, userId),
     onSuccess: (_item, variables) => {
+      queryClient.setQueryData<Set<string>>(presenceKey, (current) => {
+        const next = new Set(current ?? [])
+        next.add(variables.watchlistId)
+        return next
+      })
       queryClient.invalidateQueries({ queryKey: cloudWatchlistKeys.lists(userId) })
       queryClient.invalidateQueries({ queryKey: cloudWatchlistKeys.detail(variables.watchlistId, userId) })
-      if (movie) {
-        queryClient.invalidateQueries({
-          queryKey: cloudWatchlistKeys.presence(userId, movie.mediaType, movie.tmdbId),
-        })
-      }
+      queryClient.invalidateQueries({ queryKey: presenceKey })
     },
   })
 
@@ -163,20 +172,24 @@ export function useAddToCloudWatchlist(movie: WatchlistMovieInput | null) {
       await addMovieToCloudWatchlist(list.id, targetMovie, userId)
       return list
     },
-    onSuccess: () => {
+    onSuccess: (list) => {
+      queryClient.setQueryData<Set<string>>(presenceKey, (current) => {
+        const next = new Set(current ?? [])
+        next.add(list.id)
+        return next
+      })
       queryClient.invalidateQueries({ queryKey: cloudWatchlistKeys.lists(userId) })
-      if (movie) {
-        queryClient.invalidateQueries({
-          queryKey: cloudWatchlistKeys.presence(userId, movie.mediaType, movie.tmdbId),
-        })
-      }
+      queryClient.invalidateQueries({ queryKey: presenceKey })
     },
   })
+  const hasBlockingError = (listsQuery.isError && !listsQuery.data) || (presenceQuery.isError && !presenceQuery.data)
 
   return {
     lists: listsQuery.data ?? [],
     isLoading: listsQuery.isLoading || presenceQuery.isLoading,
-    error: listsQuery.error ?? presenceQuery.error,
+    isRefreshing: listsQuery.isFetching || presenceQuery.isFetching,
+    error: addMutation.error ?? createMutation.error ?? (hasBlockingError ? listsQuery.error ?? presenceQuery.error : null),
+    hasBlockingError,
     presence: presenceQuery.data ?? new Set<string>(),
     addToList: addMutation.mutateAsync,
     createListWithMovie: createMutation.mutateAsync,
@@ -187,7 +200,7 @@ export function useAddToCloudWatchlist(movie: WatchlistMovieInput | null) {
 export function useJoinCloudWatchlist(inviteToken: string | undefined) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const userId = user?.id
+  const userId = user?.uid
 
   return useMutation({
     mutationFn: () => joinCloudWatchlist(inviteToken ?? '', userId),

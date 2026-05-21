@@ -1,6 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-
 import { aiSummarySchema } from '../src/types/ai'
+import { getFirebaseAdminServices } from './firebaseAdmin'
 import {
   cleanString,
   cleanStringArray,
@@ -37,18 +36,8 @@ const responseSchema = {
   required: ['takeaway', 'bestFor', 'skipIf', 'tone', 'pacing', 'spoilerFree'],
 }
 
-function getServerSupabase() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !serviceRoleKey) return null
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
+function getFirebaseDb() {
+  return getFirebaseAdminServices()?.db ?? null
 }
 
 function normalizeRequest(body: SummaryRequest) {
@@ -98,20 +87,23 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
-  const supabase = getServerSupabase()
+  const db = getFirebaseDb()
 
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('ai_summaries')
-      .select('summary')
-      .eq('media_type', input.mediaType)
-      .eq('tmdb_id', input.tmdbId)
-      .maybeSingle()
+  if (db) {
+    try {
+      const docRef = db.collection('ai_summaries').doc(`${input.mediaType}_${input.tmdbId}`)
+      const doc = await docRef.get()
 
-    const cached = aiSummarySchema.safeParse(data?.summary)
-    if (!error && cached.success) {
-      res.status(200).json(cached.data)
-      return
+      if (doc.exists) {
+        const data = doc.data()
+        const cached = aiSummarySchema.safeParse(data?.summary)
+        if (cached.success) {
+          res.status(200).json(cached.data)
+          return
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching cached summary:', error)
     }
   }
 
@@ -190,17 +182,19 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  if (supabase) {
-    await supabase.from('ai_summaries').upsert(
-      {
-        media_type: input.mediaType,
-        tmdb_id: input.tmdbId,
+  if (db) {
+    try {
+      await db.collection('ai_summaries').doc(`${input.mediaType}_${input.tmdbId}`).set({
+        mediaType: input.mediaType,
+        tmdbId: input.tmdbId,
         title: input.title,
         summary: parsedOutput.data,
         model,
-      },
-      { onConflict: 'media_type,tmdb_id' },
-    )
+        updatedAt: new Date(),
+      })
+    } catch (error) {
+      console.error('Error caching summary:', error)
+    }
   }
 
   res.status(200).json(parsedOutput.data)

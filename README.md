@@ -16,7 +16,7 @@ Absolute Cinema is a polished React SPA for discovering movies with the real TMD
 - shadcn-style UI primitives
 - Framer Motion
 - TMDB API
-- Supabase Auth and Postgres for shared watchlists
+- Firebase Auth and Firestore for shared watchlists
 - Gemini API for server-side AI recommendations and summaries
 - localStorage
 - Custom CSV export utility
@@ -55,32 +55,25 @@ VITE_TMDB_BASE_URL=https://api.themoviedb.org/3
 VITE_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
 GEMINI_API_KEY=your_server_side_gemini_key
 GEMINI_MODEL=gemini-2.5-flash-lite
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_server_side_supabase_service_role_key
+
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+
+# Server-side Firebase (for API routes)
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
 ```
 
-Restart the dev server after changing environment variables. `GEMINI_API_KEY` is intentionally not prefixed with `VITE_`; it must stay server-side and is used by the `/api/ai-recommendation` endpoint.
+Restart the dev server after changing environment variables. `GEMINI_API_KEY` and `FIREBASE_SERVICE_ACCOUNT_KEY` are intentionally not prefixed with `VITE_`; they must stay server-side.
 
-The AI endpoints are implemented as serverless API routes and Vite dev middleware. Get a Gemini API key from Google AI Studio, add it to `.env`, then restart `npm run dev`.
+The AI endpoints are implemented as serverless API routes. Get a Gemini API key from Google AI Studio and add it to `.env`.
 
-Supabase is optional for browsing, local watchlists, and AI summaries. Add the Supabase variables and run the SQL in `supabase/migrations/001_core_watchlists.sql` to enable Google auth, cloud watchlists, invite links, collaboration, and cached AI summaries.
-
-### Supabase auth redirects
-
-In Supabase, open Authentication > URL Configuration:
-
-- Set Site URL to the production app URL, for example `https://your-domain.com`.
-- Add Redirect URLs for every app origin that can start auth:
-  - `https://your-domain.com/**`
-  - `https://*-your-vercel-team.vercel.app/**` for Vercel previews
-  - `http://localhost:5173/**` and `http://127.0.0.1:5173/**` for local Vite dev
-
-If Vite starts on another port, for example `5174`, add that exact localhost/127.0.0.1 port as well.
-
-If Google sign-in sends production users to `localhost`, Supabase is falling back to the Site URL or rejecting the app-provided redirect URL because the production URL is not allow-listed.
-
-In Google Cloud OAuth settings, keep the authorized redirect URI as the Supabase callback URL from Authentication > Sign In / Providers > Google, for example `https://your-project.supabase.co/auth/v1/callback`.
+Firebase is optional for browsing and local watchlists. Add the Firebase variables to enable Google auth, cloud watchlists, invite links, collaboration, and cached AI summaries. See [FIREBASE_MIGRATION.md](./FIREBASE_MIGRATION.md) for detailed setup instructions.
 
 ## Scripts
 
@@ -95,10 +88,10 @@ npm run preview
 ## Operational Notes
 
 - `VITE_TMDB_API_KEY` is required for movie and series discovery. The TMDB base URL and image base URL have safe defaults, but can be overridden with `VITE_TMDB_BASE_URL` and `VITE_TMDB_IMAGE_BASE_URL`.
-- Supabase is optional. Without Supabase variables, browsing, local watchlists, CSV export, and TMDB-backed detail pages still work. Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to enable shared watchlists, Google auth, invite links, and cached AI summaries.
-- Run the SQL migrations in `supabase/migrations/` when provisioning a new Supabase project. `001_core_watchlists.sql` creates the core schema, RLS policies, auth/profile hooks, invite RPC, and AI summary cache. `002_owner_read_policy.sql` keeps owner read access explicit.
-- AI routes live in `/api/ai-recommendation` and `/api/ai-summary`. They use `GEMINI_API_KEY` server-side only, validate Gemini JSON before returning it, and degrade with user-safe errors when quota, auth, or malformed output occurs.
-- Third-party failure modes to expect: TMDB network/rate-limit errors, Gemini quota or key errors, Supabase auth redirect misconfiguration, and browser storage quota/security failures. The app should show recoverable UI states for these instead of crashing.
+- Firebase is optional. Without Firebase variables, browsing, local watchlists, CSV export, and TMDB-backed detail pages still work. Add client Firebase variables for shared watchlists and Google auth; add server Firebase variables for invite joins and cached AI summaries.
+- Set up Firebase project, enable Firestore and Google Auth. Deploy Firestore security rules from [FIREBASE_MIGRATION.md](./FIREBASE_MIGRATION.md).
+- API routes live in `/api/ai-recommendation`, `/api/ai-summary`, `/api/create-watchlist`, `/api/join-watchlist`, and `/api/list-watchlists`. They keep `GEMINI_API_KEY` and Firebase service account credentials server-side only.
+- Third-party failure modes to expect: TMDB network/rate-limit errors, Gemini quota or key errors, Firebase auth misconfiguration, and browser storage quota/security failures. The app should show recoverable UI states for these instead of crashing.
 
 ## Maintenance Checklist
 

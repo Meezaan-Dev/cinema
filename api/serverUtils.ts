@@ -3,6 +3,7 @@ import type { z } from 'zod'
 export type ApiRequest = {
   method?: string
   body?: unknown
+  headers?: Record<string, string | string[] | undefined>
 }
 
 export type ApiResponse = {

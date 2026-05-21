@@ -30,6 +30,8 @@ export function CloudWatchlistDetailPage() {
   const [copyState, setCopyState] = useState('Copy link')
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const list = detail.data
+  const isInitialLoading = detail.isLoading && !list
+  const hasBlockingError = detail.hasBlockingError
 
   const items = useMemo(() => {
     return [...(list?.items ?? [])]
@@ -46,7 +48,7 @@ export function CloudWatchlistDetailPage() {
   if (!authConfigured) {
     return (
       <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
-        <StatusState title="Cloud watchlists need Supabase" message="Add Supabase environment variables to use shared watchlists." />
+        <StatusState title="Cloud watchlists need Firebase" message="Add Firebase environment variables to use shared watchlists." />
       </section>
     )
   }
@@ -164,12 +166,17 @@ export function CloudWatchlistDetailPage() {
         </div>
       </div>
 
-      {detail.isLoading ? <StatusState title="Loading watchlist" message="Getting the shared titles and your personal states." /> : null}
-      {detail.isError ? <ErrorState error={detail.error} onRetry={() => detail.refetch()} /> : null}
-      {!detail.isLoading && !detail.isError && items.length === 0 ? (
+      {isInitialLoading ? <StatusState title="Loading watchlist" message="Getting the shared titles and your personal states." /> : null}
+      {detail.isRefreshing ? (
+        <div className="mb-5 rounded-2xl border border-sky-300/20 bg-sky-300/10 px-4 py-3 text-sm text-sky-100">
+          Refreshing shared watchlist...
+        </div>
+      ) : null}
+      {hasBlockingError ? <ErrorState error={detail.error} onRetry={() => detail.refetch()} /> : null}
+      {!isInitialLoading && !hasBlockingError && items.length === 0 ? (
         <StatusState title="No visible titles" message="Add titles from search or detail pages, or switch filters to see more." />
       ) : null}
-      {!detail.isLoading && !detail.isError && items.length > 0 ? (
+      {!isInitialLoading && !hasBlockingError && items.length > 0 ? (
         <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="movie-grid">
             {items.map((item) => {

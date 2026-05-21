@@ -26,6 +26,7 @@ function AddToWatchlistDialogContent({ movie, onClose }: { movie: WatchlistMovie
   const [newListName, setNewListName] = useState('')
   const [message, setMessage] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
+  const [savingListId, setSavingListId] = useState<string | null>(null)
   const localMovie = useMemo(() => watchlistMovieToUserMovie(movie), [movie])
   const localSaved = localWatchlist.isSaved(localMovie)
 
@@ -45,9 +46,30 @@ function AddToWatchlistDialogContent({ movie, onClose }: { movie: WatchlistMovie
 
   async function createList() {
     if (!newListName.trim() || !movie) return
-    await cloud.createListWithMovie({ name: newListName, targetMovie: movie })
-    setNewListName('')
-    setMessage('Created a new watchlist and added this title.')
+    setMessage('')
+    setSavingListId('new')
+    try {
+      await cloud.createListWithMovie({ name: newListName, targetMovie: movie })
+      setNewListName('')
+      setMessage('Created a new watchlist and added this title.')
+    } catch {
+      // React Query stores the error for display below.
+    } finally {
+      setSavingListId(null)
+    }
+  }
+
+  async function addToList(watchlistId: string) {
+    setMessage('')
+    setSavingListId(watchlistId)
+    try {
+      await cloud.addToList({ watchlistId, targetMovie: movie })
+      setMessage('Added to watchlist.')
+    } catch {
+      // React Query stores the error for display below.
+    } finally {
+      setSavingListId(null)
+    }
   }
 
   return (
@@ -96,21 +118,26 @@ function AddToWatchlistDialogContent({ movie, onClose }: { movie: WatchlistMovie
                 </Button>
               ) : (
                 <p className="mt-4 rounded-2xl bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-                  Add Supabase environment variables to enable cloud watchlists.
+                  Add Firebase environment variables to enable cloud watchlists.
                 </p>
               )}
             </div>
           </div>
         ) : (
           <div className="mt-5 space-y-4">
-            {cloud.error ? <ErrorState error={cloud.error} /> : null}
+            {!cloud.isSaving && cloud.error ? <ErrorState error={cloud.error} /> : null}
             <div className="space-y-2">
               {cloud.isLoading ? (
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.045] p-4 text-sm text-slate-400">
                   Loading your watchlists...
                 </div>
               ) : null}
-              {!cloud.isLoading && cloud.lists.length === 0 ? (
+              {!cloud.isLoading && cloud.isRefreshing ? (
+                <div className="rounded-2xl border border-sky-300/20 bg-sky-300/10 p-4 text-sm text-sky-100">
+                  Syncing watchlists...
+                </div>
+              ) : null}
+              {!cloud.isLoading && !cloud.hasBlockingError && cloud.lists.length === 0 ? (
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.045] p-4 text-sm text-slate-400">
                   Create your first cloud watchlist below.
                 </div>
@@ -128,11 +155,17 @@ function AddToWatchlistDialogContent({ movie, onClose }: { movie: WatchlistMovie
                     <Button
                       type="button"
                       variant={added ? 'primary' : 'secondary'}
-                      onClick={() => cloud.addToList({ watchlistId: list.id, targetMovie: movie })}
+                      onClick={() => addToList(list.id)}
                       disabled={added || cloud.isSaving}
                     >
-                      {added ? <Check className="size-4" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
-                      {added ? 'Added' : 'Add'}
+                      {savingListId === list.id ? (
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                      ) : added ? (
+                        <Check className="size-4" aria-hidden="true" />
+                      ) : (
+                        <Plus className="size-4" aria-hidden="true" />
+                      )}
+                      {savingListId === list.id ? 'Adding...' : added ? 'Added' : 'Add'}
                     </Button>
                   </div>
                 )
@@ -153,8 +186,8 @@ function AddToWatchlistDialogContent({ movie, onClose }: { movie: WatchlistMovie
                   maxLength={80}
                 />
                 <Button type="button" variant="primary" onClick={createList} disabled={cloud.isSaving || !newListName.trim()}>
-                  {cloud.isSaving ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
-                  Create
+                  {savingListId === 'new' ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
+                  {savingListId === 'new' ? 'Creating...' : 'Create'}
                 </Button>
               </div>
             </div>

@@ -1,91 +1,92 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import type { FirebaseError } from 'firebase/app'
+import {
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  type User as FirebaseUser,
+} from 'firebase/auth'
 
 import { AppError } from '@/lib/errors'
 import { AuthContext, type AuthContextValue } from '@/lib/authContext'
-import { isSupabaseConfigured, supabase } from '@/lib/supabaseClient'
-
-async function ensureProfile(nextSession: Session | null) {
-  if (!supabase || !nextSession?.user) return
-
-  const metadata = nextSession.user.user_metadata
-  await supabase.from('profiles').upsert({
-    id: nextSession.user.id,
-    display_name:
-      typeof metadata.full_name === 'string'
-        ? metadata.full_name
-        : typeof metadata.name === 'string'
-          ? metadata.name
-          : nextSession.user.email,
-    avatar_url: typeof metadata.avatar_url === 'string' ? metadata.avatar_url : null,
-  })
-}
-
-function getAuthRedirectTo() {
-  return `${window.location.origin}${window.location.pathname}${window.location.search}`
-}
+import { isFirebaseConfigured, getAuth_Client } from '@/lib/firebaseClient'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(isSupabaseConfigured)
+  const [user, setUser] = useState<FirebaseUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(isFirebaseConfigured)
 
   useEffect(() => {
-    if (!supabase) return undefined
-
-    let isMounted = true
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!isMounted) return
-      setSession(data.session)
-      setIsLoading(false)
-      ensureProfile(data.session)
-    })
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession)
-      setIsLoading(false)
-      ensureProfile(nextSession)
-    })
-
-    return () => {
-      isMounted = false
-      subscription.unsubscribe()
+    if (!isFirebaseConfigured) {
+      return
     }
+
+    const auth = getAuth_Client()
+
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      setUser(authUser ?? null)
+      setAuthLoading(false)
+    })
+
+    return () => unsubscribe()
   }, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      authConfigured: isSupabaseConfigured,
-      isLoading,
-      session,
-      user: session?.user ?? null,
+      authConfigured: isFirebaseConfigured,
+      isLoading: authLoading,
+      user,
       signInWithGoogle: async () => {
-        if (!supabase) {
-          throw new AppError('configuration', 'Supabase is not configured for Google sign-in.')
+        if (!isFirebaseConfigured) {
+          throw new AppError('configuration', 'Firebase is not configured for Google sign-in.')
         }
 
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: getAuthRedirectTo(),
-          },
-        })
+        const auth = getAuth_Client()
+        const provider = new GoogleAuthProvider()
 
-        if (error) {
-          throw new AppError('auth', error.message)
+        try {
+          await signInWithPopup(auth, provider)
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          const firebaseError =
+            typeof error === 'object' && error !== null && 'code' in error
+              ? (error as FirebaseError)
+              : null
+
+          // Log detailed error info for debugging
+          console.error('🔥 Firebase Sign-In Error:', {
+            message: errorMessage,
+            code: firebaseError?.code,
+            customData: firebaseError?.customData,
+            fullError: error,
+          })
+          
+          // Provide helpful error messages based on error type
+          let userMessage = errorMessage
+          if (errorMessage.includes('CONFIGURATION_NOT_FOUND')) {
+            userMessage = 'Firebase configuration error. Please check your API key and Firebase Console settings. See FIREBASE_TROUBLESHOOTING.md for help.'
+          } else if (errorMessage.includes('auth/operation-not-allowed')) {
+            userMessage = 'Google Sign-In is not enabled in Firebase Console. Enable it in Authentication > Sign-in methods.'
+          } else if (errorMessage.includes('auth/popup-closed-by-user')) {
+            userMessage = 'Sign-in was cancelled. Please try again.'
+          }
+          
+          throw new AppError('auth', userMessage)
         }
       },
       signOut: async () => {
-        if (!supabase) return
-        const { error } = await supabase.auth.signOut()
-        if (error) {
-          throw new AppError('auth', error.message)
+        if (!isFirebaseConfigured) return
+
+        const auth = getAuth_Client()
+        try {
+          await firebaseSignOut(auth)
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          throw new AppError('auth', errorMessage)
         }
       },
     }),
-    [isLoading, session],
+    [authLoading, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
