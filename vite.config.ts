@@ -4,7 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-import aiRecommendationHandler from './api/ai-recommendation'
 import aiSummaryHandler from './api/ai-summary'
 import addWatchlistItemHandler from './api/add-watchlist-item'
 import createWatchlistHandler from './api/create-watchlist'
@@ -96,7 +95,6 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       createJsonDevApi('/api/add-watchlist-item', addWatchlistItemHandler),
-      createJsonDevApi('/api/ai-recommendation', aiRecommendationHandler),
       createJsonDevApi('/api/ai-summary', aiSummaryHandler),
       createJsonDevApi('/api/create-watchlist', createWatchlistHandler),
       createJsonDevApi('/api/get-watchlist', getWatchlistHandler),

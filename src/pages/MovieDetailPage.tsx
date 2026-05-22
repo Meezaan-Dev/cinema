@@ -73,6 +73,8 @@ export function MovieDetailPage() {
   }
 
   const userMovie = toUserMovie(movie)
+  const imdbUrl = movie.imdb_id ? `https://www.imdb.com/title/${movie.imdb_id}/` : undefined
+  const magicLinkUrl = movie.imdb_id ? `https://www.playimdb.com/title/${movie.imdb_id}/` : undefined
 
   return (
     <>
@@ -99,9 +101,9 @@ export function MovieDetailPage() {
                 saved={saved}
                 onAdd={watchlistPicker.open}
                 onRemove={watchlist.removeMovie}
-                onWatched={watchlist.toggleWatched}
-                onFavourite={watchlist.toggleFavourite}
                 onRate={watchlist.setRating}
+                magicLinkUrl={magicLinkUrl}
+                imdbUrl={imdbUrl}
                 aiSummary={aiSummary.data}
                 isAiSummaryLoading={aiSummary.isLoading}
                 aiSummaryError={aiSummary.error}

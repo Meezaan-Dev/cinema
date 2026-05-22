@@ -1,4 +1,4 @@
-import { Film, LogIn, LogOut, Menu, Search, Sparkles, UserRoundCheck, X } from 'lucide-react'
+import { Film, LogIn, LogOut, Menu, Search, UserRoundCheck, X } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, ScrollRestoration } from 'react-router-dom'
 
@@ -11,7 +11,6 @@ const links = [
   { to: '/', label: 'Home', icon: Film },
   { to: '/search', label: 'Search', icon: Search },
   { to: '/watchlists', label: 'Watchlists', icon: UserRoundCheck },
-  { to: '/picker', label: 'Tonight', icon: Sparkles },
 ]
 
 function getUserDisplayName(user: ReturnType<typeof useAuth>['user']) {

@@ -18,8 +18,6 @@ export type UserMovie = {
   mediaType?: MediaType
 }
 
-export type WatchPreference = 'any' | 'watched' | 'unwatched'
-
 export function getWatchlistKey(movie: { id: number; mediaType?: MediaType }) {
   return `${movie.mediaType ?? 'movie'}:${movie.id}`
 }

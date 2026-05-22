@@ -1,23 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { parseGeminiJson, parseJsonRequestBody } from '../../api/serverUtils'
-import { aiRecommendationPlanSchema, aiSummarySchema } from '@/types/ai'
+import { aiSummarySchema } from '@/types/ai'
 
 describe('ai schemas', () => {
-  it('accepts valid recommendation and summary payloads', () => {
-    expect(
-      aiRecommendationPlanSchema.parse({
-        mediaType: 'both',
-        genreIds: [28, 878],
-        minRating: 7,
-        maxRuntime: null,
-        sortBy: 'popularity.desc',
-        referenceTitle: null,
-        vibeTags: ['tense'],
-        reason: 'Matched from your prompt.',
-      }),
-    ).toMatchObject({ mediaType: 'both', genreIds: [28, 878] })
-
+  it('accepts valid summary payloads', () => {
     expect(
       aiSummarySchema.parse({
         takeaway: 'A tense, compact watch.',

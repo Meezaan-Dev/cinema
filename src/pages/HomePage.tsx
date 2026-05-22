@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Search, Sparkles } from 'lucide-react'
+import { Compass, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 
@@ -54,7 +54,7 @@ export function HomePage() {
               Find the film your night is asking for.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-              See what is new across movies and series, then describe the vibe you want and let smart recommendations narrow the night.
+              See what is new across movies and series, then search and filter TMDB to narrow the night.
             </p>
             <form onSubmit={submitSearch} className="mt-8 flex max-w-2xl flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.08] p-2 shadow-[0_24px_70px_rgba(0,0,0,.28)] backdrop-blur-2xl sm:flex-row">
               <label className="sr-only" htmlFor="home-search">Search movies</label>
@@ -65,9 +65,9 @@ export function HomePage() {
               </Button>
             </form>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Link className="button-link button-link-primary" to="/picker">
-                <Sparkles className="size-4" aria-hidden="true" />
-                What Should I Watch Tonight?
+              <Link className="button-link button-link-primary" to="/search">
+                <Compass className="size-4" aria-hidden="true" />
+                Browse discovery
               </Link>
               {hero ? <Link className="button-link" to={`/movie/${hero.id}`}>Open featured film</Link> : null}
             </div>

@@ -29,6 +29,7 @@ export type TmdbMovieDetails = TmdbMovie & {
   genres: TmdbGenre[]
   tagline: string
   status: string
+  imdb_id: string | null
 }
 
 export type TmdbSeason = {
@@ -84,4 +85,9 @@ export type TmdbVideo = {
 export type TmdbVideos = {
   id: number
   results: TmdbVideo[]
+}
+
+export type TmdbExternalIds = {
+  id: number
+  imdb_id: string | null
 }
