@@ -3,7 +3,7 @@ import { CalendarDays, ListVideo, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
 import { aiSummaryKeys, getAiSummary } from '@/api/aiSummaries'
-import { getSeriesDetails, queryKeys } from '@/api/tmdbEndpoints'
+import { getSeriesDetails, getSeriesExternalIds, queryKeys } from '@/api/tmdbEndpoints'
 import { MovieActions } from '@/components/movie/MovieActions'
 import { MoviePoster } from '@/components/movie/MoviePoster'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -46,6 +46,11 @@ export function SeriesDetailPage() {
   const details = useQuery({
     queryKey: queryKeys.seriesDetail(seriesTmdbId ?? seriesId),
     queryFn: () => getSeriesDetails(seriesTmdbId ?? ''),
+    enabled: isValidSeriesId,
+  })
+  const externalIds = useQuery({
+    queryKey: queryKeys.seriesExternalIds(seriesTmdbId ?? seriesId),
+    queryFn: () => getSeriesExternalIds(seriesTmdbId ?? ''),
     enabled: isValidSeriesId,
   })
   const series = details.data
@@ -93,6 +98,8 @@ export function SeriesDetailPage() {
 
   const userSeries = toUserSeries(series)
   const saved = user ? undefined : watchlist.getSaved(userSeries)
+  const imdbUrl = externalIds.data?.imdb_id ? `https://www.imdb.com/title/${externalIds.data.imdb_id}/` : undefined
+  const magicLinkUrl = externalIds.data?.imdb_id ? `https://www.playimdb.com/title/${externalIds.data.imdb_id}/` : undefined
 
   return (
     <>
@@ -144,9 +151,9 @@ export function SeriesDetailPage() {
                 saved={saved}
                 onAdd={watchlistPicker.open}
                 onRemove={watchlist.removeMovie}
-                onWatched={watchlist.toggleWatched}
-                onFavourite={watchlist.toggleFavourite}
                 onRate={watchlist.setRating}
+                magicLinkUrl={magicLinkUrl}
+                imdbUrl={imdbUrl}
                 aiSummary={aiSummary.data}
                 isAiSummaryLoading={aiSummary.isLoading}
                 aiSummaryError={aiSummary.error}

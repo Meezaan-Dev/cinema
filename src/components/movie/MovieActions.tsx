@@ -1,4 +1,4 @@
-import { Check, Clapperboard, Heart, Loader2, Plus, RefreshCw, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
+import { Clapperboard, ExternalLink, Loader2, Plus, RefreshCw, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
@@ -22,9 +22,9 @@ type MovieActionsProps = {
   saved?: UserMovie
   onAdd: (movie: UserMovie) => void
   onRemove: (movie: UserMovie) => void
-  onWatched: (movie: UserMovie) => void
-  onFavourite: (movie: UserMovie) => void
   onRate: (movie: UserMovie, rating?: number) => void
+  magicLinkUrl?: string
+  imdbUrl?: string
   aiSummary?: AiSummary
   isAiSummaryLoading?: boolean
   aiSummaryError?: unknown
@@ -161,9 +161,9 @@ export function MovieActions({
   saved,
   onAdd,
   onRemove,
-  onWatched,
-  onFavourite,
   onRate,
+  magicLinkUrl,
+  imdbUrl,
   aiSummary,
   isAiSummaryLoading,
   aiSummaryError,
@@ -173,7 +173,7 @@ export function MovieActions({
 
   return (
     <div className="rounded-3xl border border-white/[0.07] bg-white/[0.06] p-4 backdrop-blur-2xl">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(160px,1fr))]">
         {saved ? (
           <Button variant="danger" type="button" onClick={() => onRemove(current)}>
             <Trash2 className="size-4" aria-hidden="true" />
@@ -185,14 +185,18 @@ export function MovieActions({
             Watchlist
           </Button>
         )}
-        <Button variant={current.isWatched ? 'primary' : 'secondary'} type="button" onClick={() => onWatched(current)}>
-          <Check className="size-4" aria-hidden="true" />
-          {current.isWatched ? 'Watched' : 'To watch'}
-        </Button>
-        <Button variant={current.isFavourite ? 'primary' : 'secondary'} type="button" onClick={() => onFavourite(current)}>
-          <Heart className={current.isFavourite ? 'size-4 fill-current' : 'size-4'} aria-hidden="true" />
-          Favourite
-        </Button>
+        {magicLinkUrl ? (
+          <a className="button-link w-full" href={magicLinkUrl} target="_blank" rel="noreferrer">
+            <ExternalLink className="size-4" aria-hidden="true" />
+            Magic Link
+          </a>
+        ) : null}
+        {imdbUrl ? (
+          <a className="button-link w-full" href={imdbUrl} target="_blank" rel="noreferrer">
+            <ExternalLink className="size-4" aria-hidden="true" />
+            View on IMDb
+          </a>
+        ) : null}
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] pt-4">
         <span className="text-sm font-medium text-slate-300">Your rating</span>
