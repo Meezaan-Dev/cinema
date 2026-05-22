@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 const nullablePathSchema = z.string().nullable().catch(null)
+const nullableExternalIdSchema = z.string().nullable().catch(null)
 
 export const tmdbGenreSchema = z.object({
   id: z.number().int(),
@@ -53,6 +54,7 @@ export const tmdbMovieDetailsSchema = tmdbMovieSchema.extend({
   genres: z.array(tmdbGenreSchema).catch([]),
   tagline: z.string().catch(''),
   status: z.string().catch(''),
+  imdb_id: nullableExternalIdSchema,
 })
 
 export const tmdbSeasonSchema = z.object({
@@ -112,6 +114,11 @@ export const tmdbVideoSchema = z.object({
 export const tmdbVideosSchema = z.object({
   id: z.number().int(),
   results: z.array(tmdbVideoSchema).catch([]),
+})
+
+export const tmdbExternalIdsSchema = z.object({
+  id: z.number().int(),
+  imdb_id: nullableExternalIdSchema,
 })
 
 export function tmdbPagedResponseSchema<T extends z.ZodTypeAny>(itemSchema: T) {

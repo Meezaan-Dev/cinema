@@ -1,6 +1,7 @@
 import { tmdbRequest } from './tmdbClient'
 import {
   tmdbCreditsSchema,
+  tmdbExternalIdsSchema,
   tmdbGenresResponseSchema,
   tmdbMovieDetailsSchema,
   tmdbMovieSchema,
@@ -11,6 +12,7 @@ import {
 } from '@/types/schemas'
 import type {
   TmdbCredits,
+  TmdbExternalIds,
   TmdbGenre,
   TmdbMovie,
   TmdbMovieDetails,
@@ -41,9 +43,9 @@ export const queryKeys = {
   discover: (filters: DiscoverParams) => ['movies', 'discover', filters] as const,
   discoverSeries: (filters: DiscoverParams) => ['series', 'discover', filters] as const,
   discoverAll: (filters: DiscoverParams) => ['all', 'discover', filters] as const,
-  referenceSearch: (query: string) => ['movies', 'reference-search', query] as const,
   detail: (movieId: string | number) => ['movie', movieId] as const,
   seriesDetail: (seriesId: string | number) => ['series', seriesId] as const,
+  seriesExternalIds: (seriesId: string | number) => ['series', seriesId, 'external-ids'] as const,
   credits: (movieId: string | number) => ['movie', movieId, 'credits'] as const,
   videos: (movieId: string | number) => ['movie', movieId, 'videos'] as const,
   similar: (movieId: string | number) => ['movie', movieId, 'similar'] as const,
@@ -141,6 +143,10 @@ export function getMovieDetails(movieId: string | number) {
 
 export function getSeriesDetails(seriesId: string | number) {
   return tmdbRequest<TmdbSeriesDetails>(`/tv/${seriesId}`, {}, tmdbSeriesDetailsSchema)
+}
+
+export function getSeriesExternalIds(seriesId: string | number) {
+  return tmdbRequest<TmdbExternalIds>(`/tv/${seriesId}/external_ids`, {}, tmdbExternalIdsSchema)
 }
 
 export function getMovieCredits(movieId: string | number) {

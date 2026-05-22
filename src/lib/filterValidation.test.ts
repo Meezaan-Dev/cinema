@@ -2,12 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   sanitizeGenre,
-  sanitizeMood,
   sanitizeQuery,
   sanitizeRating,
-  sanitizeRuntime,
   sanitizeSortBy,
-  sanitizeWatchPreference,
   sanitizeYear,
 } from '@/lib/filterValidation'
 
@@ -29,17 +26,11 @@ describe('filter validation', () => {
     vi.useRealTimers()
   })
 
-  it('keeps only supported rating runtime sort preference and mood values', () => {
+  it('keeps only supported rating and sort values', () => {
     expect(sanitizeRating('7')).toBe('7')
     expect(sanitizeRating('9')).toBe('')
-    expect(sanitizeRuntime('120')).toBe('120')
-    expect(sanitizeRuntime('999')).toBe('')
     expect(sanitizeSortBy('vote_average.desc')).toBe('vote_average.desc')
     expect(sanitizeSortBy('bad-sort')).toBe('popularity.desc')
-    expect(sanitizeWatchPreference('watched')).toBe('watched')
-    expect(sanitizeWatchPreference('everything')).toBe('any')
-    expect(sanitizeMood('cozy')).toBe('cozy')
-    expect(sanitizeMood('anything')).toBe('electric')
   })
 
   it('validates genres against known TMDB genres when available', () => {

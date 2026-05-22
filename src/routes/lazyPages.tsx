@@ -11,7 +11,6 @@ export const MovieDetailPage = lazy(() =>
   import('@/pages/MovieDetailPage').then((module) => ({ default: module.MovieDetailPage })),
 )
 export const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
-export const PickerPage = lazy(() => import('@/pages/PickerPage').then((module) => ({ default: module.PickerPage })))
 export const SearchPage = lazy(() => import('@/pages/SearchPage').then((module) => ({ default: module.SearchPage })))
 export const SeriesDetailPage = lazy(() =>
   import('@/pages/SeriesDetailPage').then((module) => ({ default: module.SeriesDetailPage })),
