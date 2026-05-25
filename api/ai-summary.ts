@@ -1,5 +1,5 @@
-import { aiSummarySchema } from '../src/types/ai'
-import { getFirebaseAdminServices } from './firebaseAdmin'
+import { aiSummarySchema } from '../src/types/ai.js'
+import { getFirebaseAdminServices } from './firebaseAdmin.js'
 import {
   cleanString,
   cleanStringArray,
@@ -10,7 +10,7 @@ import {
   shortLogBody,
   type ApiRequest,
   type ApiResponse,
-} from './serverUtils'
+} from './serverUtils.js'
 
 type SummaryRequest = {
   mediaType?: string
