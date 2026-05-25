@@ -1,7 +1,7 @@
 import { type Timestamp } from 'firebase-admin/firestore'
 
-import { type ApiRequest, type ApiResponse } from './serverUtils'
-import { getFirebaseAdminServices, isMissingFirestoreDatabaseError } from './firebaseAdmin'
+import { type ApiRequest, type ApiResponse } from './serverUtils.js'
+import { getFirebaseAdminServices, isMissingFirestoreDatabaseError } from './firebaseAdmin.js'
 
 type FirestoreWatchlist = {
   id: string

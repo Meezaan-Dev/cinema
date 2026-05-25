@@ -1,11 +1,11 @@
 import { Timestamp } from 'firebase-admin/firestore'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import handler from './get-watchlist'
-import { getFirebaseAdminServices } from './firebaseAdmin'
-import type { ApiRequest, ApiResponse } from './serverUtils'
+import handler from './get-watchlist.js'
+import { getFirebaseAdminServices } from './firebaseAdmin.js'
+import type { ApiRequest, ApiResponse } from './serverUtils.js'
 
-vi.mock('./firebaseAdmin', () => ({
+vi.mock('./firebaseAdmin.js', () => ({
   getFirebaseAdminServices: vi.fn(),
   isMissingFirestoreDatabaseError: vi.fn(() => false),
 }))
