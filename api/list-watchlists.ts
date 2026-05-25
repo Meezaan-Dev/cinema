@@ -9,8 +9,8 @@ type FirestoreWatchlist = {
   description: string | null
   ownerId: string
   inviteToken: string
-  createdAt: Timestamp
-  updatedAt: Timestamp
+  createdAt?: Timestamp | string | null
+  updatedAt?: Timestamp | string | null
 }
 
 function getAuthorizationHeader(req: ApiRequest) {
@@ -26,6 +26,20 @@ function getBearerToken(req: ApiRequest) {
   return match?.[1]?.trim() || null
 }
 
+function toIso(value: Timestamp | string | null | undefined) {
+  if (typeof value === 'string') return value || undefined
+  return value && typeof value.toDate === 'function' ? value.toDate().toISOString() : undefined
+}
+
+function toMillis(value: Timestamp | string | null | undefined) {
+  if (typeof value === 'string') {
+    const millis = new Date(value).getTime()
+    return Number.isFinite(millis) ? millis : 0
+  }
+
+  return value && typeof value.toMillis === 'function' ? value.toMillis() : 0
+}
+
 function mapWatchlist(data: FirestoreWatchlist, role: string, itemCount: number) {
   return {
     id: data.id,
@@ -33,8 +47,8 @@ function mapWatchlist(data: FirestoreWatchlist, role: string, itemCount: number)
     description: data.description,
     ownerId: data.ownerId,
     inviteToken: data.inviteToken,
-    createdAt: data.createdAt.toDate().toISOString(),
-    updatedAt: data.updatedAt.toDate().toISOString(),
+    createdAt: toIso(data.createdAt) ?? new Date(0).toISOString(),
+    updatedAt: toIso(data.updatedAt) ?? new Date(0).toISOString(),
     role,
     itemCount,
   }
@@ -101,9 +115,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     res.status(200).json({
       watchlists: lists
         .filter((list): list is ReturnType<typeof mapWatchlist> => Boolean(list))
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+        .sort((a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt)),
     })
   } catch (error) {
+    console.error('list-watchlists route failed', error)
     res.status(isMissingFirestoreDatabaseError(error) ? 503 : 500).json({
       error: isMissingFirestoreDatabaseError(error)
         ? 'Firestore is not enabled for this Firebase project. Create the default Firestore database in Firebase Console.'

@@ -44,12 +44,31 @@ function parseServiceAccountKey() {
   return parsed
 }
 
+function hasServiceAccountConfig() {
+  return Boolean(
+    getOptionalEnv('FIREBASE_SERVICE_ACCOUNT_FILE') ||
+      getOptionalEnv('FIREBASE_SERVICE_ACCOUNT_KEY') ||
+      getOptionalEnv('FIREBASE_SERVICE_ACCOUNT_KEY_BASE64'),
+  )
+}
+
+function hasApplicationDefaultConfig() {
+  return Boolean(getOptionalEnv('GOOGLE_APPLICATION_CREDENTIALS'))
+}
+
 export function getFirebaseAdminServices(): FirebaseAdminServices | null {
   if (services) return services
 
   const projectId = getProjectId()
 
   if (!projectId) {
+    return null
+  }
+
+  if (process.env.VERCEL && !hasServiceAccountConfig() && !hasApplicationDefaultConfig()) {
+    console.error(
+      'Firebase Admin requires FIREBASE_SERVICE_ACCOUNT_KEY, FIREBASE_SERVICE_ACCOUNT_KEY_BASE64, FIREBASE_SERVICE_ACCOUNT_FILE, or GOOGLE_APPLICATION_CREDENTIALS on Vercel.',
+    )
     return null
   }
 
