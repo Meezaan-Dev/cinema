@@ -75,6 +75,13 @@ export function getErrorCopy(error: unknown) {
     }
 
     if (error.code === 'watchlist') {
+      if (error.status === 403) {
+        return {
+          title: 'Watchlist access unavailable',
+          message: error.message || 'You are not a member of this watchlist.',
+        }
+      }
+
       return {
         title: 'Watchlist unavailable',
         message: error.message || 'The watchlist service returned an error. Wait a moment, then try again.',

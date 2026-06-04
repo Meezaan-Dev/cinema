@@ -1,15 +1,8 @@
 import {
-  collection,
   doc,
   getDoc,
-  getDocs,
   setDoc,
-  query,
-  where,
   Timestamp,
-  writeBatch,
-  type DocumentReference,
-  type Firestore,
 } from 'firebase/firestore'
 import { AppError } from '@/lib/errors'
 import { getAuth_Client, getFirebaseDB } from '@/lib/firebaseClient'
@@ -37,18 +30,6 @@ type FirestoreState = {
 
 function deterministicItemId(watchlistId: string, mediaType: 'movie' | 'tv', tmdbId: number): string {
   return `${watchlistId}_${mediaType}_${tmdbId}`
-}
-
-async function deleteRefsInBatches(db: Firestore, refs: DocumentReference[]) {
-  const batchSize = 450
-
-  for (let index = 0; index < refs.length; index += batchSize) {
-    const batch = writeBatch(db)
-    for (const ref of refs.slice(index, index + batchSize)) {
-      batch.delete(ref)
-    }
-    await batch.commit()
-  }
 }
 
 function requireUser(userId: string | undefined): string {
@@ -246,6 +227,7 @@ export async function deleteCloudWatchlist(
       throw new AppError(
         response.status === 401 ? 'auth' : response.status === 404 ? 'not-found' : 'watchlist',
         message,
+        response.status,
       )
     }
   } catch (error) {
@@ -287,6 +269,7 @@ export async function getCloudWatchlistDetail(
       throw new AppError(
         response.status === 401 ? 'auth' : response.status === 404 ? 'not-found' : 'watchlist',
         message,
+        response.status,
       )
     }
 
@@ -438,20 +421,40 @@ export async function hideCloudItemForUser(
   })
 }
 
-export async function deleteCloudWatchlistItem(itemId: string): Promise<void> {
-  const db = getFirebaseDB()
-
+export async function deleteCloudWatchlistItem(itemId: string, userId: string | undefined): Promise<void> {
+  requireUser(userId)
+  if (!itemId) {
+    throw new AppError('not-found', 'Choose a title first.')
+  }
   try {
-    const statesQuery = query(
-      collection(db, 'watchlist_item_states'),
-      where('itemId', '==', itemId),
-    )
-    const stateSnapshots = await getDocs(statesQuery)
-    await deleteRefsInBatches(db, [
-      doc(db, 'watchlist_items', itemId),
-      ...stateSnapshots.docs.map((stateDoc) => stateDoc.ref),
-    ])
+    const auth = getAuth_Client()
+    const idToken = await auth.currentUser?.getIdToken()
+
+    if (!idToken) {
+      throw new AppError('auth', 'Sign in with Google to use shared watchlists.')
+    }
+
+    const response = await fetch('/api/delete-watchlist-item', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ itemId }),
+    })
+
+    const payload = (await response.json().catch(() => null)) as { error?: unknown } | null
+
+    if (!response.ok) {
+      const message = typeof payload?.error === 'string' ? payload.error : 'Could not remove this title.'
+      throw new AppError(
+        response.status === 401 ? 'auth' : response.status === 404 ? 'not-found' : 'watchlist',
+        message,
+        response.status,
+      )
+    }
   } catch (error) {
+    if (error instanceof AppError) throw error
     toCloudError(error instanceof Error ? error : null, 'Could not remove this title for everyone.')
   }
 }

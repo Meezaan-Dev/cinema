@@ -1,16 +1,14 @@
-import { Check, Copy, Download, Heart, Loader2, Trash2, UserMinus } from 'lucide-react'
+import { Copy, Download, Loader2, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { MovieCard } from '@/components/movie/MovieCard'
 import { Button } from '@/components/ui/Button'
-import { RatingControl } from '@/components/ui/RatingControl'
 import { ErrorState, StatusState } from '@/components/ui/StatusState'
-import { WatchlistDecisionGuide } from '@/components/watchlist/WatchlistDecisionGuide'
+import { SharedWatchlistItemRow } from '@/components/watchlist/SharedWatchlistItemRow'
 import { useAuth } from '@/hooks/useAuth'
 import { useCloudWatchlistDetail } from '@/hooks/useCloudWatchlists'
 import { downloadCsv } from '@/lib/csv'
-import { getYear } from '@/lib/formatters'
+import { getErrorCopy } from '@/lib/errors'
 import { cloudItemToUserMovie, type CloudWatchlistItem } from '@/types/watchlist'
 
 type CloudFilter = 'all' | 'watched' | 'to_watch'
@@ -18,6 +16,14 @@ type CloudSort = 'addedAt' | 'rating' | 'releaseDate'
 
 function itemStatus(item: CloudWatchlistItem) {
   return item.state?.status ?? 'to_watch'
+}
+
+function itemDetailsPath(item: CloudWatchlistItem) {
+  return item.mediaType === 'tv' ? `/tv/${item.tmdbId}` : `/movie/${item.tmdbId}`
+}
+
+function roleLabel(role: string) {
+  return role === 'owner' ? 'Owner' : 'Member'
 }
 
 export function CloudWatchlistDetailPage() {
@@ -29,9 +35,11 @@ export function CloudWatchlistDetailPage() {
   const [sort, setSort] = useState<CloudSort>('addedAt')
   const [copyState, setCopyState] = useState('Copy link')
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+  const [confirmingRemoveId, setConfirmingRemoveId] = useState<string | null>(null)
   const list = detail.data
   const isInitialLoading = detail.isLoading && !list
   const hasBlockingError = detail.hasBlockingError
+  const actionErrorCopy = detail.actionError ? getErrorCopy(detail.actionError) : null
 
   const items = useMemo(() => {
     return [...(list?.items ?? [])]
@@ -77,39 +85,56 @@ export function CloudWatchlistDetailPage() {
   }
 
   async function toggleStatus(item: CloudWatchlistItem) {
-    await detail.saveState({
-      item,
-      state: {
-        status: itemStatus(item) === 'watched' ? 'to_watch' : 'watched',
-      },
-    })
+    try {
+      await detail.saveState({
+        item,
+        state: {
+          status: itemStatus(item) === 'watched' ? 'to_watch' : 'watched',
+        },
+      })
+    } catch {
+      // React Query stores the error for display.
+    }
   }
 
   async function toggleFavourite(item: CloudWatchlistItem) {
-    await detail.saveState({
-      item,
-      state: {
-        isFavourite: !(item.state?.isFavourite ?? false),
-      },
-    })
+    try {
+      await detail.saveState({
+        item,
+        state: {
+          isFavourite: !(item.state?.isFavourite ?? false),
+        },
+      })
+    } catch {
+      // React Query stores the error for display.
+    }
   }
 
   async function setRating(item: CloudWatchlistItem, personalRating?: number) {
-    await detail.saveState({
-      item,
-      state: {
-        personalRating,
-      },
-    })
+    try {
+      await detail.saveState({
+        item,
+        state: {
+          personalRating,
+        },
+      })
+    } catch {
+      // React Query stores the error for display.
+    }
   }
 
   async function removeItem(item: CloudWatchlistItem) {
-    if (list?.role === 'owner') {
-      await detail.removeGlobally(item.id)
+    if (confirmingRemoveId !== item.id) {
+      setConfirmingRemoveId(item.id)
       return
     }
 
-    await detail.hideForMe(item)
+    try {
+      await detail.removeGlobally(item.id)
+      setConfirmingRemoveId(null)
+    } catch {
+      // React Query stores the error for display.
+    }
   }
 
   async function deleteWatchlist() {
@@ -119,8 +144,12 @@ export function CloudWatchlistDetailPage() {
       return
     }
 
-    await detail.deleteWatchlist()
-    navigate('/watchlists')
+    try {
+      await detail.deleteWatchlist()
+      navigate('/watchlists')
+    } catch {
+      // React Query stores the error for display.
+    }
   }
 
   function exportCsv() {
@@ -129,40 +158,71 @@ export function CloudWatchlistDetailPage() {
   }
 
   return (
-    <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
-      <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+    <section className="mx-auto max-w-3xl px-3 py-6 sm:px-6 sm:py-8 lg:max-w-7xl">
+      <div className="mb-5 flex flex-col gap-4 sm:mb-6">
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-500">Shared watchlist</p>
-          <h1 className="mt-2 line-clamp-2 text-4xl font-semibold tracking-tight text-white">{list?.name ?? 'Watchlist'}</h1>
-          <p className="mt-2 text-slate-400">
-            {list ? `${list.itemCount} visible ${list.itemCount === 1 ? 'title' : 'titles'} - ${list.role}` : 'Loading titles...'}
-          </p>
+          <h1 className="mt-2 line-clamp-2 text-2xl font-semibold tracking-tight text-white sm:text-4xl">{list?.name ?? 'Watchlist'}</h1>
+          {list ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-white/[0.08] px-2.5 py-1 text-xs font-medium text-slate-300">
+                {list.itemCount} {list.itemCount === 1 ? 'title' : 'titles'}
+              </span>
+              <span className="rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 text-xs font-medium capitalize text-slate-400">
+                {roleLabel(list.role)}
+              </span>
+            </div>
+          ) : (
+            <p className="mt-2 text-slate-400">Loading titles...</p>
+          )}
         </div>
-        <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
-          <select className="field sm:w-auto" value={filter} onChange={(event) => setFilter(event.target.value as CloudFilter)} aria-label="Filter shared watchlist">
-            <option value="all">All</option>
-            <option value="to_watch">To watch</option>
-            <option value="watched">Watched</option>
-          </select>
-          <select className="field sm:w-auto" value={sort} onChange={(event) => setSort(event.target.value as CloudSort)} aria-label="Sort shared watchlist">
-            <option value="addedAt">Date added</option>
-            <option value="rating">Rating</option>
-            <option value="releaseDate">Release year</option>
-          </select>
-          <Button type="button" onClick={exportCsv} disabled={!items.length}>
-            <Download className="size-4" aria-hidden="true" />
-            Export
-          </Button>
-          <Button type="button" variant="primary" onClick={copyInviteLink} disabled={!list}>
-            <Copy className="size-4" aria-hidden="true" />
-            {copyState}
-          </Button>
-          {list?.role === 'owner' ? (
-            <Button type="button" variant="danger" onClick={deleteWatchlist} disabled={detail.isDeletingWatchlist}>
-              {detail.isDeletingWatchlist ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />}
-              {isConfirmingDelete ? 'Confirm delete' : 'Delete list'}
+
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.04] p-1.5 sm:flex sm:w-fit sm:items-center sm:gap-2 sm:p-1">
+            <select
+              className="field min-h-11 w-full border-0 bg-transparent py-2 touch-manipulation"
+              value={filter}
+              onChange={(event) => setFilter(event.target.value as CloudFilter)}
+              aria-label="Filter shared watchlist"
+            >
+              <option value="all">All</option>
+              <option value="to_watch">To watch</option>
+              <option value="watched">Watched</option>
+            </select>
+            <select
+              className="field min-h-11 w-full border-0 bg-transparent py-2 touch-manipulation"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as CloudSort)}
+              aria-label="Sort shared watchlist"
+            >
+              <option value="addedAt">Date added</option>
+              <option value="rating">Rating</option>
+              <option value="releaseDate">Release year</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap">
+            <Button type="button" variant="secondary" className="min-h-11 w-full touch-manipulation" onClick={exportCsv} disabled={!items.length}>
+              <Download className="size-4" aria-hidden="true" />
+              Export
             </Button>
-          ) : null}
+            <Button type="button" variant="secondary" className="min-h-11 w-full touch-manipulation" onClick={copyInviteLink} disabled={!list}>
+              <Copy className="size-4" aria-hidden="true" />
+              {copyState}
+            </Button>
+            {list?.role === 'owner' ? (
+              <Button
+                type="button"
+                variant="danger"
+                className="col-span-2 min-h-11 w-full touch-manipulation sm:col-span-1 sm:w-auto"
+                onClick={deleteWatchlist}
+                disabled={detail.isDeletingWatchlist}
+              >
+                {detail.isDeletingWatchlist ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />}
+                {isConfirmingDelete ? 'Confirm delete' : 'Delete list'}
+              </Button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -172,63 +232,41 @@ export function CloudWatchlistDetailPage() {
           Refreshing shared watchlist...
         </div>
       ) : null}
+      {actionErrorCopy && !hasBlockingError ? (
+        <div className="mb-5 rounded-2xl border border-rose-300/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+          <span className="font-semibold">{actionErrorCopy.title}:</span> {actionErrorCopy.message}
+        </div>
+      ) : null}
       {hasBlockingError ? <ErrorState error={detail.error} onRetry={() => detail.refetch()} /> : null}
       {!isInitialLoading && !hasBlockingError && items.length === 0 ? (
         <StatusState title="No visible titles" message="Add titles from search or detail pages, or switch filters to see more." />
       ) : null}
       {!isInitialLoading && !hasBlockingError && items.length > 0 ? (
-        <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-          <div className="movie-grid">
-            {items.map((item) => {
-              const movie = cloudItemToUserMovie(item)
-              return <MovieCard key={item.id} movie={movie} saved={movie} />
-            })}
-          </div>
-          <aside className="space-y-3">
-            {items.map((item) => {
-              const watched = itemStatus(item) === 'watched'
-              const favourite = item.state?.isFavourite ?? false
-              const removeCopy = list?.role === 'owner' ? 'Remove for everyone' : 'Remove for me'
+        <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.045] divide-y divide-white/[0.07]">
+          {items.map((item) => {
+            const watched = itemStatus(item) === 'watched'
+            const favourite = item.state?.isFavourite ?? false
+            const isConfirmingRemove = confirmingRemoveId === item.id
+            const isRemoving = detail.removingItemId === item.id
+            const isSavingThisRow = detail.isSavingState || isRemoving
 
-              return (
-                <div key={item.id} className="rounded-2xl border border-white/[0.07] bg-white/[0.045] p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="line-clamp-2 font-semibold text-white">{item.title}</h2>
-                      <p className="mt-1 text-sm text-slate-400">{getYear(item.releaseDate)}</p>
-                    </div>
-                    <Button size="icon" variant={favourite ? 'primary' : 'ghost'} type="button" onClick={() => toggleFavourite(item)} aria-label={`Toggle favourite for ${item.title}`} disabled={detail.isUpdating}>
-                      <Heart className={favourite ? 'size-4 fill-current' : 'size-4'} aria-hidden="true" />
-                    </Button>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant={watched ? 'primary' : 'secondary'} type="button" onClick={() => toggleStatus(item)} disabled={detail.isUpdating}>
-                      {detail.isUpdating ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Check className="size-4" aria-hidden="true" />}
-                      {watched ? 'Watched' : 'To watch'}
-                    </Button>
-                    <Button size="sm" variant="danger" type="button" onClick={() => removeItem(item)} disabled={detail.isUpdating}>
-                      {list?.role === 'owner' ? <Trash2 className="size-4" aria-hidden="true" /> : <UserMinus className="size-4" aria-hidden="true" />}
-                      {removeCopy}
-                    </Button>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] pt-3">
-                    <span className="text-sm font-medium text-slate-300">Your rating</span>
-                    <RatingControl value={item.state?.personalRating} onChange={(rating) => setRating(item, rating)} />
-                  </div>
-                  <WatchlistDecisionGuide
-                    input={{
-                      mediaType: item.mediaType,
-                      tmdbId: item.tmdbId,
-                      title: item.title,
-                      overview: item.overview,
-                      releaseDate: item.releaseDate,
-                      genres: item.genres,
-                    }}
-                  />
-                </div>
-              )
-            })}
-          </aside>
+            return (
+              <SharedWatchlistItemRow
+                key={item.id}
+                item={item}
+                detailsPath={itemDetailsPath(item)}
+                watched={watched}
+                favourite={favourite}
+                isConfirmingRemove={isConfirmingRemove}
+                isRemoving={isRemoving}
+                isSaving={isSavingThisRow}
+                onToggleFavourite={() => toggleFavourite(item)}
+                onToggleStatus={() => toggleStatus(item)}
+                onSetRating={(rating) => setRating(item, rating)}
+                onRemove={() => removeItem(item)}
+              />
+            )
+          })}
         </div>
       ) : null}
       <div className="mt-8">

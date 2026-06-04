@@ -108,7 +108,7 @@ export function useCloudWatchlistDetail(watchlistId: string | undefined) {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (itemId: string) => deleteCloudWatchlistItem(itemId),
+    mutationFn: (itemId: string) => deleteCloudWatchlistItem(itemId, userId),
     onSuccess: invalidate,
   })
 
@@ -119,16 +119,24 @@ export function useCloudWatchlistDetail(watchlistId: string | undefined) {
       queryClient.removeQueries({ queryKey: cloudWatchlistKeys.detail(watchlistId, userId) })
     },
   })
+  const hasBlockingError = query.isError && !query.data
+  const actionError =
+    saveStateMutation.error ?? hideMutation.error ?? deleteMutation.error ?? deleteWatchlistMutation.error ?? null
 
   return {
     ...query,
-    hasBlockingError: query.isError && !query.data,
+    error: actionError ?? (hasBlockingError ? query.error : null),
+    isError: query.isError || saveStateMutation.isError || hideMutation.isError || deleteMutation.isError || deleteWatchlistMutation.isError,
+    hasBlockingError,
+    actionError,
     isRefreshing: query.isFetching && Boolean(query.data),
     saveState: saveStateMutation.mutateAsync,
     hideForMe: hideMutation.mutateAsync,
     removeGlobally: deleteMutation.mutateAsync,
+    removingItemId: deleteMutation.isPending ? deleteMutation.variables : undefined,
     deleteWatchlist: deleteWatchlistMutation.mutateAsync,
     isDeletingWatchlist: deleteWatchlistMutation.isPending,
+    isSavingState: saveStateMutation.isPending || hideMutation.isPending,
     isUpdating: saveStateMutation.isPending || hideMutation.isPending || deleteMutation.isPending,
   }
 }

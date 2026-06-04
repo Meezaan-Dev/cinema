@@ -259,7 +259,7 @@ await saveCloudItemState(itemId, userId, state)
 await joinCloudWatchlist(inviteToken, userId)
 ```
 
-Cloud watchlist listing, creation, and invite joins call server routes with the signed-in user's Firebase ID token. `/api/list-watchlists` reads the user's memberships, `/api/create-watchlist` creates the list and owner membership together, and `/api/join-watchlist` creates or reactivates invite memberships.
+Cloud watchlist listing, creation, item deletion, and invite joins call server routes with the signed-in user's Firebase ID token. `/api/list-watchlists` reads the user's memberships, `/api/create-watchlist` creates the list and owner membership together, `/api/delete-watchlist-item` removes a shared title for active members, and `/api/join-watchlist` creates or reactivates invite memberships.
 
 ## Migration Checklist
 

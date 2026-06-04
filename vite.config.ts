@@ -7,6 +7,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import aiSummaryHandler from './api/ai-summary'
 import addWatchlistItemHandler from './api/add-watchlist-item'
 import createWatchlistHandler from './api/create-watchlist'
+import deleteWatchlistItemHandler from './api/delete-watchlist-item'
 import deleteWatchlistHandler from './api/delete-watchlist'
 import getWatchlistHandler from './api/get-watchlist'
 import joinWatchlistHandler from './api/join-watchlist'
@@ -98,6 +99,7 @@ export default defineConfig(({ mode }) => {
       createJsonDevApi('/api/add-watchlist-item', addWatchlistItemHandler),
       createJsonDevApi('/api/ai-summary', aiSummaryHandler),
       createJsonDevApi('/api/create-watchlist', createWatchlistHandler),
+      createJsonDevApi('/api/delete-watchlist-item', deleteWatchlistItemHandler),
       createJsonDevApi('/api/delete-watchlist', deleteWatchlistHandler),
       createJsonDevApi('/api/get-watchlist', getWatchlistHandler),
       createJsonDevApi('/api/join-watchlist', joinWatchlistHandler),
