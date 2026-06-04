@@ -217,56 +217,37 @@ export async function deleteCloudWatchlist(
   watchlistId: string | undefined,
   userId: string | undefined,
 ): Promise<void> {
-  const currentUserId = requireUser(userId)
+  requireUser(userId)
   if (!watchlistId) {
     throw new AppError('not-found', 'Choose a watchlist first.')
   }
 
-  const db = getFirebaseDB()
-
   try {
-    const watchlistDoc = await getDoc(doc(db, 'watchlists', watchlistId))
+    const auth = getAuth_Client()
+    const idToken = await auth.currentUser?.getIdToken()
 
-    if (!watchlistDoc.exists()) {
-      throw new AppError('not-found', 'This watchlist does not exist.')
+    if (!idToken) {
+      throw new AppError('auth', 'Sign in with Google to use shared watchlists.')
     }
 
-    const watchlistData = watchlistDoc.data() as { ownerId?: string }
+    const response = await fetch('/api/delete-watchlist', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ watchlistId }),
+    })
 
-    if (watchlistData.ownerId !== currentUserId) {
-      throw new AppError('watchlist', 'Only the owner can delete this watchlist.')
-    }
+    const payload = (await response.json().catch(() => null)) as { error?: unknown } | null
 
-    const membersQuery = query(
-      collection(db, 'watchlist_members'),
-      where('watchlistId', '==', watchlistId),
-    )
-    const itemsQuery = query(
-      collection(db, 'watchlist_items'),
-      where('watchlistId', '==', watchlistId),
-    )
-
-    const [memberSnapshots, itemSnapshots] = await Promise.all([
-      getDocs(membersQuery),
-      getDocs(itemsQuery),
-    ])
-    const itemIds = itemSnapshots.docs.map((itemDoc) => itemDoc.id)
-    const refsToDelete: DocumentReference[] = [
-      watchlistDoc.ref,
-      ...memberSnapshots.docs.map((memberDoc) => memberDoc.ref),
-      ...itemSnapshots.docs.map((itemDoc) => itemDoc.ref),
-    ]
-
-    for (const itemId of itemIds) {
-      const statesQuery = query(
-        collection(db, 'watchlist_item_states'),
-        where('itemId', '==', itemId),
+    if (!response.ok) {
+      const message = typeof payload?.error === 'string' ? payload.error : 'Could not delete this watchlist.'
+      throw new AppError(
+        response.status === 401 ? 'auth' : response.status === 404 ? 'not-found' : 'watchlist',
+        message,
       )
-      const stateSnapshots = await getDocs(statesQuery)
-      refsToDelete.push(...stateSnapshots.docs.map((stateDoc) => stateDoc.ref))
     }
-
-    await deleteRefsInBatches(db, refsToDelete)
   } catch (error) {
     if (error instanceof AppError) throw error
     toCloudError(error instanceof Error ? error : null, 'Could not delete this watchlist.')
