@@ -63,7 +63,7 @@ src/pages/           Route-level screens
 src/components/      UI, movie cards, watchlist rows, layout
 src/hooks/           Watchlist and auth hooks
 src/api/             Client calls to /api and TMDB
-FIREBASE_MIGRATION.md  Firestore schema, rules, and setup
+FIREBASE_SETUP.md    Firestore schema, rules, and setup
 ```
 
 ## Setup
@@ -111,7 +111,7 @@ Restart the dev server after changing env vars. Never prefix `GEMINI_API_KEY` or
 | + Firebase client | Google sign-in, shared lists in the UI |
 | + Firebase Admin | Invite joins, cloud CRUD, cached AI, item/list delete APIs |
 
-See [FIREBASE_MIGRATION.md](./FIREBASE_MIGRATION.md) for Firestore collections, security rules, and migration notes.
+See [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) for Firestore collections, security rules, and setup.
 
 ## API routes
 
@@ -143,9 +143,10 @@ npm run preview  # Preview production build
 ## Operational notes
 
 - **TMDB** is required for meaningful content; handle rate limits and network errors in the UI.
-- **Firebase** is optional for solo use; shared lists and invite flows need client + Admin config.
+- **Firebase** is optional for solo use; shared lists and invite flows need client + Admin config. Deploy Firestore rules from [FIREBASE_SETUP.md](./FIREBASE_SETUP.md).
 - **Gemini** failures surface as recoverable usher errors with retry.
 - **localStorage** can hit quota or be cleared by the user; cloud lists are the durable option when signed in.
+- Third-party failure modes: TMDB rate limits, Gemini quota errors, Firebase misconfiguration, and browser storage limits. The UI should surface recoverable errors instead of crashing.
 
 ## Maintenance checklist
 

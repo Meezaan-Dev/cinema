@@ -248,7 +248,6 @@ export function CloudWatchlistDetailPage() {
             const favourite = item.state?.isFavourite ?? false
             const isConfirmingRemove = confirmingRemoveId === item.id
             const isRemoving = detail.removingItemId === item.id
-            const isSavingThisRow = detail.isSavingState || isRemoving
 
             return (
               <SharedWatchlistItemRow
@@ -259,7 +258,7 @@ export function CloudWatchlistDetailPage() {
                 favourite={favourite}
                 isConfirmingRemove={isConfirmingRemove}
                 isRemoving={isRemoving}
-                isSaving={isSavingThisRow}
+                isSaving={detail.isUpdating}
                 onToggleFavourite={() => toggleFavourite(item)}
                 onToggleStatus={() => toggleStatus(item)}
                 onSetRating={(rating) => setRating(item, rating)}

@@ -103,7 +103,7 @@ function SharedWatchlistActions({
           variant={isConfirmingRemove ? 'danger' : 'ghost'}
           className="min-h-11 w-full"
           onClick={onRemove}
-          disabled={isRemoving}
+          disabled={isRemoving || isSaving}
           aria-label={removeLabel}
         >
           {isRemoving ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />}
