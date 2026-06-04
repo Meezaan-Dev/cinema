@@ -1,12 +1,8 @@
 # Absolute Cinema
 
-Absolute Cinema is a dark-themed React app for discovering movies and TV series with TMDB, saving titles you care about, and deciding what to watch next—solo or with friends.
+Absolute Cinema is a web app for discovering movies and TV series with TMDB, saving titles you care about, and deciding what to watch next solo or with friends.
 
 Browse trending and popular catalogs, dig into detail pages with cast and trailers, keep a personal watchlist in the browser, or sign in with Google to run collaborative lists where everyone shares the same titles but keeps their own watched status, favourites, and ratings.
-
-## Screenshots
-
-<img width="1467" height="954" alt="Screenshot 2026-05-06 at 12 34 21" src="https://github.com/user-attachments/assets/ac88ddce-8c06-43ec-82d7-50af77217227" />
 
 ## What you can do
 
