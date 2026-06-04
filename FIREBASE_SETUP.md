@@ -58,6 +58,7 @@ Firebase Admin is used by these server routes:
 - `GET /api/list-watchlists`: lists active memberships for the signed-in user.
 - `POST /api/get-watchlist`: returns a watchlist and visible items for a member.
 - `POST /api/add-watchlist-item`: adds or updates a shared item and user state.
+- `POST /api/delete-watchlist-item`: removes a shared item and its member state documents for active members.
 - `POST /api/delete-watchlist`: deletes a watchlist and related members, items, and item states for the owner.
 - `POST /api/join-watchlist`: validates an invite token and creates or reactivates membership.
 - `POST /api/ai-summary`: caches Gemini summaries in Firestore when Firebase Admin is configured.

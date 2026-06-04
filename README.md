@@ -1,40 +1,70 @@
 # Absolute Cinema
 
-Absolute Cinema is a polished React SPA for discovering movies with the real TMDB API. It combines trending, popular, search, detail, watchlist, personal ratings, favourites, CSV export, and AI-powered decision summaries.
+Absolute Cinema is a dark-themed React app for discovering movies and TV series with TMDB, saving titles you care about, and deciding what to watch next—solo or with friends.
+
+Browse trending and popular catalogs, dig into detail pages with cast and trailers, keep a personal watchlist in the browser, or sign in with Google to run collaborative lists where everyone shares the same titles but keeps their own watched status, favourites, and ratings.
 
 ## Screenshots
 
 <img width="1467" height="954" alt="Screenshot 2026-05-06 at 12 34 21" src="https://github.com/user-attachments/assets/ac88ddce-8c06-43ec-82d7-50af77217227" />
 
+## What you can do
 
-## Tech Stack
+### Discovery
+- Home feed with trending, popular, and top-rated movies
+- Search with genre, year, rating, and sort filters (movies and series)
+- Movie and series detail pages: overview, genres, cast, similar titles, YouTube trailers
+- Optional **Magic Link** buttons on detail pages (PlayIMDb) when TMDB provides an IMDb id
 
-- React 19 with Vite and TypeScript
-- React Router
-- TanStack Query
-- Tailwind CSS
-- shadcn-style UI primitives
-- Framer Motion
-- TMDB API
-- Firebase Auth and Firestore for shared watchlists
-- Gemini API for server-side AI summaries
-- localStorage
-- Custom CSV export utility
+### Personal watchlist (no account)
+- Add titles from home, search, or detail pages
+- Persisted in `localStorage`
+- Mark watched, favourite, and rate (1–5 stars)
+- Filter, sort, and export to CSV
 
-## Features
+### Shared watchlists (Google sign-in + Firebase)
+- Create named lists and share invite links (`/join/:token`)
+- Members add movies and series to one shared catalog
+- Per-member state: watched / to watch, favourite, personal rating, optional notes
+- List owners can delete a whole list; active members can remove a title for everyone
+- Import a local watchlist into the cloud after sign-in
+- Detail UI aligned with movie detail pages: poster, metadata, actions panel, and **Tiny Usher** (spoiler-safe AI summaries)
 
-- Browse trending, popular, and top-rated movies
-- Search movies with genre, year, rating, and sort filters
-- See what is new across movies and series
-- View movie details with cast, trailers, and recommendations
-- Add or remove movies from a persistent watchlist
-- Mark movies watched, favourite movies, and add personal ratings
-- Filter and sort the watchlist
-- Export watchlist data to CSV
-- Generate spoiler-safe AI decision summaries on detail pages
-- Sign in with Google to create shareable, collaborative watchlists
-- Keep watched/to-watch status, favourites, and ratings personal inside shared lists
-- Loading, empty, error, retry, and image fallback states
+### Tiny Usher (AI)
+- On detail pages and shared watchlist rows, request a short spoiler-safe takeaway via Gemini
+- Summaries are cached server-side in Firestore when Firebase is configured
+
+## Routes
+
+| Path | Purpose |
+|------|---------|
+| `/` | Home discovery |
+| `/search` | Search and filter |
+| `/movie/:id` | Movie detail |
+| `/tv/:id` | Series detail |
+| `/watchlists` | Local + cloud watchlist hub |
+| `/watchlists/:id` | Shared watchlist detail |
+| `/join/:token` | Accept an invite |
+
+## Tech stack
+
+- **Frontend:** React 19, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS 4, Framer Motion
+- **Data:** TMDB API (discovery and metadata)
+- **Auth & cloud data:** Firebase Auth (Google) + Firestore
+- **Server routes:** Vite dev middleware locally; Vercel-style `/api/*` handlers in production
+- **AI:** Google Gemini (`/api/ai-summary`)
+- **Local persistence:** `localStorage` for the personal shelf
+
+## Project layout
+
+```
+api/                 Server handlers (watchlists, AI, TMDB-adjacent ops)
+src/pages/           Route-level screens
+src/components/      UI, movie cards, watchlist rows, layout
+src/hooks/           Watchlist and auth hooks
+src/api/             Client calls to /api and TMDB
+FIREBASE_SETUP.md    Firestore schema, rules, and setup
+```
 
 ## Setup
 
@@ -43,18 +73,23 @@ npm install
 npm run dev
 ```
 
+Open the URL Vite prints (default `http://localhost:5173`).
+
 ## Environment
 
 Create a `.env` file in the project root:
 
 ```env
+# Required for discovery
 VITE_TMDB_API_KEY=your_tmdb_v3_api_key
 VITE_TMDB_BASE_URL=https://api.themoviedb.org/3
 VITE_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
+
+# Server-side AI (optional; detail/watchlist usher)
 GEMINI_API_KEY=your_server_side_gemini_key
 GEMINI_MODEL=gemini-2.5-flash-lite
 
-# Firebase Configuration
+# Client Firebase (optional; shared watchlists + Google sign-in)
 VITE_FIREBASE_API_KEY=your_firebase_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your-project-id
@@ -62,38 +97,60 @@ VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 
-# Server-side Firebase (for API routes)
+# Server Firebase (optional; API routes)
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
 ```
 
-Restart the dev server after changing environment variables. `GEMINI_API_KEY` and `FIREBASE_SERVICE_ACCOUNT_KEY` are intentionally not prefixed with `VITE_`; they must stay server-side.
+Restart the dev server after changing env vars. Never prefix `GEMINI_API_KEY` or `FIREBASE_SERVICE_ACCOUNT_KEY` with `VITE_`—they must stay on the server.
 
-The AI endpoints are implemented as serverless API routes. Get a Gemini API key from Google AI Studio and add it to `.env`.
+| Configuration | Works without it |
+|---------------|------------------|
+| TMDB key only | Browse, search, details, local watchlist, CSV export |
+| + Gemini | Tiny Usher summaries |
+| + Firebase client | Google sign-in, shared lists in the UI |
+| + Firebase Admin | Invite joins, cloud CRUD, cached AI, item/list delete APIs |
 
-Firebase is optional for browsing and local watchlists. Add the Firebase variables to enable Google auth, cloud watchlists, invite links, collaboration, and cached AI summaries. See [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) for detailed setup instructions.
+See [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) for Firestore collections, security rules, and setup.
+
+## API routes
+
+Server handlers under `/api` (wired in `vite.config.ts` for local dev):
+
+| Route | Role |
+|-------|------|
+| `ai-summary` | Spoiler-safe Gemini summaries (cached) |
+| `list-watchlists` | Lists for the signed-in user |
+| `create-watchlist` | Create list + owner membership |
+| `get-watchlist` | List metadata, items, and caller's per-item state |
+| `add-watchlist-item` | Add a movie or series to a list |
+| `delete-watchlist-item` | Remove a title from a list for all members |
+| `delete-watchlist` | Delete a list (owner) |
+| `join-watchlist` | Join or reactivate via invite token |
+
+All watchlist routes expect a Firebase ID token (`Authorization: Bearer …`).
 
 ## Scripts
 
 ```bash
-npm run dev
-npm run build
-npm run lint
-npm run test
-npm run preview
+npm run dev      # Vite + local /api stubs
+npm run build    # Typecheck + production bundle
+npm run lint     # ESLint
+npm run test     # Vitest (API route unit tests)
+npm run preview  # Preview production build
 ```
 
-## Operational Notes
+## Operational notes
 
-- `VITE_TMDB_API_KEY` is required for movie and series discovery. The TMDB base URL and image base URL have safe defaults, but can be overridden with `VITE_TMDB_BASE_URL` and `VITE_TMDB_IMAGE_BASE_URL`.
-- Firebase is optional. Without Firebase variables, browsing, local watchlists, CSV export, and TMDB-backed detail pages still work. Add client Firebase variables for shared watchlists and Google auth; add server Firebase variables for invite joins and cached AI summaries.
-- Set up Firebase project, enable Firestore and Google Auth. Deploy Firestore security rules from [FIREBASE_SETUP.md](./FIREBASE_SETUP.md).
-- API routes live in `/api/ai-summary`, `/api/add-watchlist-item`, `/api/create-watchlist`, `/api/delete-watchlist`, `/api/get-watchlist`, `/api/join-watchlist`, and `/api/list-watchlists`. They keep `GEMINI_API_KEY` and Firebase service account credentials server-side only.
-- Third-party failure modes to expect: TMDB network/rate-limit errors, Gemini quota or key errors, Firebase auth misconfiguration, and browser storage quota/security failures. The app should show recoverable UI states for these instead of crashing.
+- **TMDB** is required for meaningful content; handle rate limits and network errors in the UI.
+- **Firebase** is optional for solo use; shared lists and invite flows need client + Admin config. Deploy Firestore rules from [FIREBASE_SETUP.md](./FIREBASE_SETUP.md).
+- **Gemini** failures surface as recoverable usher errors with retry.
+- **localStorage** can hit quota or be cleared by the user; cloud lists are the durable option when signed in.
+- Third-party failure modes: TMDB rate limits, Gemini quota errors, Firebase misconfiguration, and browser storage limits. The UI should surface recoverable errors instead of crashing.
 
-## Maintenance Checklist
+## Maintenance checklist
 
-Before leaving the code untouched for a while, run:
+Before shipping or after a long pause:
 
 ```bash
 npm run lint
@@ -102,11 +159,11 @@ npm run build
 npm audit --omit=dev
 ```
 
-Smoke-test these flows locally or in a preview deploy:
+Smoke-test:
 
-- Search and filter movies/series
-- Movie and series detail pages
-- Local watchlist add/remove/rate/export
-- Cloud watchlist create/delete/import
-- Invite link join flow
-- AI summary on detail pages
+- [ ] Search and filters (movie + series)
+- [ ] Movie and series detail (trailer, similar, Magic Link if IMDb id exists)
+- [ ] Local watchlist: add, rate, favourite, watched, export
+- [ ] Sign in → create shared list → copy invite → join in another session
+- [ ] Shared list: add title, toggle state, remove title, delete list (owner)
+- [ ] Tiny Usher on a detail page and a shared list row

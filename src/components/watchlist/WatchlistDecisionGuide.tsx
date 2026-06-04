@@ -5,13 +5,22 @@ import { useState } from 'react'
 import { aiSummaryKeys, getAiSummary } from '@/api/aiSummaries'
 import { Button } from '@/components/ui/Button'
 import { getErrorCopy } from '@/lib/errors'
+import { cn } from '@/lib/utils'
 import type { AiSummaryRequest } from '@/types/ai'
 
 type WatchlistDecisionGuideProps = {
   input: AiSummaryRequest
+  layout?: 'block' | 'inline'
+  trigger?: 'button' | 'icon'
 }
 
-export function WatchlistDecisionGuide({ input }: WatchlistDecisionGuideProps) {
+export function WatchlistDecisionGuide({
+  input,
+  layout = 'block',
+  trigger = 'button',
+}: WatchlistDecisionGuideProps) {
+  const isInline = layout === 'inline'
+  const isIconTrigger = trigger === 'icon'
   const [isOpen, setIsOpen] = useState(false)
   const summary = useQuery({
     queryKey: aiSummaryKeys.summary(input.mediaType, input.tmdbId),
@@ -22,16 +31,45 @@ export function WatchlistDecisionGuide({ input }: WatchlistDecisionGuideProps) {
   const errorCopy = summary.error ? getErrorCopy(summary.error) : null
 
   if (!isOpen) {
+    if (isIconTrigger) {
+      return (
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="touch-manipulation"
+          aria-label="Ask tiny usher"
+          onClick={() => setIsOpen(true)}
+        >
+          <Sparkles className="size-4" aria-hidden="true" />
+        </Button>
+      )
+    }
+
     return (
-      <Button type="button" size="sm" className="mt-3 w-full" onClick={() => setIsOpen(true)}>
+      <Button
+        type="button"
+        size="sm"
+        variant={isInline ? 'ghost' : undefined}
+        className={cn(
+          'touch-manipulation',
+          isInline ? 'mt-2 h-8 px-2 text-slate-400 hover:text-white' : 'mt-3 w-full min-h-11',
+        )}
+        onClick={() => setIsOpen(true)}
+      >
         <Sparkles className="size-4" aria-hidden="true" />
         Ask tiny usher
       </Button>
     )
   }
 
-  return (
-    <div className="mt-3 rounded-2xl border border-sky-300/15 bg-sky-300/[0.06] p-3">
+  const panel = (
+    <div
+      className={cn(
+        'rounded-2xl border border-sky-300/15 bg-sky-300/[0.06] p-3',
+        isIconTrigger ? 'w-full basis-full' : isInline ? 'mt-2' : 'mt-3',
+      )}
+    >
       <div className="flex items-start gap-3">
         <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-sky-300/20 bg-[#05070c]">
           <Clapperboard className="size-5 text-sky-200" aria-hidden="true" />
@@ -41,7 +79,7 @@ export function WatchlistDecisionGuide({ input }: WatchlistDecisionGuideProps) {
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-200">Tiny usher</p>
             <button
               type="button"
-              className="rounded-full px-2 text-xs font-semibold text-slate-500 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300"
+              className="min-h-11 rounded-full px-3 text-xs font-semibold text-slate-500 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300 touch-manipulation sm:min-h-0 sm:px-2"
               onClick={() => setIsOpen(false)}
             >
               Hide
@@ -79,4 +117,24 @@ export function WatchlistDecisionGuide({ input }: WatchlistDecisionGuideProps) {
       </div>
     </div>
   )
+
+  if (isIconTrigger) {
+    return (
+      <>
+        <Button
+          type="button"
+          size="icon"
+          variant="primary"
+          className="touch-manipulation"
+          aria-label="Close tiny usher"
+          onClick={() => setIsOpen(false)}
+        >
+          <Sparkles className="size-4" aria-hidden="true" />
+        </Button>
+        {panel}
+      </>
+    )
+  }
+
+  return panel
 }

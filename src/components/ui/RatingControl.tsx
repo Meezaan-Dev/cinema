@@ -5,11 +5,12 @@ import { cn } from '@/lib/utils'
 type RatingControlProps = {
   value?: number
   onChange: (value?: number) => void
+  disabled?: boolean
 }
 
-export function RatingControl({ value, onChange }: RatingControlProps) {
+export function RatingControl({ value, onChange, disabled }: RatingControlProps) {
   return (
-    <div className="flex flex-wrap items-center gap-1" aria-label="Personal rating">
+    <div className="flex items-center gap-0.5" aria-label="Personal rating">
       {Array.from({ length: 5 }).map((_, index) => {
         const rating = index + 1
         const active = Boolean(value && value >= rating)
@@ -17,8 +18,9 @@ export function RatingControl({ value, onChange }: RatingControlProps) {
           <button
             key={rating}
             type="button"
+            disabled={disabled}
             onClick={() => onChange(value === rating ? undefined : rating)}
-            className="rounded-full p-1 text-slate-500 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+            className="rounded-full p-1 text-slate-500 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 disabled:pointer-events-none disabled:opacity-45 touch-manipulation"
             aria-label={`Rate ${rating} out of 5`}
           >
             <Star
