@@ -18,7 +18,7 @@ export function RouteErrorPage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[#05070c] px-4 text-slate-100">
+    <main className="grid min-h-screen place-items-center bg-[#14181C] px-4 text-white">
       <div className="w-full max-w-2xl">
         <StatusState title={copy.title} message={copy.message} type="error" />
         <div className="mt-5 flex justify-center">

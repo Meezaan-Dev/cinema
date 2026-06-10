@@ -10,11 +10,14 @@ describe('ai schemas', () => {
         takeaway: 'A tense, compact watch.',
         bestFor: ['Thriller night'],
         skipIf: ['You want comedy'],
+        whatMakesItSpecial: 'Exceptional performances.',
+        similarTitles: ['Breaking Bad', 'Ozark'],
+        recommendationScore: 8,
         tone: 'Tense',
         pacing: 'Fast',
         spoilerFree: true,
       }),
-    ).toMatchObject({ spoilerFree: true })
+    ).toMatchObject({ spoilerFree: true, recommendationScore: 8 })
   })
 
   it('rejects invalid JSON and normalizes malformed Gemini fields', () => {
@@ -22,7 +25,7 @@ describe('ai schemas', () => {
     expect(parseGeminiJson('{"takeaway":false}', aiSummarySchema)).toMatchObject({
       ok: true,
       data: {
-        takeaway: 'A spoiler-free decision guide is not available yet.',
+        takeaway: 'A spoiler-free overview is not available yet.',
         bestFor: [],
         spoilerFree: true,
       },

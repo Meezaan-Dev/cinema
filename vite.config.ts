@@ -5,13 +5,6 @@ import path from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import aiSummaryHandler from './api/ai-summary'
-import addWatchlistItemHandler from './api/add-watchlist-item'
-import createWatchlistHandler from './api/create-watchlist'
-import deleteWatchlistItemHandler from './api/delete-watchlist-item'
-import deleteWatchlistHandler from './api/delete-watchlist'
-import getWatchlistHandler from './api/get-watchlist'
-import joinWatchlistHandler from './api/join-watchlist'
-import listWatchlistsHandler from './api/list-watchlists'
 
 function setProcessEnvFromVite(name: string, value: string | undefined) {
   if (!process.env[name] && value) {
@@ -44,9 +37,8 @@ type DevApiResponse = {
 
 function createJsonDevApi(pathname: string, handler: (req: { method?: string; body?: unknown; headers?: IncomingMessage['headers'] }, res: DevApiResponse) => Promise<void>): Plugin {
   return {
-    name: `absolute-cinema-dev-api-${pathname}`,
+    name: `cinema-dev-api-${pathname}`,
     configureServer(server: ViteDevServer) {
-      // Mirrors Vercel serverless JSON routes during local Vite dev.
       server.middlewares.use(pathname, async (req: IncomingMessage, res: ServerResponse) => {
         const body = await readJsonBody(req)
 
@@ -81,29 +73,16 @@ function createJsonDevApi(pathname: string, handler: (req: { method?: string; bo
   }
 }
 
-// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   setProcessEnvFromVite('GEMINI_API_KEY', env.GEMINI_API_KEY)
   setProcessEnvFromVite('GEMINI_MODEL', env.GEMINI_MODEL)
-  setProcessEnvFromVite('FIREBASE_PROJECT_ID', env.FIREBASE_PROJECT_ID || env.VITE_FIREBASE_PROJECT_ID)
-  setProcessEnvFromVite('FIREBASE_SERVICE_ACCOUNT_KEY', env.FIREBASE_SERVICE_ACCOUNT_KEY)
-  setProcessEnvFromVite('FIREBASE_SERVICE_ACCOUNT_KEY_BASE64', env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64)
-  setProcessEnvFromVite('FIREBASE_SERVICE_ACCOUNT_FILE', env.FIREBASE_SERVICE_ACCOUNT_FILE)
-  setProcessEnvFromVite('GOOGLE_APPLICATION_CREDENTIALS', env.GOOGLE_APPLICATION_CREDENTIALS)
 
   return {
     plugins: [
       react(),
       tailwindcss(),
-      createJsonDevApi('/api/add-watchlist-item', addWatchlistItemHandler),
       createJsonDevApi('/api/ai-summary', aiSummaryHandler),
-      createJsonDevApi('/api/create-watchlist', createWatchlistHandler),
-      createJsonDevApi('/api/delete-watchlist-item', deleteWatchlistItemHandler),
-      createJsonDevApi('/api/delete-watchlist', deleteWatchlistHandler),
-      createJsonDevApi('/api/get-watchlist', getWatchlistHandler),
-      createJsonDevApi('/api/join-watchlist', joinWatchlistHandler),
-      createJsonDevApi('/api/list-watchlists', listWatchlistsHandler),
     ],
     resolve: {
       alias: {
@@ -112,13 +91,6 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       chunkSizeWarningLimit: 600,
-    },
-    server: {
-      headers: {
-        // Allow Firebase Auth popups to work properly
-        // Firebase signInWithPopup() requires access to window.closed on the popup
-        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
-      },
     },
   }
 })

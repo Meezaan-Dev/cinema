@@ -1,4 +1,5 @@
 import { AppError } from '@/lib/errors'
+import { sanitizeAiSummaryRequest } from '@/lib/sanitize'
 import { aiSummarySchema, type AiSummary, type AiSummaryRequest } from '@/types/ai'
 
 export const aiSummaryKeys = {
@@ -6,12 +7,17 @@ export const aiSummaryKeys = {
 }
 
 export async function getAiSummary(input: AiSummaryRequest): Promise<AiSummary> {
+  const payload = sanitizeAiSummaryRequest(input)
+  if (!payload.tmdbId || !payload.title) {
+    throw new AppError('invalid-data', 'A valid title is required for Usher.')
+  }
+
   let response: Response
   try {
     response = await fetch('/api/ai-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
+      body: JSON.stringify(payload),
     })
   } catch {
     throw new AppError('network', 'The AI summary endpoint could not be reached.')

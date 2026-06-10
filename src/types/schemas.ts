@@ -1,7 +1,18 @@
 import { z } from 'zod'
 
-const nullablePathSchema = z.string().nullable().catch(null)
-const nullableExternalIdSchema = z.string().nullable().catch(null)
+import { sanitizeImdbId, sanitizeTmdbImagePath, sanitizeYoutubeKey } from '@/lib/sanitize'
+
+const nullablePathSchema = z
+  .string()
+  .nullable()
+  .catch(null)
+  .transform((path) => sanitizeTmdbImagePath(path))
+
+const nullableExternalIdSchema = z
+  .string()
+  .nullable()
+  .catch(null)
+  .transform((id) => sanitizeImdbId(id))
 
 export const tmdbGenreSchema = z.object({
   id: z.number().int(),
@@ -102,14 +113,19 @@ export const tmdbCreditsSchema = z.object({
   cast: z.array(tmdbCastMemberSchema).catch([]),
 })
 
-export const tmdbVideoSchema = z.object({
-  id: z.string(),
-  key: z.string(),
-  name: z.string().catch('Trailer'),
-  site: z.string().catch(''),
-  type: z.string().catch(''),
-  official: z.boolean().catch(false),
-})
+export const tmdbVideoSchema = z
+  .object({
+    id: z.string(),
+    key: z.string(),
+    name: z.string().catch('Trailer'),
+    site: z.string().catch(''),
+    type: z.string().catch(''),
+    official: z.boolean().catch(false),
+  })
+  .transform((video) => ({
+    ...video,
+    key: video.site === 'YouTube' ? sanitizeYoutubeKey(video.key) ?? '' : video.key.trim().slice(0, 32),
+  }))
 
 export const tmdbVideosSchema = z.object({
   id: z.number().int(),
@@ -134,30 +150,3 @@ export const tmdbGenresResponseSchema = z.object({
   genres: z.array(tmdbGenreSchema).catch([]),
 })
 
-const validIsoDate = z.string().datetime().catch(() => new Date().toISOString())
-
-export const userMovieSchema = z
-  .object({
-    id: z.coerce.number().int().positive(),
-    title: z.string().trim().min(1).catch('Untitled'),
-    posterPath: z.string().nullable().catch(null),
-    backdropPath: z.string().nullable().catch(null),
-    releaseDate: z.string().catch(''),
-    voteAverage: z.coerce.number().min(0).max(10).catch(0),
-    genres: z.array(z.string()).catch([]),
-    addedAt: validIsoDate,
-    isWatched: z.coerce.boolean().catch(false),
-    isFavourite: z.coerce.boolean().catch(false),
-    personalRating: z.coerce.number().min(1).max(5).optional().catch(undefined),
-    notes: z.string().optional().catch(undefined),
-    mediaType: z.enum(['movie', 'tv']).optional().catch('movie'),
-  })
-  .transform((movie) => ({
-    ...movie,
-    genres: movie.genres.map((genre) => genre.trim()).filter(Boolean),
-  }))
-
-export const watchlistStorageSchema = z.object({
-  version: z.literal(1),
-  movies: z.array(userMovieSchema).catch([]),
-})
