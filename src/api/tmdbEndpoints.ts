@@ -32,11 +32,16 @@ export type DiscoverParams = {
 
 export const queryKeys = {
   trending: ['movies', 'trending'] as const,
+  trendingAll: ['all', 'trending'] as const,
   popular: ['movies', 'popular'] as const,
+  popularSeries: ['series', 'popular'] as const,
   newMovies: ['movies', 'new'] as const,
   newSeries: ['series', 'new'] as const,
   topRated: ['movies', 'top-rated'] as const,
+  topRatedSeries: ['series', 'top-rated'] as const,
+  upcoming: ['movies', 'upcoming'] as const,
   genres: ['genres'] as const,
+  tvGenres: ['genres', 'tv'] as const,
   search: (query: string, filters: DiscoverParams) => ['movies', 'search', query, filters] as const,
   searchSeries: (query: string, filters: DiscoverParams) => ['series', 'search', query, filters] as const,
   searchAll: (query: string, filters: DiscoverParams) => ['all', 'search', query, filters] as const,
@@ -47,8 +52,11 @@ export const queryKeys = {
   seriesDetail: (seriesId: string | number) => ['series', seriesId] as const,
   seriesExternalIds: (seriesId: string | number) => ['series', seriesId, 'external-ids'] as const,
   credits: (movieId: string | number) => ['movie', movieId, 'credits'] as const,
+  seriesCredits: (seriesId: string | number) => ['series', seriesId, 'credits'] as const,
   videos: (movieId: string | number) => ['movie', movieId, 'videos'] as const,
+  seriesVideos: (seriesId: string | number) => ['series', seriesId, 'videos'] as const,
   similar: (movieId: string | number) => ['movie', movieId, 'similar'] as const,
+  similarSeries: (seriesId: string | number) => ['series', seriesId, 'similar'] as const,
 }
 
 export function getTrendingMovies() {
@@ -59,11 +67,27 @@ export function getTrendingMovies() {
   )
 }
 
+export function getTrendingAll() {
+  return tmdbRequest<TmdbPagedResponse<TmdbMovie>>(
+    '/trending/all/week',
+    {},
+    tmdbPagedResponseSchema(tmdbMovieSchema),
+  )
+}
+
 export function getPopularMovies() {
   return tmdbRequest<TmdbPagedResponse<TmdbMovie>>(
     '/movie/popular',
     {},
     tmdbPagedResponseSchema(tmdbMovieSchema),
+  )
+}
+
+export function getPopularSeries() {
+  return tmdbRequest<TmdbPagedResponse<TmdbMovie>>(
+    '/tv/popular',
+    {},
+    tmdbPagedResponseSchema(tmdbSeriesSchema),
   )
 }
 
@@ -91,8 +115,28 @@ export function getTopRatedMovies() {
   )
 }
 
+export function getTopRatedSeries() {
+  return tmdbRequest<TmdbPagedResponse<TmdbMovie>>(
+    '/tv/top_rated',
+    {},
+    tmdbPagedResponseSchema(tmdbSeriesSchema),
+  )
+}
+
+export function getUpcomingMovies() {
+  return tmdbRequest<TmdbPagedResponse<TmdbMovie>>(
+    '/movie/upcoming',
+    {},
+    tmdbPagedResponseSchema(tmdbMovieSchema),
+  )
+}
+
 export function getGenres() {
   return tmdbRequest<{ genres: TmdbGenre[] }>('/genre/movie/list', {}, tmdbGenresResponseSchema)
+}
+
+export function getTvGenres() {
+  return tmdbRequest<{ genres: TmdbGenre[] }>('/genre/tv/list', {}, tmdbGenresResponseSchema)
 }
 
 export function searchMovies(query: string, filters: DiscoverParams = {}) {
@@ -153,8 +197,16 @@ export function getMovieCredits(movieId: string | number) {
   return tmdbRequest<TmdbCredits>(`/movie/${movieId}/credits`, {}, tmdbCreditsSchema)
 }
 
+export function getSeriesCredits(seriesId: string | number) {
+  return tmdbRequest<TmdbCredits>(`/tv/${seriesId}/credits`, {}, tmdbCreditsSchema)
+}
+
 export function getMovieVideos(movieId: string | number) {
   return tmdbRequest<TmdbVideos>(`/movie/${movieId}/videos`, {}, tmdbVideosSchema)
+}
+
+export function getSeriesVideos(seriesId: string | number) {
+  return tmdbRequest<TmdbVideos>(`/tv/${seriesId}/videos`, {}, tmdbVideosSchema)
 }
 
 export function getSimilarMovies(movieId: string | number) {
@@ -162,5 +214,13 @@ export function getSimilarMovies(movieId: string | number) {
     `/movie/${movieId}/recommendations`,
     {},
     tmdbPagedResponseSchema(tmdbMovieSchema),
+  )
+}
+
+export function getSimilarSeries(seriesId: string | number) {
+  return tmdbRequest<TmdbPagedResponse<TmdbMovie>>(
+    `/tv/${seriesId}/recommendations`,
+    {},
+    tmdbPagedResponseSchema(tmdbSeriesSchema),
   )
 }

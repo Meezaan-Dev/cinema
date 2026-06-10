@@ -3,30 +3,49 @@ import { ExternalLink, Play, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
 import { aiSummaryKeys, getAiSummary } from '@/api/aiSummaries'
-import { getMovieCredits, getMovieDetails, getMovieVideos, getSimilarMovies, queryKeys } from '@/api/tmdbEndpoints'
-import { MovieActions } from '@/components/movie/MovieActions'
+import {
+  getMovieCredits,
+  getMovieDetails,
+  getMovieVideos,
+  getSimilarMovies,
+  queryKeys,
+} from '@/api/tmdbEndpoints'
+import { CastRail } from '@/components/movie/CastRail'
 import { MoviePoster } from '@/components/movie/MoviePoster'
 import { MovieSection } from '@/components/movie/MovieSection'
+import { UsherCard } from '@/components/usher/UsherCard'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ErrorState, StatusState } from '@/components/ui/StatusState'
 import { formatRating, formatRuntime, getYear, imageUrl } from '@/lib/formatters'
+import { buildImdbUrl, buildMagicLinkUrl, sanitizeYoutubeKey } from '@/lib/sanitize'
 import { parsePositiveIntegerParam } from '@/lib/routeParams'
-import { useAuth } from '@/hooks/useAuth'
-import { useWatchlist } from '@/hooks/useWatchlist'
-import { useWatchlistPicker } from '@/hooks/useWatchlistPicker'
-import { toUserMovie } from '@/types/movie'
 
 export function MovieDetailPage() {
   const { movieId = '' } = useParams()
   const movieTmdbId = parsePositiveIntegerParam(movieId)
   const isValidMovieId = movieTmdbId !== null
-  const { user } = useAuth()
-  const watchlist = useWatchlist()
-  const watchlistPicker = useWatchlistPicker()
-  const details = useQuery({ queryKey: queryKeys.detail(movieTmdbId ?? movieId), queryFn: () => getMovieDetails(movieTmdbId ?? ''), enabled: isValidMovieId })
-  const credits = useQuery({ queryKey: queryKeys.credits(movieTmdbId ?? movieId), queryFn: () => getMovieCredits(movieTmdbId ?? ''), enabled: isValidMovieId })
-  const videos = useQuery({ queryKey: queryKeys.videos(movieTmdbId ?? movieId), queryFn: () => getMovieVideos(movieTmdbId ?? ''), enabled: isValidMovieId })
-  const similar = useQuery({ queryKey: queryKeys.similar(movieTmdbId ?? movieId), queryFn: () => getSimilarMovies(movieTmdbId ?? ''), enabled: isValidMovieId })
+
+  const details = useQuery({
+    queryKey: queryKeys.detail(movieTmdbId ?? movieId),
+    queryFn: () => getMovieDetails(movieTmdbId ?? ''),
+    enabled: isValidMovieId,
+  })
+  const credits = useQuery({
+    queryKey: queryKeys.credits(movieTmdbId ?? movieId),
+    queryFn: () => getMovieCredits(movieTmdbId ?? ''),
+    enabled: isValidMovieId,
+  })
+  const videos = useQuery({
+    queryKey: queryKeys.videos(movieTmdbId ?? movieId),
+    queryFn: () => getMovieVideos(movieTmdbId ?? ''),
+    enabled: isValidMovieId,
+  })
+  const similar = useQuery({
+    queryKey: queryKeys.similar(movieTmdbId ?? movieId),
+    queryFn: () => getSimilarMovies(movieTmdbId ?? ''),
+    enabled: isValidMovieId,
+  })
+
   const movie = details.data
   const aiSummary = useQuery({
     queryKey: aiSummaryKeys.summary('movie', movieTmdbId ?? movieId),
@@ -44,13 +63,17 @@ export function MovieDetailPage() {
     retry: false,
   })
 
-  const saved = movie && !user ? watchlist.getSaved(movie) : undefined
-  const trailer = videos.data?.results.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ?? videos.data?.results.find((video) => video.site === 'YouTube')
+  const trailerCandidate =
+    videos.data?.results.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ??
+    videos.data?.results.find((video) => video.site === 'YouTube')
+  const trailerKey = sanitizeYoutubeKey(trailerCandidate?.key)
   const backdrop = imageUrl(movie?.backdrop_path, 'original')
+  const imdbUrl = buildImdbUrl(movie?.imdb_id)
+  const magicLinkUrl = buildMagicLinkUrl(movie?.imdb_id)
 
   if (!isValidMovieId) {
     return (
-      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <StatusState title="Movie not found" message="Movie URLs need a valid TMDB movie ID." />
       </section>
     )
@@ -58,100 +81,158 @@ export function MovieDetailPage() {
 
   if (details.isLoading) {
     return (
-      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
-        <Skeleton className="h-[420px] w-full" />
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <Skeleton className="h-[420px] w-full rounded-2xl" />
       </section>
     )
   }
 
   if (details.isError || !movie) {
     return (
-      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <ErrorState error={details.error} onRetry={() => details.refetch()} />
       </section>
     )
   }
 
-  const userMovie = toUserMovie(movie)
-  const imdbUrl = movie.imdb_id ? `https://www.imdb.com/title/${movie.imdb_id}/` : undefined
-  const magicLinkUrl = movie.imdb_id ? `https://www.playimdb.com/title/${movie.imdb_id}/` : undefined
-
   return (
     <>
       <section className="relative overflow-hidden">
-        {backdrop ? <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover opacity-48" /> : null}
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,12,.5),#05070c_88%)]" />
-        <div className="relative mx-auto grid max-w-7xl gap-6 px-3 py-8 sm:gap-8 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-16">
-          <MoviePoster path={movie.poster_path} title={movie.title} className="w-full shadow-[0_24px_70px_rgba(0,0,0,.48)] sm:w-72 lg:w-full" size="w780" />
-          <div className="max-w-4xl self-end">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-400">{getYear(movie.release_date)} • {formatRuntime(movie.runtime)}</p>
-            <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight text-white sm:text-6xl">{movie.title}</h1>
-            {movie.tagline ? <p className="mt-3 text-lg italic text-slate-300">{movie.tagline}</p> : null}
+        {backdrop ? (
+          <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" />
+        ) : null}
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,24,28,.4),#14181C_90%)]" />
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_1fr] lg:py-14">
+          <MoviePoster
+            path={movie.poster_path}
+            title={movie.title}
+            className="w-full shadow-[0_24px_60px_rgba(0,0,0,.5)] sm:w-64 lg:w-full"
+            size="w780"
+          />
+          <div className="max-w-3xl self-end">
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#99AABB]">
+              {getYear(movie.release_date)} · {formatRuntime(movie.runtime)}
+            </p>
+            <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+              {movie.title}
+            </h1>
+            {movie.tagline ? <p className="mt-3 text-lg italic text-[#99AABB]">{movie.tagline}</p> : null}
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              {movie.genres.map((genre) => <span key={genre.id} className="rounded-full border border-white/[0.08] bg-white/[0.08] px-3 py-1 text-sm text-slate-200">{genre.name}</span>)}
-              <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-[#05070c]">
-                <Star className="mr-1 inline size-4 fill-current" aria-hidden="true" />
-                {formatRating(movie.vote_average)} TMDB
+              {movie.genres.map((genre) => (
+                <span
+                  key={genre.id}
+                  className="rounded-full border border-white/[0.08] bg-[#1C2228] px-3 py-1 text-sm text-[#99AABB]"
+                >
+                  {genre.name}
+                </span>
+              ))}
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#00E054] px-3 py-1 text-sm font-semibold text-[#14181C]">
+                <Star className="size-4 fill-current" aria-hidden="true" />
+                {formatRating(movie.vote_average)}
               </span>
             </div>
-            <p className="mt-6 max-w-3xl text-base leading-7 text-slate-200">{movie.overview || 'No overview is available for this movie yet.'}</p>
-            <div className="mt-8 max-w-3xl">
-              <MovieActions
-                movie={userMovie}
-                saved={saved}
-                onAdd={watchlistPicker.open}
-                onRemove={watchlist.removeMovie}
-                onRate={watchlist.setRating}
-                magicLinkUrl={magicLinkUrl}
-                imdbUrl={imdbUrl}
-                aiSummary={aiSummary.data}
-                isAiSummaryLoading={aiSummary.isLoading}
-                aiSummaryError={aiSummary.error}
-                onAiSummaryRetry={() => {
-                  aiSummary.refetch()
-                }}
-              />
+            <p className="mt-6 max-w-2xl text-base leading-7 text-[#99AABB]">
+              {movie.overview || 'No overview is available for this movie yet.'}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {magicLinkUrl ? (
+                <a className="button-link button-link-accent" href={magicLinkUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="size-4" aria-hidden="true" />
+                  Magic Link
+                </a>
+              ) : null}
+              {imdbUrl ? (
+                <a className="button-link" href={imdbUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="size-4" aria-hidden="true" />
+                  View on IMDb
+                </a>
+              ) : null}
+              <a href="#usher" className="button-link">
+                Ask Usher
+              </a>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-3 py-8 sm:gap-8 sm:px-6 lg:grid-cols-[1fr_360px]">
-        <div>
-          <h2 className="text-2xl font-semibold text-white">Cast</h2>
-          {credits.isLoading ? <Skeleton className="mt-4 h-28" /> : null}
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {credits.data?.cast.slice(0, 8).map((person) => (
-              <div key={person.id} className="rounded-2xl border border-white/[0.07] bg-white/[0.045] p-4">
-                <p className="font-semibold text-white">{person.name}</p>
-                <p className="mt-1 text-sm text-slate-400">{person.character}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <aside className="rounded-2xl border border-white/[0.07] bg-white/[0.045] p-4">
-          <h2 className="text-xl font-semibold text-white">Trailer</h2>
-          {trailer ? (
-            <>
-              <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-black">
-                <iframe className="h-full w-full" src={`https://www.youtube.com/embed/${trailer.key}`} title={`${movie.title} trailer`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-              </div>
-              <a className="button-link mt-4 w-full" href={`https://www.youtube.com/watch?v=${trailer.key}`} target="_blank" rel="noreferrer">
-                <Play className="size-4" aria-hidden="true" />
-                Open trailer
-                <ExternalLink className="size-4" aria-hidden="true" />
-              </a>
-            </>
-          ) : (
-            <p className="mt-3 text-sm text-slate-400">No trailer is available from TMDB yet.</p>
-          )}
-        </aside>
+      <section id="usher" className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <UsherCard
+          summary={aiSummary.data}
+          isLoading={aiSummary.isLoading}
+          error={aiSummary.error}
+          onRetry={() => aiSummary.refetch()}
+        />
       </section>
 
-      <MovieSection title="Similar recommendations" movies={similar.data?.results.slice(0, 10)} isLoading={similar.isLoading} isError={similar.isError} error={similar.error} onRetry={() => similar.refetch()} savedByKey={user ? undefined : watchlist.byKey} onAdd={watchlistPicker.open} />
-      <div className="mx-auto max-w-7xl px-3 pb-10 sm:px-6">
-        <Link to="/search" className="text-sm font-medium text-slate-400 hover:text-white">Back to discovery</Link>
-      </div>
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <h2 className="text-2xl font-semibold text-white">Cast</h2>
+        <div className="mt-4">
+          <CastRail cast={credits.data?.cast.slice(0, 12) ?? []} isLoading={credits.isLoading} />
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <h2 className="text-2xl font-semibold text-white">Trailer</h2>
+        {trailerKey ? (
+          <div className="mt-4">
+            <div className="aspect-video max-w-3xl overflow-hidden rounded-xl bg-black">
+              <iframe
+                className="h-full w-full"
+                src={`https://www.youtube.com/embed/${trailerKey}`}
+                title={`${movie.title} trailer`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+            <a
+              className="button-link mt-4"
+              href={`https://www.youtube.com/watch?v=${trailerKey}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Play className="size-4" aria-hidden="true" />
+              Open on YouTube
+              <ExternalLink className="size-4" aria-hidden="true" />
+            </a>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-[#99AABB]">No trailer is available from TMDB yet.</p>
+        )}
+      </section>
+
+      <MovieSection
+        title="Similar Movies"
+        movies={similar.data?.results.slice(0, 10)}
+        isLoading={similar.isLoading}
+        isError={similar.isError}
+        error={similar.error}
+        onRetry={() => similar.refetch()}
+      />
+
+      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
+        <h2 className="text-xl font-semibold text-white">Details</h2>
+        <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
+            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">Release date</dt>
+            <dd className="mt-1 text-sm text-white">{movie.release_date || 'Unknown'}</dd>
+          </div>
+          <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
+            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">Status</dt>
+            <dd className="mt-1 text-sm text-white">{movie.status || 'Unknown'}</dd>
+          </div>
+          <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
+            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">Runtime</dt>
+            <dd className="mt-1 text-sm text-white">{formatRuntime(movie.runtime)}</dd>
+          </div>
+          <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
+            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">TMDB rating</dt>
+            <dd className="mt-1 text-sm text-white">{formatRating(movie.vote_average)} / 10</dd>
+          </div>
+        </dl>
+        <Link to="/" className="mt-8 inline-block text-sm font-medium text-[#99AABB] hover:text-white">
+          Back to Discover
+        </Link>
+      </section>
     </>
   )
 }

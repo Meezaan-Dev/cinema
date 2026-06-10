@@ -1,3 +1,5 @@
+import { sanitizeTmdbImagePath, sanitizeTmdbImageSize } from '@/lib/sanitize'
+
 export function getYear(date?: string) {
   return date ? new Date(date).getFullYear().toString() : 'TBA'
 }
@@ -14,7 +16,10 @@ export function formatRating(rating?: number) {
 }
 
 export function imageUrl(path: string | null | undefined, size = 'w500') {
-  if (!path) return null
+  const safePath = sanitizeTmdbImagePath(path)
+  if (!safePath) return null
+
   const base = import.meta.env.VITE_TMDB_IMAGE_BASE_URL || 'https://image.tmdb.org/t/p'
-  return `${base}/${size}${path}`
+  const safeSize = sanitizeTmdbImageSize(size)
+  return `${base}/${safeSize}${safePath}`
 }

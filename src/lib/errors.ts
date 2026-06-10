@@ -2,7 +2,6 @@ export type AppErrorCode =
   | 'missing-api-key'
   | 'network'
   | 'http'
-  | 'watchlist'
   | 'rate-limit'
   | 'not-found'
   | 'auth'
@@ -33,13 +32,6 @@ export function getErrorCopy(error: unknown) {
     }
 
     if (error.code === 'auth') {
-      if (!error.message.includes('TMDB')) {
-        return {
-          title: 'Sign-in required',
-          message: error.message || 'Sign in with Google and try again.',
-        }
-      }
-
       return {
         title: 'TMDB rejected the key',
         message: 'Check that your TMDB v3 API key is correct and active.',
@@ -71,20 +63,6 @@ export function getErrorCopy(error: unknown) {
       return {
         title: 'TMDB is unavailable',
         message: 'TMDB returned an error. Wait a moment, then try again.',
-      }
-    }
-
-    if (error.code === 'watchlist') {
-      if (error.status === 403) {
-        return {
-          title: 'Watchlist access unavailable',
-          message: error.message || 'You are not a member of this watchlist.',
-        }
-      }
-
-      return {
-        title: 'Watchlist unavailable',
-        message: error.message || 'The watchlist service returned an error. Wait a moment, then try again.',
       }
     }
 

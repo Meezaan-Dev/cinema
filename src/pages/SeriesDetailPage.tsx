@@ -1,36 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, ListVideo, Star } from 'lucide-react'
+import { CalendarDays, ExternalLink, ListVideo, Play, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
 import { aiSummaryKeys, getAiSummary } from '@/api/aiSummaries'
-import { getSeriesDetails, getSeriesExternalIds, queryKeys } from '@/api/tmdbEndpoints'
-import { MovieActions } from '@/components/movie/MovieActions'
+import {
+  getSeriesCredits,
+  getSeriesDetails,
+  getSeriesExternalIds,
+  getSeriesVideos,
+  getSimilarSeries,
+  queryKeys,
+} from '@/api/tmdbEndpoints'
+import { CastRail } from '@/components/movie/CastRail'
 import { MoviePoster } from '@/components/movie/MoviePoster'
+import { MovieSection } from '@/components/movie/MovieSection'
+import { UsherCard } from '@/components/usher/UsherCard'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ErrorState, StatusState } from '@/components/ui/StatusState'
 import { formatRating, getYear, imageUrl } from '@/lib/formatters'
+import { buildImdbUrl, buildMagicLinkUrl, sanitizeYoutubeKey } from '@/lib/sanitize'
 import { parsePositiveIntegerParam } from '@/lib/routeParams'
-import { useAuth } from '@/hooks/useAuth'
-import { useWatchlist } from '@/hooks/useWatchlist'
-import { useWatchlistPicker } from '@/hooks/useWatchlistPicker'
-import type { TmdbSeriesDetails } from '@/types/tmdb'
-import type { UserMovie } from '@/types/movie'
-
-function toUserSeries(series: TmdbSeriesDetails): UserMovie {
-  return {
-    id: series.id,
-    title: series.name,
-    posterPath: series.poster_path,
-    backdropPath: series.backdrop_path,
-    releaseDate: series.first_air_date,
-    voteAverage: series.vote_average,
-    genres: series.genres.map((genre) => genre.name),
-    addedAt: new Date().toISOString(),
-    isWatched: false,
-    isFavourite: false,
-    mediaType: 'tv',
-  }
-}
 
 function displayDate(date: string) {
   return date || 'TBA'
@@ -40,9 +29,7 @@ export function SeriesDetailPage() {
   const { seriesId = '' } = useParams()
   const seriesTmdbId = parsePositiveIntegerParam(seriesId)
   const isValidSeriesId = seriesTmdbId !== null
-  const { user } = useAuth()
-  const watchlist = useWatchlist()
-  const watchlistPicker = useWatchlistPicker()
+
   const details = useQuery({
     queryKey: queryKeys.seriesDetail(seriesTmdbId ?? seriesId),
     queryFn: () => getSeriesDetails(seriesTmdbId ?? ''),
@@ -53,6 +40,22 @@ export function SeriesDetailPage() {
     queryFn: () => getSeriesExternalIds(seriesTmdbId ?? ''),
     enabled: isValidSeriesId,
   })
+  const credits = useQuery({
+    queryKey: queryKeys.seriesCredits(seriesTmdbId ?? seriesId),
+    queryFn: () => getSeriesCredits(seriesTmdbId ?? ''),
+    enabled: isValidSeriesId,
+  })
+  const videos = useQuery({
+    queryKey: queryKeys.seriesVideos(seriesTmdbId ?? seriesId),
+    queryFn: () => getSeriesVideos(seriesTmdbId ?? ''),
+    enabled: isValidSeriesId,
+  })
+  const similar = useQuery({
+    queryKey: queryKeys.similarSeries(seriesTmdbId ?? seriesId),
+    queryFn: () => getSimilarSeries(seriesTmdbId ?? ''),
+    enabled: isValidSeriesId,
+  })
+
   const series = details.data
   const aiSummary = useQuery({
     queryKey: aiSummaryKeys.summary('tv', seriesTmdbId ?? seriesId),
@@ -71,10 +74,16 @@ export function SeriesDetailPage() {
   })
 
   const backdrop = imageUrl(series?.backdrop_path, 'original')
+  const imdbUrl = buildImdbUrl(externalIds.data?.imdb_id)
+  const magicLinkUrl = buildMagicLinkUrl(externalIds.data?.imdb_id)
+  const trailerCandidate =
+    videos.data?.results.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ??
+    videos.data?.results.find((video) => video.site === 'YouTube')
+  const trailerKey = sanitizeYoutubeKey(trailerCandidate?.key)
 
   if (!isValidSeriesId) {
     return (
-      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <StatusState title="Series not found" message="Series URLs need a valid TMDB series ID." />
       </section>
     )
@@ -82,93 +91,147 @@ export function SeriesDetailPage() {
 
   if (details.isLoading) {
     return (
-      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
-        <Skeleton className="h-[420px] w-full" />
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <Skeleton className="h-[420px] w-full rounded-2xl" />
       </section>
     )
   }
 
   if (details.isError || !series) {
     return (
-      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <ErrorState error={details.error} onRetry={() => details.refetch()} />
       </section>
     )
   }
 
-  const userSeries = toUserSeries(series)
-  const saved = user ? undefined : watchlist.getSaved(userSeries)
-  const imdbUrl = externalIds.data?.imdb_id ? `https://www.imdb.com/title/${externalIds.data.imdb_id}/` : undefined
-  const magicLinkUrl = externalIds.data?.imdb_id ? `https://www.playimdb.com/title/${externalIds.data.imdb_id}/` : undefined
-
   return (
     <>
       <section className="relative overflow-hidden">
-        {backdrop ? <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover opacity-48" /> : null}
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,12,.5),#05070c_88%)]" />
-        <div className="relative mx-auto grid max-w-7xl gap-6 px-3 py-8 sm:gap-8 sm:px-6 lg:grid-cols-[320px_1fr] lg:py-16">
-          <MoviePoster path={series.poster_path} title={series.name} className="w-full shadow-[0_24px_70px_rgba(0,0,0,.48)] sm:w-72 lg:w-full" size="w780" />
-          <div className="max-w-4xl self-end">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-400">
-              {getYear(series.first_air_date)} • {series.status || 'Status unknown'}
+        {backdrop ? (
+          <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" />
+        ) : null}
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,24,28,.4),#14181C_90%)]" />
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_1fr] lg:py-14">
+          <MoviePoster
+            path={series.poster_path}
+            title={series.name}
+            className="w-full shadow-[0_24px_60px_rgba(0,0,0,.5)] sm:w-64 lg:w-full"
+            size="w780"
+          />
+          <div className="max-w-3xl self-end">
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#99AABB]">
+              {getYear(series.first_air_date)} · {series.status || 'Status unknown'}
             </p>
-            <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight text-white sm:text-6xl">{series.name}</h1>
+            <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+              {series.name}
+            </h1>
             <div className="mt-5 flex flex-wrap items-center gap-2">
               {series.genres.map((genre) => (
-                <span key={genre.id} className="rounded-full border border-white/[0.08] bg-white/[0.08] px-3 py-1 text-sm text-slate-200">
+                <span
+                  key={genre.id}
+                  className="rounded-full border border-white/[0.08] bg-[#1C2228] px-3 py-1 text-sm text-[#99AABB]"
+                >
                   {genre.name}
                 </span>
               ))}
-              <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-[#05070c]">
-                <Star className="mr-1 inline size-4 fill-current" aria-hidden="true" />
-                {formatRating(series.vote_average)} TMDB
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#00E054] px-3 py-1 text-sm font-semibold text-[#14181C]">
+                <Star className="size-4 fill-current" aria-hidden="true" />
+                {formatRating(series.vote_average)}
               </span>
             </div>
-            <p className="mt-6 max-w-3xl text-base leading-7 text-slate-200">{series.overview || 'No overview is available for this series yet.'}</p>
-            <dl className="mt-6 grid max-w-3xl gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.06] p-4">
-                <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+            <p className="mt-6 max-w-2xl text-base leading-7 text-[#99AABB]">
+              {series.overview || 'No overview is available for this series yet.'}
+            </p>
+            <dl className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
+                <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">
                   <CalendarDays className="size-4" aria-hidden="true" />
                   First aired
                 </dt>
                 <dd className="mt-2 text-lg font-semibold text-white">{displayDate(series.first_air_date)}</dd>
               </div>
-              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.06] p-4">
-                <dt className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">Seasons</dt>
+              <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
+                <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">Seasons</dt>
                 <dd className="mt-2 text-lg font-semibold text-white">{series.number_of_seasons}</dd>
               </div>
-              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.06] p-4">
-                <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+              <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
+                <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">
                   <ListVideo className="size-4" aria-hidden="true" />
                   Episodes
                 </dt>
                 <dd className="mt-2 text-lg font-semibold text-white">{series.number_of_episodes}</dd>
               </div>
             </dl>
-            <div className="mt-8 max-w-3xl">
-              <MovieActions
-                movie={userSeries}
-                saved={saved}
-                onAdd={watchlistPicker.open}
-                onRemove={watchlist.removeMovie}
-                onRate={watchlist.setRating}
-                magicLinkUrl={magicLinkUrl}
-                imdbUrl={imdbUrl}
-                aiSummary={aiSummary.data}
-                isAiSummaryLoading={aiSummary.isLoading}
-                aiSummaryError={aiSummary.error}
-                onAiSummaryRetry={() => {
-                  aiSummary.refetch()
-                }}
-              />
+            <div className="mt-6 flex flex-wrap gap-3">
+              {magicLinkUrl ? (
+                <a className="button-link button-link-accent" href={magicLinkUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="size-4" aria-hidden="true" />
+                  Magic Link
+                </a>
+              ) : null}
+              {imdbUrl ? (
+                <a className="button-link" href={imdbUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="size-4" aria-hidden="true" />
+                  View on IMDb
+                </a>
+              ) : null}
+              <a href="#usher" className="button-link">
+                Ask Usher
+              </a>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
+      <section id="usher" className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <UsherCard
+          summary={aiSummary.data}
+          isLoading={aiSummary.isLoading}
+          error={aiSummary.error}
+          onRetry={() => aiSummary.refetch()}
+        />
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <h2 className="text-2xl font-semibold text-white">Cast</h2>
+        <div className="mt-4">
+          <CastRail cast={credits.data?.cast.slice(0, 12) ?? []} isLoading={credits.isLoading} />
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <h2 className="text-2xl font-semibold text-white">Trailer</h2>
+        {trailerKey ? (
+          <div className="mt-4">
+            <div className="aspect-video max-w-3xl overflow-hidden rounded-xl bg-black">
+              <iframe
+                className="h-full w-full"
+                src={`https://www.youtube.com/embed/${trailerKey}`}
+                title={`${series.name} trailer`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+            <a
+              className="button-link mt-4"
+              href={`https://www.youtube.com/watch?v=${trailerKey}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Play className="size-4" aria-hidden="true" />
+              Open on YouTube
+              <ExternalLink className="size-4" aria-hidden="true" />
+            </a>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-[#99AABB]">No trailer is available from TMDB yet.</p>
+        )}
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-5">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Episode guide</p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#99AABB]">Episode guide</p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">Seasons</h2>
         </div>
         {series.seasons.length === 0 ? (
@@ -176,14 +239,20 @@ export function SeriesDetailPage() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {series.seasons.map((season) => (
-              <article key={season.id} className="grid grid-cols-[92px_1fr] gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.045] p-3 sm:grid-cols-[116px_1fr]">
-                <MoviePoster path={season.poster_path} title={season.name} className="w-full rounded-xl" size="w342" />
+              <article
+                key={season.id}
+                className="grid grid-cols-[92px_1fr] gap-4 rounded-xl border border-white/[0.08] bg-[#1C2228] p-3 sm:grid-cols-[116px_1fr]"
+              >
+                <MoviePoster path={season.poster_path} title={season.name} className="w-full rounded-lg" size="w342" />
                 <div className="min-w-0 py-1">
                   <h3 className="line-clamp-2 text-base font-semibold text-white">{season.name}</h3>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {season.episode_count} {season.episode_count === 1 ? 'episode' : 'episodes'} • {displayDate(season.air_date)}
+                  <p className="mt-1 text-sm text-[#99AABB]">
+                    {season.episode_count} {season.episode_count === 1 ? 'episode' : 'episodes'} ·{' '}
+                    {displayDate(season.air_date)}
                   </p>
-                  {season.overview ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-300">{season.overview}</p> : null}
+                  {season.overview ? (
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#99AABB]">{season.overview}</p>
+                  ) : null}
                 </div>
               </article>
             ))}
@@ -191,8 +260,20 @@ export function SeriesDetailPage() {
         )}
       </section>
 
-      <div className="mx-auto max-w-7xl px-3 pb-10 sm:px-6">
-        <Link to="/search" className="text-sm font-medium text-slate-400 hover:text-white">Back to discovery</Link>
+      <MovieSection
+        title="Similar Shows"
+        movies={similar.data?.results.slice(0, 10)}
+        isLoading={similar.isLoading}
+        isError={similar.isError}
+        error={similar.error}
+        onRetry={() => similar.refetch()}
+        exploreTo="/tv-shows"
+      />
+
+      <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
+        <Link to="/" className="text-sm font-medium text-[#99AABB] hover:text-white">
+          Back to Discover
+        </Link>
       </div>
     </>
   )

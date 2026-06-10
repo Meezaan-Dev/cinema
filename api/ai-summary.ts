@@ -1,5 +1,4 @@
 import { aiSummarySchema } from '../src/types/ai.js'
-import { getFirebaseAdminServices } from './firebaseAdmin.js'
 import {
   cleanString,
   cleanStringArray,
@@ -29,15 +28,24 @@ const responseSchema = {
     takeaway: { type: 'string' },
     bestFor: { type: 'array', items: { type: 'string' }, maxItems: 4 },
     skipIf: { type: 'array', items: { type: 'string' }, maxItems: 4 },
+    whatMakesItSpecial: { type: 'string' },
+    similarTitles: { type: 'array', items: { type: 'string' }, maxItems: 5 },
+    recommendationScore: { type: 'number' },
     tone: { type: 'string' },
     pacing: { type: 'string' },
     spoilerFree: { type: 'boolean' },
   },
-  required: ['takeaway', 'bestFor', 'skipIf', 'tone', 'pacing', 'spoilerFree'],
-}
-
-function getFirebaseDb() {
-  return getFirebaseAdminServices()?.db ?? null
+  required: [
+    'takeaway',
+    'bestFor',
+    'skipIf',
+    'whatMakesItSpecial',
+    'similarTitles',
+    'recommendationScore',
+    'tone',
+    'pacing',
+    'spoilerFree',
+  ],
 }
 
 function normalizeRequest(body: SummaryRequest) {
@@ -49,6 +57,11 @@ function normalizeRequest(body: SummaryRequest) {
     return null
   }
 
+  const runtime =
+    typeof body.runtime === 'number' && Number.isFinite(body.runtime) && body.runtime >= 0
+      ? Math.min(Math.round(body.runtime), 10_000)
+      : null
+
   return {
     mediaType,
     tmdbId,
@@ -56,7 +69,7 @@ function normalizeRequest(body: SummaryRequest) {
     overview: cleanString(body.overview, 1200),
     releaseDate: cleanString(body.releaseDate, 40),
     genres: cleanStringArray(body.genres, 8, 80),
-    runtime: typeof body.runtime === 'number' ? body.runtime : null,
+    runtime,
     status: cleanString(body.status, 80),
   }
 }
@@ -87,26 +100,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
-  const db = getFirebaseDb()
-
-  if (db) {
-    try {
-      const docRef = db.collection('ai_summaries').doc(`${input.mediaType}_${input.tmdbId}`)
-      const doc = await docRef.get()
-
-      if (doc.exists) {
-        const data = doc.data()
-        const cached = aiSummarySchema.safeParse(data?.summary)
-        if (cached.success) {
-          res.status(200).json(cached.data)
-          return
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching cached summary:', error)
-    }
-  }
-
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     res.status(501).json({ error: 'GEMINI_API_KEY is not configured on the server.' })
@@ -122,7 +115,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         parts: [
           {
             text:
-              'You write spoiler-free movie and TV decision guides. Do not reveal twists, endings, deaths, or late-story turns. Use only the provided metadata. Be concrete, concise, and helpful for deciding what to watch tonight.',
+              'You are Usher, a knowledgeable friend helping someone decide if a movie or TV show is worth their time. Write spoiler-free viewing guidance. Do not reveal twists, endings, deaths, or late-story turns. Use only the provided metadata. Be concrete, concise, and editorial.',
           },
         ],
       },
@@ -140,7 +133,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
                 runtime: input.runtime,
                 status: input.status,
                 instruction:
-                  'Return a decision helper: one short takeaway, best-for bullets, skip-if bullets, tone, pacing, and spoilerFree true.',
+                  'Return a spoiler-free decision guide: takeaway (2-3 sentences), bestFor bullets (who would enjoy), skipIf bullets (who should avoid), whatMakesItSpecial (one sentence), similarTitles (up to 5 well-known titles), recommendationScore (1-10 integer), tone, pacing, and spoilerFree true.',
               }),
             },
           ],
@@ -148,7 +141,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       ],
       generationConfig: {
         temperature: 0.25,
-        maxOutputTokens: 512,
+        maxOutputTokens: 768,
         responseMimeType: 'application/json',
         responseSchema,
       },
@@ -180,21 +173,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (!parsedOutput.ok) {
     res.status(parsedOutput.status).json({ error: parsedOutput.error })
     return
-  }
-
-  if (db) {
-    try {
-      await db.collection('ai_summaries').doc(`${input.mediaType}_${input.tmdbId}`).set({
-        mediaType: input.mediaType,
-        tmdbId: input.tmdbId,
-        title: input.title,
-        summary: parsedOutput.data,
-        model,
-        updatedAt: new Date(),
-      })
-    } catch (error) {
-      console.error('Error caching summary:', error)
-    }
   }
 
   res.status(200).json(parsedOutput.data)
