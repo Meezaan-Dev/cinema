@@ -22,6 +22,7 @@ type UsherCardProps = {
   isLoading?: boolean
   error?: unknown
   onRetry?: () => void
+  onRequestSummary?: () => void
   compact?: boolean
 }
 
@@ -116,11 +117,11 @@ function GuideTabContent({ summary, activeTab }: { summary: AiSummary; activeTab
   )
 }
 
-export function UsherCard({ summary, isLoading, error, onRetry, compact }: UsherCardProps) {
+export function UsherCard({ summary, isLoading, error, onRetry, onRequestSummary, compact }: UsherCardProps) {
   const [activeTab, setActiveTab] = useState<GuideTab>('bestFor')
   const errorCopy = error ? getErrorCopy(error) : null
 
-  if (!summary && !isLoading && !error) return null
+  if (!summary && !isLoading && !error && !onRequestSummary) return null
 
   return (
     <div className={cn('rounded-2xl border border-white/[0.08] bg-[#1C2228] p-5', compact && 'p-4')}>
@@ -139,6 +140,17 @@ export function UsherCard({ summary, isLoading, error, onRetry, compact }: Usher
           </Button>
         ) : null}
       </div>
+
+      {!summary && !isLoading && !error && onRequestSummary ? (
+        <div className="rounded-xl border border-white/[0.08] bg-[#202830] p-4 text-center">
+          <p className="text-sm text-[#99AABB]">
+            Get a spoiler-free take on whether this is worth your time.
+          </p>
+          <Button className="mt-4" type="button" onClick={onRequestSummary}>
+            Ask Usher
+          </Button>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#202830] p-4 text-sm text-[#99AABB]">

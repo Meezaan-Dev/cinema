@@ -58,9 +58,11 @@ Open the URL Vite prints (default `http://localhost:5173`).
 Create a `.env` file in the project root:
 
 ```env
-# Required for discovery
-VITE_TMDB_API_KEY=your_tmdb_v3_api_key
-VITE_TMDB_BASE_URL=https://api.themoviedb.org/3
+# Server-side TMDB credentials — never prefix with VITE_
+TMDB_API_KEY=your_tmdb_v3_api_key
+TMDB_BASE_URL=https://api.themoviedb.org/3
+
+# Client-side TMDB image CDN (not a secret)
 VITE_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
 
 # Server-side AI (optional; Usher on detail pages)
@@ -68,7 +70,8 @@ GEMINI_API_KEY=your_server_side_gemini_key
 GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
-Restart the dev server after changing env vars. Never prefix `GEMINI_API_KEY` with `VITE_` — it must stay on the server.
+Restart the dev server after changing env vars.  
+**Security note:** `TMDB_API_KEY`, `TMDB_BASE_URL`, and `GEMINI_API_KEY` must never be prefixed with `VITE_` — they must stay server-side only.
 
 | Configuration | Works without it |
 |---------------|------------------|
@@ -80,6 +83,7 @@ Restart the dev server after changing env vars. Never prefix `GEMINI_API_KEY` wi
 | Route | Role |
 |-------|------|
 | `ai-summary` | Spoiler-free Gemini summaries via Usher |
+| `tmdb` | Secure proxy for TMDB API requests (server-side only) |
 
 ## Scripts
 
@@ -93,6 +97,7 @@ npm run preview  # Preview production build
 
 ## Operational notes
 
+- **TMDB** credentials are server-side only, proxied through `/api/tmdb`. The API key is never exposed to the browser.
 - **TMDB** is required for meaningful content; handle rate limits and network errors in the UI.
 - **Gemini** failures surface as recoverable Usher errors with retry.
 - Third-party failure modes: TMDB rate limits and Gemini quota errors. The UI surfaces recoverable errors instead of crashing.

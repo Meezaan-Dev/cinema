@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, ExternalLink, ListVideo, Play, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
+import { useState } from 'react'
 
 import { aiSummaryKeys, getAiSummary } from '@/api/aiSummaries'
 import {
@@ -57,6 +58,7 @@ export function SeriesDetailPage() {
   })
 
   const series = details.data
+  const [showAiSummary, setShowAiSummary] = useState(false)
   const aiSummary = useQuery({
     queryKey: aiSummaryKeys.summary('tv', seriesTmdbId ?? seriesId),
     queryFn: () =>
@@ -69,7 +71,7 @@ export function SeriesDetailPage() {
         genres: series?.genres.map((genre) => genre.name) ?? [],
         status: series?.status,
       }),
-    enabled: Boolean(series),
+    enabled: Boolean(series) && showAiSummary,
     retry: false,
   })
 
@@ -190,6 +192,7 @@ export function SeriesDetailPage() {
           isLoading={aiSummary.isLoading}
           error={aiSummary.error}
           onRetry={() => aiSummary.refetch()}
+          onRequestSummary={() => setShowAiSummary(true)}
         />
       </section>
 

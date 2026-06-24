@@ -24,10 +24,10 @@ export class AppError extends Error {
 
 export function getErrorCopy(error: unknown) {
   if (error instanceof AppError) {
-    if (error.code === 'missing-api-key') {
+    if (error.code === 'missing-api-key' || error.code === 'configuration') {
       return {
-        title: 'TMDB key required',
-        message: 'Add VITE_TMDB_API_KEY to your .env file, then restart the dev server.',
+        title: 'TMDB not configured',
+        message: error.message || 'The server does not have TMDB credentials configured.',
       }
     }
 
@@ -89,12 +89,6 @@ export function getErrorCopy(error: unknown) {
       }
     }
 
-    if (error.code === 'configuration') {
-      return {
-        title: 'Configuration needed',
-        message: error.message,
-      }
-    }
   }
 
   return {

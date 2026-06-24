@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ExternalLink, Play, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
+import { useState } from 'react'
 
 import { aiSummaryKeys, getAiSummary } from '@/api/aiSummaries'
 import {
@@ -47,6 +48,7 @@ export function MovieDetailPage() {
   })
 
   const movie = details.data
+  const [showAiSummary, setShowAiSummary] = useState(false)
   const aiSummary = useQuery({
     queryKey: aiSummaryKeys.summary('movie', movieTmdbId ?? movieId),
     queryFn: () =>
@@ -59,7 +61,7 @@ export function MovieDetailPage() {
         genres: movie?.genres.map((genre) => genre.name) ?? [],
         runtime: movie?.runtime,
       }),
-    enabled: Boolean(movie),
+    enabled: Boolean(movie) && showAiSummary,
     retry: false,
   })
 
@@ -161,6 +163,7 @@ export function MovieDetailPage() {
           isLoading={aiSummary.isLoading}
           error={aiSummary.error}
           onRetry={() => aiSummary.refetch()}
+          onRequestSummary={() => setShowAiSummary(true)}
         />
       </section>
 
