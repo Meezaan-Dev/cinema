@@ -5,7 +5,7 @@ import path from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import aiSummaryHandler from './api/ai-summary'
-import tmdbProxyHandler from './api/tmdb-proxy'
+import tmdbHandler from './api/tmdb'
 
 function setProcessEnvFromVite(name: string, value: string | undefined) {
   if (!process.env[name] && value) {
@@ -86,7 +86,7 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       createJsonDevApi('/api/ai-summary', aiSummaryHandler),
-      createJsonDevApi('/api/tmdb', tmdbProxyHandler),
+      createJsonDevApi('/api/tmdb', tmdbHandler),
     ],
     resolve: {
       alias: {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isValidEndpoint, validateParams } from '../../api/tmdb-proxy.ts'
+import { isValidEndpoint, validateParams } from '../../api/tmdb.ts'
 
 describe('isValidEndpoint', () => {
   it('accepts known movie endpoints', () => {

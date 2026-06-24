@@ -9,7 +9,12 @@ import {
   shortLogBody,
   type ApiRequest,
   type ApiResponse,
+  type RequestParseResult,
 } from './serverUtils.js'
+
+function isResultError<T>(r: RequestParseResult<T>): r is { ok: false; status: number; error: string } {
+  return !r.ok
+}
 
 type SummaryRequest = {
   mediaType?: string
@@ -170,7 +175,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   const parsedOutput = parseGeminiJson(outputText, aiSummarySchema)
-  if (!parsedOutput.ok) {
+  if (isResultError(parsedOutput)) {
     res.status(parsedOutput.status).json({ error: parsedOutput.error })
     return
   }

@@ -2,7 +2,26 @@ import {
   parseJsonRequestBody,
   type ApiRequest,
   type ApiResponse,
+  type RequestParseResult,
 } from "./serverUtils.js";
+
+function env(name: string): string | undefined {
+  const proc = (globalThis as Record<string, unknown>).process;
+  if (
+    typeof proc === "object" &&
+    proc !== null &&
+    typeof (proc as Record<string, unknown>).env === "object"
+  ) {
+    return ((proc as Record<string, unknown>).env as Record<string, string | undefined>)[name];
+  }
+  return undefined;
+}
+
+function isRequestError<T>(
+  r: RequestParseResult<T>,
+): r is { ok: false; status: number; error: string } {
+  return !r.ok;
+}
 
 const ENDPOINT_PATTERNS = [
   /^\/trending\/(movie|all)\/week$/,
@@ -101,10 +120,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return;
   }
 
-  const apiKey = process.env.TMDB_API_KEY;
-  const baseUrl = (
-    process.env.TMDB_BASE_URL || "https://api.themoviedb.org/3"
-  ).replace(/\/+$/, "");
+  const apiKey = env("TMDB_API_KEY");
+  const baseUrl = (env("TMDB_BASE_URL") || "https://api.themoviedb.org/3").replace(
+    /\/+$/,
+    "",
+  );
 
   if (!apiKey) {
     console.error(
@@ -126,7 +146,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     endpoint?: unknown;
     params?: Record<string, unknown>;
   }>(req.body);
-  if (!parsed.ok) {
+  if (isRequestError(parsed)) {
     res
       .status(parsed.status)
       .json(errorResponse(parsed.error, "invalid-request", parsed.status));
