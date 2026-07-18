@@ -24,6 +24,7 @@ describe('isValidEndpoint', () => {
   it('accepts search endpoints', () => {
     expect(isValidEndpoint('/search/movie')).toBe(true)
     expect(isValidEndpoint('/search/tv')).toBe(true)
+    expect(isValidEndpoint('/search/person')).toBe(true)
   })
 
   it('accepts discover endpoints', () => {
@@ -39,6 +40,7 @@ describe('isValidEndpoint', () => {
   it('accepts detail endpoints with numeric IDs', () => {
     expect(isValidEndpoint('/movie/123')).toBe(true)
     expect(isValidEndpoint('/tv/456')).toBe(true)
+    expect(isValidEndpoint('/person/789')).toBe(true)
     expect(isValidEndpoint('/movie/999999')).toBe(true)
   })
 
@@ -50,6 +52,7 @@ describe('isValidEndpoint', () => {
     expect(isValidEndpoint('/tv/456/videos')).toBe(true)
     expect(isValidEndpoint('/tv/456/recommendations')).toBe(true)
     expect(isValidEndpoint('/tv/456/external_ids')).toBe(true)
+    expect(isValidEndpoint('/person/789/combined_credits')).toBe(true)
   })
 
   it('rejects unknown endpoints', () => {
@@ -67,6 +70,7 @@ describe('isValidEndpoint', () => {
   it('rejects endpoints with non-numeric IDs', () => {
     expect(isValidEndpoint('/movie/abc')).toBe(false)
     expect(isValidEndpoint('/tv/<script>')).toBe(false)
+    expect(isValidEndpoint('/person/abc')).toBe(false)
   })
 })
 

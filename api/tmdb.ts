@@ -27,13 +27,15 @@ const ENDPOINT_PATTERNS = [
   /^\/trending\/(movie|all)\/week$/,
   /^\/movie\/(popular|now_playing|top_rated|upcoming)$/,
   /^\/tv\/(popular|on_the_air|top_rated)$/,
-  /^\/search\/(movie|tv)$/,
+  /^\/search\/(movie|tv|person)$/,
   /^\/discover\/(movie|tv)$/,
   /^\/genre\/(movie|tv)\/list$/,
   /^\/movie\/\d+\/(credits|videos|recommendations)$/,
   /^\/tv\/\d+\/(credits|videos|recommendations|external_ids)$/,
   /^\/movie\/\d+$/,
   /^\/tv\/\d+$/,
+  /^\/person\/\d+$/,
+  /^\/person\/\d+\/combined_credits$/,
 ];
 
 const MAX_PAGE = 500;

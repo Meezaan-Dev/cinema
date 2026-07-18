@@ -12,6 +12,15 @@ export type TmdbMovie = {
   genre_ids?: number[]
 }
 
+export type TmdbPersonSearchResult = {
+  id: number
+  name: string
+  profile_path: string | null
+  known_for_department: string
+  popularity: number
+  known_for: TmdbMovie[]
+}
+
 export type TmdbGenre = {
   id: number
   name: string
@@ -90,4 +99,33 @@ export type TmdbVideos = {
 export type TmdbExternalIds = {
   id: number
   imdb_id: string | null
+}
+
+export type TmdbPersonDetails = {
+  id: number
+  name: string
+  biography: string
+  birthday: string | null
+  deathday: string | null
+  place_of_birth: string | null
+  profile_path: string | null
+  known_for_department: string
+  popularity: number
+}
+
+export type TmdbPersonCastCredit = TmdbMovie & {
+  character: string
+  credit_id: string
+}
+
+export type TmdbPersonCrewCredit = TmdbMovie & {
+  department: string
+  job: string
+  credit_id: string
+}
+
+export type TmdbPersonCombinedCredits = {
+  id: number
+  cast: TmdbPersonCastCredit[]
+  crew: TmdbPersonCrewCredit[]
 }
