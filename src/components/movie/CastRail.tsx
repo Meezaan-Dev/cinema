@@ -1,4 +1,5 @@
 import { User } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 import { imageUrl } from '@/lib/formatters'
 import type { TmdbCastMember } from '@/types/tmdb'
@@ -31,7 +32,11 @@ export function CastRail({ cast, isLoading }: CastRailProps) {
       {cast.map((person) => {
         const photo = imageUrl(person.profile_path, 'w185')
         return (
-          <article key={person.id} className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-3 text-center">
+          <Link
+            key={person.id}
+            to={`/person/${person.id}`}
+            className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-3 text-center transition hover:-translate-y-0.5 hover:border-[#00E054]/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
+          >
             {photo ? (
               <img
                 src={photo}
@@ -46,7 +51,7 @@ export function CastRail({ cast, isLoading }: CastRailProps) {
             )}
             <p className="mt-2 line-clamp-2 text-sm font-medium text-white">{person.name}</p>
             <p className="mt-0.5 line-clamp-2 text-xs text-[#99AABB]">{person.character}</p>
-          </article>
+          </Link>
         )
       })}
     </div>

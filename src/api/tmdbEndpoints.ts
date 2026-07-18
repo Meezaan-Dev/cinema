@@ -6,6 +6,9 @@ import {
   tmdbMovieDetailsSchema,
   tmdbMovieSchema,
   tmdbPagedResponseSchema,
+  tmdbPersonCombinedCreditsSchema,
+  tmdbPersonDetailsSchema,
+  tmdbPersonSearchResultSchema,
   tmdbSeriesDetailsSchema,
   tmdbSeriesSchema,
   tmdbVideosSchema,
@@ -17,6 +20,9 @@ import type {
   TmdbMovie,
   TmdbMovieDetails,
   TmdbPagedResponse,
+  TmdbPersonCombinedCredits,
+  TmdbPersonDetails,
+  TmdbPersonSearchResult,
   TmdbSeriesDetails,
   TmdbVideos,
 } from '@/types/tmdb'
@@ -45,6 +51,7 @@ export const queryKeys = {
   search: (query: string, filters: DiscoverParams) => ['movies', 'search', query, filters] as const,
   searchSeries: (query: string, filters: DiscoverParams) => ['series', 'search', query, filters] as const,
   searchAll: (query: string, filters: DiscoverParams) => ['all', 'search', query, filters] as const,
+  searchPeople: (query: string) => ['people', 'search', query] as const,
   discover: (filters: DiscoverParams) => ['movies', 'discover', filters] as const,
   discoverSeries: (filters: DiscoverParams) => ['series', 'discover', filters] as const,
   discoverAll: (filters: DiscoverParams) => ['all', 'discover', filters] as const,
@@ -57,6 +64,8 @@ export const queryKeys = {
   seriesVideos: (seriesId: string | number) => ['series', seriesId, 'videos'] as const,
   similar: (movieId: string | number) => ['movie', movieId, 'similar'] as const,
   similarSeries: (seriesId: string | number) => ['series', seriesId, 'similar'] as const,
+  personDetail: (personId: string | number) => ['person', personId] as const,
+  personCredits: (personId: string | number) => ['person', personId, 'combined-credits'] as const,
 }
 
 export function getTrendingMovies() {
@@ -157,6 +166,14 @@ export function searchSeries(query: string, filters: DiscoverParams = {}) {
   }, tmdbPagedResponseSchema(tmdbSeriesSchema))
 }
 
+export function searchPeople(query: string) {
+  return tmdbRequest<TmdbPagedResponse<TmdbPersonSearchResult>>('/search/person', {
+    query,
+    include_adult: false,
+    page: 1,
+  }, tmdbPagedResponseSchema(tmdbPersonSearchResultSchema))
+}
+
 export function discoverMovies(filters: DiscoverParams = {}) {
   return tmdbRequest<TmdbPagedResponse<TmdbMovie>>('/discover/movie', {
     include_adult: false,
@@ -222,5 +239,17 @@ export function getSimilarSeries(seriesId: string | number) {
     `/tv/${seriesId}/recommendations`,
     {},
     tmdbPagedResponseSchema(tmdbSeriesSchema),
+  )
+}
+
+export function getPersonDetails(personId: string | number) {
+  return tmdbRequest<TmdbPersonDetails>(`/person/${personId}`, {}, tmdbPersonDetailsSchema)
+}
+
+export function getPersonCombinedCredits(personId: string | number) {
+  return tmdbRequest<TmdbPersonCombinedCredits>(
+    `/person/${personId}/combined_credits`,
+    {},
+    tmdbPersonCombinedCreditsSchema,
   )
 }

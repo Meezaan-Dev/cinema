@@ -1,4 +1,4 @@
-import { Clapperboard, Film, Search, Tv } from 'lucide-react'
+import { Clapperboard, Film, Search, Tv, Users } from 'lucide-react'
 import { NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router-dom'
 
 import { APP_NAME } from '@/lib/constants'
@@ -8,12 +8,14 @@ const desktopLinks = [
   { to: '/', label: 'Discover', icon: Clapperboard, end: true },
   { to: '/movies', label: 'Movies', icon: Film },
   { to: '/tv-shows', label: 'TV Shows', icon: Tv },
+  { to: '/people', label: 'People', icon: Users },
   { to: '/search', label: 'Search', icon: Search },
 ]
 
 const mobileLinks = [
   { to: '/', label: 'Discover', icon: Clapperboard, end: true },
   { to: '/movies', label: 'Movies', icon: Film },
+  { to: '/people', label: 'People', icon: Users },
   { to: '/search', label: 'Search', icon: Search },
   { to: '/tv-shows', label: 'TV Shows', icon: Tv },
 ]
@@ -59,7 +61,7 @@ function NavItem({
 
 export function AppLayout() {
   const location = useLocation()
-  const isDetailPage = /^\/(movie|tv)\//.test(location.pathname)
+  const isDetailPage = /^\/(movie|tv|person)\//.test(location.pathname)
 
   return (
     <div className="min-h-screen bg-[#14181C] text-white">
