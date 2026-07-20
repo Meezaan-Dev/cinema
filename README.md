@@ -1,6 +1,6 @@
 # Cinema
 
-Cinema is a focused movie and TV discovery experience powered by TMDB. Browse trending content, search titles, explore detailed pages with cast and trailers, and get spoiler-free AI guidance from **Usher** — a knowledgeable companion that helps you decide what to watch.
+Cinema is a focused movie and TV discovery experience powered by TMDB. Browse trending content, search titles, and explore detailed pages with cast and trailers.
 
 No accounts. No watchlists. No setup beyond a TMDB key.
 
@@ -12,10 +12,6 @@ No accounts. No watchlists. No setup beyond a TMDB key.
 - Unified search across movies and TV with instant debounced results
 - Movie and TV detail pages: overview, genres, cast, trailers, similar titles, metadata
 - **Magic Link** (PlayIMDb) and **View on IMDb** when TMDB provides an IMDb ID
-
-### Usher (AI)
-- On movie and TV detail pages, get spoiler-free viewing guidance via Gemini
-- Includes: summary, who would enjoy it, what to avoid, tone & pacing, similar titles, and a recommendation score
 
 ## Routes
 
@@ -32,14 +28,13 @@ No accounts. No watchlists. No setup beyond a TMDB key.
 
 - **Frontend:** React 19, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS 4, Framer Motion
 - **Data:** TMDB API
-- **AI:** Google Gemini (`/api/ai-summary`)
 
 ## Project layout
 
 ```
-api/                 Server handlers (AI summaries)
+api/                 Server handlers
 src/pages/           Route-level screens
-src/components/      UI, movie cards, Usher, layout
+src/components/      UI, movie cards, layout
 src/hooks/           Search and utility hooks
 src/api/             Client calls to /api and TMDB
 ```
@@ -65,24 +60,19 @@ TMDB_BASE_URL=https://api.themoviedb.org/3
 # Client-side TMDB image CDN (not a secret)
 VITE_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
 
-# Server-side AI (optional; Usher on detail pages)
-GEMINI_API_KEY=your_server_side_gemini_key
-GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
 Restart the dev server after changing env vars.  
-**Security note:** `TMDB_API_KEY`, `TMDB_BASE_URL`, and `GEMINI_API_KEY` must never be prefixed with `VITE_` — they must stay server-side only.
+**Security note:** `TMDB_API_KEY` and `TMDB_BASE_URL` must never be prefixed with `VITE_` — they must stay server-side only.
 
 | Configuration | Works without it |
 |---------------|------------------|
 | TMDB key only | Browse, search, details, trailers |
-| + Gemini | Usher AI summaries on detail pages |
 
 ## API routes
 
 | Route | Role |
 |-------|------|
-| `ai-summary` | Spoiler-free Gemini summaries via Usher |
 | `tmdb` | Secure proxy for TMDB API requests (server-side only) |
 
 ## Scripts
@@ -99,8 +89,7 @@ npm run preview  # Preview production build
 
 - **TMDB** credentials are server-side only, proxied through `/api/tmdb`. The API key is never exposed to the browser.
 - **TMDB** is required for meaningful content; handle rate limits and network errors in the UI.
-- **Gemini** failures surface as recoverable Usher errors with retry.
-- Third-party failure modes: TMDB rate limits and Gemini quota errors. The UI surfaces recoverable errors instead of crashing.
+- Third-party failure modes: TMDB rate limits. The UI surfaces recoverable errors instead of crashing.
 
 ## Maintenance checklist
 
@@ -115,5 +104,5 @@ Smoke-test:
 
 - [ ] Discover home loads trending, popular, and coming soon sections
 - [ ] Search movies and TV with filters
-- [ ] Movie detail: trailer, cast, similar, Magic Link, IMDb link, Usher
-- [ ] TV detail: seasons, cast, trailer, similar, Magic Link, Usher
+- [ ] Movie detail: trailer, cast, similar, Magic Link, IMDb link
+- [ ] TV detail: seasons, cast, trailer, similar, Magic Link

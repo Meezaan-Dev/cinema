@@ -1,9 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ExternalLink, Play, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
-import { useState } from 'react'
 
-import { aiSummaryKeys, getAiSummary } from '@/api/aiSummaries'
 import {
   getMovieCredits,
   getMovieDetails,
@@ -14,7 +12,6 @@ import {
 import { CastRail } from '@/components/movie/CastRail'
 import { MoviePoster } from '@/components/movie/MoviePoster'
 import { MovieSection } from '@/components/movie/MovieSection'
-import { UsherCard } from '@/components/usher/UsherCard'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ErrorState, StatusState } from '@/components/ui/StatusState'
 import { formatRating, formatRuntime, getYear, imageUrl } from '@/lib/formatters'
@@ -48,23 +45,6 @@ export function MovieDetailPage() {
   })
 
   const movie = details.data
-  const [showAiSummary, setShowAiSummary] = useState(false)
-  const aiSummary = useQuery({
-    queryKey: aiSummaryKeys.summary('movie', movieTmdbId ?? movieId),
-    queryFn: () =>
-      getAiSummary({
-        mediaType: 'movie',
-        tmdbId: movie?.id ?? 0,
-        title: movie?.title ?? '',
-        overview: movie?.overview ?? '',
-        releaseDate: movie?.release_date ?? '',
-        genres: movie?.genres.map((genre) => genre.name) ?? [],
-        runtime: movie?.runtime,
-      }),
-    enabled: Boolean(movie) && showAiSummary,
-    retry: false,
-  })
-
   const trailerCandidate =
     videos.data?.results.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ??
     videos.data?.results.find((video) => video.site === 'YouTube')
@@ -149,22 +129,9 @@ export function MovieDetailPage() {
                   View on IMDb
                 </a>
               ) : null}
-              <a href="#usher" className="button-link">
-                Ask Usher
-              </a>
             </div>
           </div>
         </div>
-      </section>
-
-      <section id="usher" className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <UsherCard
-          summary={aiSummary.data}
-          isLoading={aiSummary.isLoading}
-          error={aiSummary.error}
-          onRetry={() => aiSummary.refetch()}
-          onRequestSummary={() => setShowAiSummary(true)}
-        />
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">

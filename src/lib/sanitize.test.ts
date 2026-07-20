@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import {
   buildImdbUrl,
   buildMagicLinkUrl,
-  sanitizeAiSummaryRequest,
   sanitizeDisplayText,
   sanitizeImdbId,
   sanitizeTmdbImagePath,
@@ -42,28 +41,7 @@ describe('sanitize helpers', () => {
     expect(sanitizeYoutubeKey('bad key!')).toBeNull()
   })
 
-  it('normalizes display text and AI request payloads', () => {
+  it('normalizes display text', () => {
     expect(sanitizeDisplayText('  hello   world  ', 10)).toBe('hello worl')
-
-    expect(
-      sanitizeAiSummaryRequest({
-        mediaType: 'movie',
-        tmdbId: 42,
-        title: '  Dune  ',
-        overview: 'A   story',
-        releaseDate: '2021-01-01',
-        genres: [' Sci-Fi ', ''],
-        runtime: 120,
-      }),
-    ).toEqual({
-      mediaType: 'movie',
-      tmdbId: 42,
-      title: 'Dune',
-      overview: 'A story',
-      releaseDate: '2021-01-01',
-      genres: ['Sci-Fi'],
-      runtime: 120,
-      status: undefined,
-    })
   })
 })

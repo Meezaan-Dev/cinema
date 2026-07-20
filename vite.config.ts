@@ -4,7 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-import aiSummaryHandler from './api/ai-summary'
 import tmdbHandler from './api/tmdb'
 
 function setProcessEnvFromVite(name: string, value: string | undefined) {
@@ -76,8 +75,6 @@ function createJsonDevApi(pathname: string, handler: (req: { method?: string; bo
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  setProcessEnvFromVite('GEMINI_API_KEY', env.GEMINI_API_KEY)
-  setProcessEnvFromVite('GEMINI_MODEL', env.GEMINI_MODEL)
   setProcessEnvFromVite('TMDB_API_KEY', env.TMDB_API_KEY || env.VITE_TMDB_API_KEY)
   setProcessEnvFromVite('TMDB_BASE_URL', env.TMDB_BASE_URL || env.VITE_TMDB_BASE_URL)
 
@@ -85,7 +82,6 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      createJsonDevApi('/api/ai-summary', aiSummaryHandler),
       createJsonDevApi('/api/tmdb', tmdbHandler),
     ],
     resolve: {
