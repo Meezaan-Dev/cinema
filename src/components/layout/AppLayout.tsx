@@ -1,24 +1,9 @@
-import { Clapperboard, Film, Search, Tv, Users } from 'lucide-react'
+import { Clapperboard, Film, Search, Tv } from 'lucide-react'
+import { useState } from 'react'
 import { NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router-dom'
 
-import { APP_NAME } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-
-const desktopLinks = [
-  { to: '/', label: 'Discover', icon: Clapperboard, end: true },
-  { to: '/movies', label: 'Movies', icon: Film },
-  { to: '/tv-shows', label: 'TV Shows', icon: Tv },
-  { to: '/people', label: 'People', icon: Users },
-  { to: '/search', label: 'Search', icon: Search },
-]
-
-const mobileLinks = [
-  { to: '/', label: 'Discover', icon: Clapperboard, end: true },
-  { to: '/movies', label: 'Movies', icon: Film },
-  { to: '/people', label: 'People', icon: Users },
-  { to: '/search', label: 'Search', icon: Search },
-  { to: '/tv-shows', label: 'TV Shows', icon: Tv },
-]
+import { SuperSearch } from '@/components/search/SuperSearch'
 
 function NavItem({
   to,
@@ -62,21 +47,39 @@ function NavItem({
 export function AppLayout() {
   const location = useLocation()
   const isDetailPage = /^\/(movie|tv|person)\//.test(location.pathname)
+  const [isSuperSearchOpen, setIsSuperSearchOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-[#14181C] text-white">
       <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#14181C]/90 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <nav className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 sm:px-6">
           <NavLink
             to="/"
-            className="shrink-0 text-lg font-bold tracking-tight text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#00E054]"
+            end
+            className={({ isActive }) =>
+              cn(
+                'inline-flex justify-self-start rounded-full px-3.5 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
+                isActive ? 'bg-[#00E054] text-[#14181C]' : 'text-[#99AABB] hover:bg-white/5 hover:text-white',
+              )
+            }
           >
-            {APP_NAME}
+            Discovery
           </NavLink>
-          <div className="hidden items-center gap-1 md:flex">
-            {desktopLinks.map((link) => (
-              <NavItem key={link.to} {...link} />
-            ))}
+          <button
+            type="button"
+            onClick={() => setIsSuperSearchOpen(true)}
+            className="inline-flex h-10 items-center gap-2 justify-self-center rounded-full border border-white/[0.08] bg-[#1C2228] px-4 text-sm font-medium text-white transition hover:bg-[#202830] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
+            aria-label="Open search"
+          >
+            <Search className="size-4" aria-hidden="true" />
+            <span>Search</span>
+            <kbd className="hidden rounded-md border border-white/[0.08] bg-[#14181C] px-1.5 py-0.5 text-[11px] font-semibold text-[#99AABB] sm:inline">
+              Cmd/Ctrl K
+            </kbd>
+          </button>
+          <div className="flex justify-self-end gap-1">
+            <NavItem to="/movies" label="Movies" icon={Film} />
+            <NavItem to="/tv-shows" label="Shows" icon={Tv} />
           </div>
         </nav>
       </header>
@@ -90,15 +93,31 @@ export function AppLayout() {
         aria-label="Mobile navigation"
       >
         <div className="mx-auto flex max-w-lg items-stretch justify-around px-2">
-          {mobileLinks.map((link) => (
-            <NavItem key={link.to} {...link} mobile />
-          ))}
+          <NavItem to="/" label="Discover" icon={Clapperboard} end mobile />
+          <button
+            type="button"
+            onClick={() => setIsSuperSearchOpen(true)}
+            className={cn(
+              'flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
+              isSuperSearchOpen ? 'text-[#00E054]' : 'text-[#99AABB] hover:text-white',
+            )}
+          >
+            <Search className="size-5" aria-hidden="true" />
+            <span>Search</span>
+          </button>
+          <NavItem to="/movies" label="Movies" icon={Film} mobile />
+          <NavItem to="/tv-shows" label="Shows" icon={Tv} mobile />
         </div>
       </nav>
 
       <footer className="hidden border-t border-white/[0.08] px-4 py-8 text-center text-sm text-[#99AABB] md:block">
         Powered by TMDB data. No account required.
       </footer>
+      <SuperSearch
+        isOpen={isSuperSearchOpen}
+        onOpen={() => setIsSuperSearchOpen(true)}
+        onClose={() => setIsSuperSearchOpen(false)}
+      />
       <ScrollRestoration />
     </div>
   )
