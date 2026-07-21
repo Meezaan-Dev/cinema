@@ -99,7 +99,7 @@ export function AppLayout() {
         </nav>
       </header>
 
-      <aside className="group/sidebar fixed inset-y-0 left-0 z-50 hidden w-[76px] border-r border-white/[0.08] bg-[#14181C]/95 px-3 py-5 backdrop-blur-xl transition-[width,background-color] duration-300 ease-out hover:w-60 hover:bg-[#14181C] focus-within:w-60 focus-within:bg-[#14181C] md:block">
+      <aside className="group/sidebar fixed inset-y-0 left-0 z-50 hidden w-[76px] bg-[linear-gradient(90deg,#14181C_0%,rgba(20,24,28,0.96)_68%,rgba(20,24,28,0)_100%)] px-3 py-5 backdrop-blur-xl transition-[width,background] duration-300 ease-out hover:w-60 hover:bg-[linear-gradient(90deg,#14181C_0%,rgba(20,24,28,0.98)_72%,rgba(20,24,28,0)_100%)] focus-within:w-60 focus-within:bg-[linear-gradient(90deg,#14181C_0%,rgba(20,24,28,0.98)_72%,rgba(20,24,28,0)_100%)] md:block">
         <nav className="flex h-full justify-center flex-col gap-3" aria-label="Primary navigation">
           <NavLink
             to="/"
