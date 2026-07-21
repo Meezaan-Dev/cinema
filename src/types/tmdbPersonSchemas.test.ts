@@ -1,13 +1,72 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  tmdbMixedMediaSchema,
   tmdbPagedResponseSchema,
   tmdbPersonCombinedCreditsSchema,
   tmdbPersonDetailsSchema,
   tmdbPersonSearchResultSchema,
+  tmdbTrendingTitlesResponseSchema,
 } from './schemas'
 
 describe('TMDB person schemas', () => {
+  it('parses mixed trending TV results with the series name as title', () => {
+    const parsed = tmdbMixedMediaSchema.parse({
+      id: 4,
+      media_type: 'tv',
+      name: 'Slow Horses',
+      first_air_date: '2022-04-01',
+      overview: 'A group of MI5 misfits.',
+      poster_path: '/slow-horses.jpg',
+      backdrop_path: null,
+      vote_average: 8.2,
+      vote_count: 500,
+      popularity: 90,
+    })
+
+    expect(parsed).toMatchObject({
+      title: 'Slow Horses',
+      release_date: '2022-04-01',
+      media_type: 'tv',
+    })
+  })
+
+  it('filters people out of mixed trending title results', () => {
+    const parsed = tmdbTrendingTitlesResponseSchema.parse({
+      page: 1,
+      total_pages: 1,
+      total_results: 2,
+      results: [
+        {
+          id: 4,
+          media_type: 'tv',
+          name: 'Slow Horses',
+          first_air_date: '2022-04-01',
+          overview: 'A group of MI5 misfits.',
+          poster_path: '/slow-horses.jpg',
+          backdrop_path: null,
+          vote_average: 8.2,
+          vote_count: 500,
+          popularity: 90,
+        },
+        {
+          id: 5,
+          media_type: 'person',
+          name: 'Gary Oldman',
+          profile_path: '/gary.jpg',
+          known_for_department: 'Acting',
+          popularity: 80,
+        },
+      ],
+    })
+
+    expect(parsed.results).toHaveLength(1)
+    expect(parsed.results[0]).toMatchObject({
+      title: 'Slow Horses',
+      media_type: 'tv',
+    })
+  })
+
   it('parses person search results with mixed known-for credits', () => {
     const parsed = tmdbPagedResponseSchema(tmdbPersonSearchResultSchema).parse({
       page: 1,

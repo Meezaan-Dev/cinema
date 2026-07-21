@@ -11,6 +11,7 @@ import {
   tmdbPersonSearchResultSchema,
   tmdbSeriesDetailsSchema,
   tmdbSeriesSchema,
+  tmdbTrendingTitlesResponseSchema,
   tmdbVideosSchema,
 } from '@/types/schemas'
 import type {
@@ -80,7 +81,7 @@ export function getTrendingAll() {
   return tmdbRequest<TmdbPagedResponse<TmdbMovie>>(
     '/trending/all/week',
     {},
-    tmdbPagedResponseSchema(tmdbMovieSchema),
+    tmdbTrendingTitlesResponseSchema,
   )
 }
 

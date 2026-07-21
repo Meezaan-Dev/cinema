@@ -11,12 +11,14 @@ function NavItem({
   icon: Icon,
   end,
   mobile,
+  sidebar,
 }: {
   to: string
   label: string
   icon: typeof Clapperboard
   end?: boolean
   mobile?: boolean
+  sidebar?: boolean
 }) {
   return (
     <NavLink
@@ -26,20 +28,33 @@ function NavItem({
         cn(
           mobile
             ? 'flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium'
-            : 'inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition',
+            : sidebar
+              ? 'group/item relative flex h-12 w-full shrink-0 items-center gap-3 overflow-hidden rounded-2xl px-3 text-sm font-semibold transition'
+              : 'inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition',
           isActive
             ? mobile
               ? 'text-[#00E054]'
-              : 'bg-[#00E054] text-[#14181C]'
+              : sidebar
+                ? 'bg-[#00E054]/10 text-[#00E054] ring-1 ring-[#00E054]/25'
+                : 'bg-[#00E054] text-[#14181C]'
             : mobile
               ? 'text-[#99AABB] hover:text-white'
-              : 'text-[#99AABB] hover:bg-white/5 hover:text-white',
+              : sidebar
+                ? 'text-[#99AABB] hover:bg-white/[0.08] hover:text-white'
+                : 'text-[#99AABB] hover:bg-white/5 hover:text-white',
           !mobile && 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
         )
       }
     >
-      <Icon className={mobile ? 'size-5' : 'size-4'} aria-hidden="true" />
-      <span>{label}</span>
+      <Icon className={mobile ? 'size-5' : sidebar ? 'size-5 shrink-0' : 'size-4'} aria-hidden="true" />
+      <span
+        className={cn(
+          sidebar &&
+            'whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:translate-x-0 group-hover/sidebar:opacity-100 group-focus-within/sidebar:translate-x-0 group-focus-within/sidebar:opacity-100 md:-translate-x-1',
+        )}
+      >
+        {label}
+      </span>
     </NavLink>
   )
 }
@@ -51,7 +66,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-[#14181C] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#14181C]/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#14181C]/90 backdrop-blur-xl md:hidden">
         <nav className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 sm:px-6">
           <NavLink
             to="/"
@@ -84,7 +99,36 @@ export function AppLayout() {
         </nav>
       </header>
 
-      <main className={cn(isDetailPage ? '' : 'pb-20 md:pb-0')}>
+      <aside className="group/sidebar fixed inset-y-0 left-0 z-50 hidden w-[76px] border-r border-white/[0.08] bg-[#14181C]/95 px-3 py-5 backdrop-blur-xl transition-[width,background-color] duration-300 ease-out hover:w-60 hover:bg-[#14181C] focus-within:w-60 focus-within:bg-[#14181C] md:block">
+        <nav className="flex h-full justify-center flex-col gap-3" aria-label="Primary navigation">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              cn(
+                'group/item relative flex h-12 w-full shrink-0 items-center gap-3 overflow-hidden rounded-2xl px-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
+                isActive
+                  ? 'bg-[#00E054]/10 text-[#00E054] ring-1 ring-[#00E054]/25'
+                  : 'text-[#99AABB] hover:bg-white/5 hover:text-white',
+              )
+            }
+          >
+            <Clapperboard className="size-5 shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:translate-x-0 group-hover/sidebar:opacity-100 group-focus-within/sidebar:translate-x-0 group-focus-within/sidebar:opacity-100 md:-translate-x-1">
+              Discovery
+            </span>
+          </NavLink>
+
+          <NavItem to="/search" label="Search" icon={Search} sidebar />
+
+          <div className="mt-2 flex flex-col gap-3">
+            <NavItem to="/movies" label="Movies" icon={Film} sidebar />
+            <NavItem to="/tv-shows" label="Shows" icon={Tv} sidebar />
+          </div>
+        </nav>
+      </aside>
+
+      <main className={cn('md:pl-[76px]', isDetailPage ? '' : 'pb-20 md:pb-0')}>
         <Outlet />
       </main>
 
@@ -110,7 +154,7 @@ export function AppLayout() {
         </div>
       </nav>
 
-      <footer className="hidden border-t border-white/[0.08] px-4 py-8 text-center text-sm text-[#99AABB] md:block">
+      <footer className="hidden border-t border-white/[0.08] px-4 py-8 text-center text-sm text-[#99AABB] md:ml-[76px] md:block">
         Powered by TMDB data. No account required.
       </footer>
       <SuperSearch
