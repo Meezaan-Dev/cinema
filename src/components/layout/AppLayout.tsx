@@ -65,15 +65,15 @@ export function AppLayout() {
   const [isSuperSearchOpen, setIsSuperSearchOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-[#14181C] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#14181C]/90 backdrop-blur-xl md:hidden">
-        <nav className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 sm:px-6">
+    <div className="min-h-svh bg-[#14181C] text-white">
+      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#14181C]/90 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <NavLink
             to="/"
             end
             className={({ isActive }) =>
               cn(
-                'inline-flex justify-self-start rounded-full px-3.5 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
+                'inline-flex shrink-0 rounded-full px-3.5 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
                 isActive ? 'bg-[#00E054] text-[#14181C]' : 'text-[#99AABB] hover:bg-white/5 hover:text-white',
               )
             }
@@ -83,7 +83,7 @@ export function AppLayout() {
           <button
             type="button"
             onClick={() => setIsSuperSearchOpen(true)}
-            className="inline-flex h-10 items-center gap-2 justify-self-center rounded-full border border-white/[0.08] bg-[#1C2228] px-4 text-sm font-medium text-white transition hover:bg-[#202830] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
+            className="inline-flex h-10 min-w-0 items-center gap-2 rounded-full border border-white/[0.08] bg-[#1C2228] px-4 text-sm font-medium text-white transition hover:bg-[#202830] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
             aria-label="Open search"
           >
             <Search className="size-4" aria-hidden="true" />
@@ -92,10 +92,6 @@ export function AppLayout() {
               Cmd/Ctrl K
             </kbd>
           </button>
-          <div className="flex justify-self-end gap-1">
-            <NavItem to="/movies" label="Movies" icon={Film} />
-            <NavItem to="/tv-shows" label="Shows" icon={Tv} />
-          </div>
         </nav>
       </header>
 
@@ -128,15 +124,15 @@ export function AppLayout() {
         </nav>
       </aside>
 
-      <main className={cn('md:pl-[76px]', isDetailPage ? '' : 'pb-20 md:pb-0')}>
+      <main className={cn('md:pl-[76px]', isDetailPage ? '' : 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0')}>
         <Outlet />
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#14181C]/95 backdrop-blur-xl md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#14181C]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
         aria-label="Mobile navigation"
       >
-        <div className="mx-auto flex max-w-lg items-stretch justify-around px-2">
+        <div className="mx-auto flex min-h-16 max-w-lg items-stretch justify-around px-2">
           <NavItem to="/" label="Discover" icon={Clapperboard} end mobile />
           <button
             type="button"
