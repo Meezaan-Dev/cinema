@@ -134,17 +134,6 @@ export function AppLayout() {
       >
         <div className="mx-auto flex min-h-16 max-w-lg items-stretch justify-around px-2">
           <NavItem to="/" label="Discover" icon={Clapperboard} end mobile />
-          <button
-            type="button"
-            onClick={() => setIsSuperSearchOpen(true)}
-            className={cn(
-              'flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
-              isSuperSearchOpen ? 'text-[#00E054]' : 'text-[#99AABB] hover:text-white',
-            )}
-          >
-            <Search className="size-5" aria-hidden="true" />
-            <span>Search</span>
-          </button>
           <NavItem to="/movies" label="Movies" icon={Film} mobile />
           <NavItem to="/tv-shows" label="Shows" icon={Tv} mobile />
         </div>
