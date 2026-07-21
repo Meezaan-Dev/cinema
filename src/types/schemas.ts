@@ -60,10 +60,10 @@ export const tmdbSeriesSchema = z
     media_type: 'tv' as const,
   }))
 
-const tmdbMixedMediaSchema = z
+export const tmdbMixedMediaSchema = z
   .object({
     id: z.number().int(),
-    media_type: z.enum(['movie', 'tv']).catch('movie'),
+    media_type: z.enum(['movie', 'tv']),
     title: z.string().optional(),
     name: z.string().optional(),
     overview: z.string().catch(''),
@@ -217,6 +217,21 @@ export function tmdbPagedResponseSchema<T extends z.ZodTypeAny>(itemSchema: T) {
     total_results: z.number().int().catch(0),
   })
 }
+
+export const tmdbTrendingTitlesResponseSchema = z.object({
+  page: z.number().int().catch(1),
+  results: z
+    .array(z.unknown())
+    .catch([])
+    .transform((items) =>
+      items.flatMap((item) => {
+        const parsed = tmdbMixedMediaSchema.safeParse(item)
+        return parsed.success ? [parsed.data] : []
+      }),
+    ),
+  total_pages: z.number().int().catch(1),
+  total_results: z.number().int().catch(0),
+})
 
 export const tmdbGenresResponseSchema = z.object({
   genres: z.array(tmdbGenreSchema).catch([]),
