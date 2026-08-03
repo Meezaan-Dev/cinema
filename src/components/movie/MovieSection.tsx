@@ -15,6 +15,7 @@ type MovieSectionProps = {
   error?: unknown
   onRetry?: () => void
   horizontal?: boolean
+  carousel?: boolean
   exploreTo?: string
 }
 
@@ -27,8 +28,11 @@ export function MovieSection({
   error,
   onRetry,
   horizontal,
+  carousel,
   exploreTo = '/search',
 }: MovieSectionProps) {
+  const isHorizontal = horizontal || carousel
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
       <div className="mb-5 flex items-end justify-between gap-4">
@@ -45,18 +49,36 @@ export function MovieSection({
           Explore
         </Link>
       </div>
-      {isLoading ? <MovieGridSkeleton count={horizontal ? 6 : 10} /> : null}
+      {isLoading ? <MovieGridSkeleton count={isHorizontal ? 6 : 10} /> : null}
       {isError ? <ErrorState error={error} onRetry={onRetry} /> : null}
       {!isLoading && !isError && movies?.length === 0 ? (
         <EmptyState title="Nothing here yet" message="Check back soon for new titles." />
       ) : null}
-      {!isLoading && !isError && movies?.length ? (
+      {!isLoading && !isError && movies?.length && carousel ? (
+        <div className="carousel-row">
+          <div className="carousel-track">
+            {movies.map((movie) => (
+              <MovieCard
+                key={`${movie.media_type ?? 'movie'}-${movie.id}`}
+                movie={movie}
+                compact
+              />
+            ))}
+            {movies.map((movie) => (
+              <div key={`duplicate-${movie.media_type ?? 'movie'}-${movie.id}`} aria-hidden="true" inert>
+                <MovieCard movie={movie} compact />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {!isLoading && !isError && movies?.length && !carousel ? (
         <div className={horizontal ? 'scroll-row' : 'movie-grid'}>
           {movies.map((movie) => (
             <MovieCard
               key={`${movie.media_type ?? 'movie'}-${movie.id}`}
               movie={movie}
-              compact={horizontal}
+              compact={isHorizontal}
             />
           ))}
         </div>

@@ -97,7 +97,7 @@ export function HomePage() {
         isError={trending.isError}
         error={trending.error}
         onRetry={() => trending.refetch()}
-        horizontal
+        carousel
       />
       <MovieSection
         title="Popular Movies"

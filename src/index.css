@@ -130,6 +130,57 @@ img {
   scroll-snap-align: start;
 }
 
+.carousel-row {
+  --carousel-gap: 1.15rem;
+  overflow: hidden;
+  padding-bottom: 1rem;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+
+.carousel-track {
+  display: grid;
+  width: max-content;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(146px, 204px);
+  gap: var(--carousel-gap);
+  animation: carousel-drift 72s linear infinite;
+}
+
+.carousel-row:hover .carousel-track,
+.carousel-row:focus-within .carousel-track {
+  animation-play-state: paused;
+}
+
+@keyframes carousel-drift {
+  to {
+    transform: translateX(calc(-50% - (var(--carousel-gap) / 2)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel-row {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  .carousel-track {
+    animation: none;
+  }
+
+  .carousel-track > * {
+    scroll-snap-align: start;
+  }
+
+  .carousel-track > [aria-hidden="true"] {
+    display: none;
+  }
+}
+
 .cast-row {
   display: grid;
   grid-auto-flow: column;
