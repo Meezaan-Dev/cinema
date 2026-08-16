@@ -52,6 +52,14 @@ export function MovieDetailPage() {
   const backdrop = imageUrl(movie?.backdrop_path, 'original')
   const imdbUrl = buildImdbUrl(movie?.imdb_id)
   const magicLinkUrl = buildMagicLinkUrl(movie?.imdb_id)
+  const detailItems = movie
+    ? [
+        { label: 'Release date', value: movie.release_date || 'Unknown' },
+        { label: 'Status', value: movie.status || 'Unknown' },
+        { label: 'Runtime', value: formatRuntime(movie.runtime) },
+        { label: 'TMDB rating', value: `${formatRating(movie.vote_average)} / 10` },
+      ]
+    : []
 
   if (!isValidMovieId) {
     return (
@@ -84,18 +92,18 @@ export function MovieDetailPage() {
           <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" />
         ) : null}
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,24,28,.4),#14181C_90%)]" />
-        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_1fr] lg:py-14">
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-14 xl:grid-cols-[260px_minmax(0,1fr)]">
           <MoviePoster
             path={movie.poster_path}
             title={movie.title}
             className="w-full shadow-[0_24px_60px_rgba(0,0,0,.5)] sm:w-64 lg:w-full"
             size="w780"
           />
-          <div className="max-w-3xl self-end">
+          <div className="min-w-0 self-end">
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#99AABB]">
               {getYear(movie.release_date)} · {formatRuntime(movie.runtime)}
             </p>
-            <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl xl:text-[3.5rem]">
               {movie.title}
             </h1>
             {movie.tagline ? <p className="mt-3 text-lg italic text-[#99AABB]">{movie.tagline}</p> : null}
@@ -116,6 +124,14 @@ export function MovieDetailPage() {
             <p className="mt-6 max-w-2xl text-base leading-7 text-[#99AABB]">
               {movie.overview || 'No overview is available for this movie yet.'}
             </p>
+            <dl className="mt-6 grid max-w-4xl gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {detailItems.map((item) => (
+                <div key={item.label} className="rounded-xl border border-white/[0.08] bg-[#1C2228]/85 p-4 backdrop-blur">
+                  <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">{item.label}</dt>
+                  <dd className="mt-1 text-sm font-semibold text-white">{item.value}</dd>
+                </div>
+              ))}
+            </dl>
             <div className="mt-6 flex flex-wrap gap-3">
               {magicLinkUrl ? (
                 <a className="button-link button-link-accent" href={magicLinkUrl} target="_blank" rel="noreferrer">
@@ -180,26 +196,7 @@ export function MovieDetailPage() {
       />
 
       <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-        <h2 className="text-xl font-semibold text-white">Details</h2>
-        <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
-            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">Release date</dt>
-            <dd className="mt-1 text-sm text-white">{movie.release_date || 'Unknown'}</dd>
-          </div>
-          <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
-            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">Status</dt>
-            <dd className="mt-1 text-sm text-white">{movie.status || 'Unknown'}</dd>
-          </div>
-          <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
-            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">Runtime</dt>
-            <dd className="mt-1 text-sm text-white">{formatRuntime(movie.runtime)}</dd>
-          </div>
-          <div className="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
-            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">TMDB rating</dt>
-            <dd className="mt-1 text-sm text-white">{formatRating(movie.vote_average)} / 10</dd>
-          </div>
-        </dl>
-        <Link to="/" className="mt-8 inline-block text-sm font-medium text-[#99AABB] hover:text-white">
+        <Link to="/" className="inline-block text-sm font-medium text-[#99AABB] hover:text-white">
           Back to Discover
         </Link>
       </section>
