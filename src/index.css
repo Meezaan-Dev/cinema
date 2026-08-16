@@ -197,6 +197,38 @@ img {
   scroll-snap-align: start;
 }
 
+.cast-row-spotlight {
+  grid-auto-columns: minmax(160px, 188px);
+  gap: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.cast-nav-button {
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-primary);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.cast-nav-button:hover {
+  border-color: rgba(0, 224, 84, 0.35);
+  background: var(--surface-elevated);
+}
+
+.cast-nav-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .button-link {
   display: inline-flex;
   min-height: 44px;

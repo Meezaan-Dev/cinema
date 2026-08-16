@@ -46,9 +46,9 @@ export function HomePage() {
         <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#14181C] to-transparent" />
         <div className="relative mx-auto flex min-h-[70svh] max-w-7xl flex-col justify-end px-4 py-16 sm:px-6">
           {hero ? (
-            <div className="max-w-2xl">
+            <div className="max-w-5xl">
               <p className="text-xs font-medium uppercase tracking-[0.24em] text-[#99AABB]">Featured</p>
-              <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl">
+              <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl lg:whitespace-nowrap">
                 {hero.title}
               </h1>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-[#99AABB]">
