@@ -173,6 +173,16 @@ export function AppLayout() {
           <NavItem to="/movies" label="Movies" icon={Film} mobile />
           <NavItem to="/watchlist" label="Saved" icon={Bookmark} mobile />
           <NavItem to="/history" label="History" icon={History} mobile />
+          <button
+            type="button"
+            onClick={() => void (user ? signOutUser() : signInWithGoogle())}
+            disabled={isLoading}
+            className="flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium text-[#99AABB] transition hover:text-white disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
+            aria-label={user ? 'Sign out' : 'Sign in'}
+          >
+            {user ? <LogOut className="size-5" aria-hidden="true" /> : <User className="size-5" aria-hidden="true" />}
+            <span>{user ? 'Sign out' : 'Sign in'}</span>
+          </button>
         </div>
       </nav>
 
