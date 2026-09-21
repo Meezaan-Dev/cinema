@@ -1,5 +1,5 @@
 import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite'
-import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -80,7 +80,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
-      react(),
+      vue(),
       tailwindcss(),
       createJsonDevApi('/api/tmdb', tmdbHandler),
     ],

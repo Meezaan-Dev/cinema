@@ -26,16 +26,18 @@ No accounts. No watchlists. No setup beyond a TMDB key.
 
 ## Tech stack
 
-- **Frontend:** React 19, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS 4, Framer Motion
+- **Frontend:** Vue 3, TypeScript, Vite, Vue Router, Pinia, TanStack Vue Query, Tailwind CSS 4, motion-v
 - **Data:** TMDB API
 
 ## Project layout
 
 ```
 api/                 Server handlers
-src/pages/           Route-level screens
+src/pages/           Route-level Vue views
 src/components/      UI, movie cards, layout
-src/hooks/           Search and utility hooks
+src/composables/     Search and utility composables
+src/router/          Vue Router config
+src/stores/          Pinia UI state
 src/api/             Client calls to /api and TMDB
 ```
 
