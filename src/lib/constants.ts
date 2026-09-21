@@ -1,1 +1,1 @@
-export const APP_NAME = 'Rewind'
+export const APP_NAME = 'Cinema'

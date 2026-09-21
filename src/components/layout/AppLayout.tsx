@@ -1,10 +1,9 @@
-import { Bookmark, Clapperboard, Film, History, LogOut, Search, Tv, User } from 'lucide-react'
+import { Clapperboard, Film, Search, Tv } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
 import { SuperSearch } from '@/components/search/SuperSearch'
-import { useAuth } from '@/auth/useAuth'
 
 function NavItem({
   to,
@@ -64,8 +63,6 @@ export function AppLayout() {
   const location = useLocation()
   const isDetailPage = /^\/(movie|tv|person)\//.test(location.pathname)
   const [isSuperSearchOpen, setIsSuperSearchOpen] = useState(false)
-  const { profile, uid, isLoading, isSigningIn, signInError, signInWithGoogle, signOutUser, clearSignInError } =
-    useAuth()
 
   return (
     <div className="min-h-svh bg-[#14181C] text-white">
@@ -81,7 +78,7 @@ export function AppLayout() {
               )
             }
           >
-            Rewind
+            Discovery
           </NavLink>
           <button
             type="button"
@@ -100,76 +97,29 @@ export function AppLayout() {
 
       <aside className="group/sidebar fixed inset-y-0 left-0 z-50 hidden w-[76px] bg-[linear-gradient(90deg,#14181C_0%,rgba(20,24,28,0.96)_68%,rgba(20,24,28,0)_100%)] px-3 py-5 backdrop-blur-xl transition-[width,background] duration-300 ease-out hover:w-60 hover:bg-[linear-gradient(90deg,#14181C_0%,rgba(20,24,28,0.98)_72%,rgba(20,24,28,0)_100%)] focus-within:w-60 focus-within:bg-[linear-gradient(90deg,#14181C_0%,rgba(20,24,28,0.98)_72%,rgba(20,24,28,0)_100%)] md:block">
         <nav className="flex h-full justify-center flex-col gap-3" aria-label="Primary navigation">
-          <NavItem to="/" label="Discover" icon={Clapperboard} end sidebar />
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              cn(
+                'group/item relative flex h-12 w-full shrink-0 items-center gap-3 overflow-hidden rounded-2xl px-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
+                isActive
+                  ? 'bg-[#00E054]/10 text-[#00E054] ring-1 ring-[#00E054]/25'
+                  : 'text-[#99AABB] hover:bg-white/5 hover:text-white',
+              )
+            }
+          >
+            <Clapperboard className="size-5 shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:translate-x-0 group-hover/sidebar:opacity-100 group-focus-within/sidebar:translate-x-0 group-focus-within/sidebar:opacity-100 md:-translate-x-1">
+              Discovery
+            </span>
+          </NavLink>
 
           <NavItem to="/search" label="Search" icon={Search} sidebar />
 
           <div className="mt-2 flex flex-col gap-3">
             <NavItem to="/movies" label="Movies" icon={Film} sidebar />
             <NavItem to="/tv-shows" label="Shows" icon={Tv} sidebar />
-            <NavItem to="/watchlist" label="Watchlist" icon={Bookmark} sidebar />
-            <NavItem to="/history" label="History" icon={History} sidebar />
-          </div>
-          <div className="mt-auto">
-            {profile ? (
-              <div className="group/item relative flex w-full flex-col gap-2">
-                <div className="flex items-center gap-3 rounded-2xl px-3 py-2">
-                  {profile.photoURL ? (
-                    <img
-                      src={profile.photoURL}
-                      alt=""
-                      referrerPolicy="no-referrer"
-                      className="size-8 shrink-0 rounded-full bg-[#1C2228] object-cover ring-1 ring-white/10"
-                    />
-                  ) : (
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#00E054]/20 text-sm font-bold text-[#00E054]">
-                      {(profile.displayName ?? profile.email ?? 'U')[0].toUpperCase()}
-                    </div>
-                  )}
-                  <div className="whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:translate-x-0 group-hover/sidebar:opacity-100 group-focus-within/sidebar:translate-x-0 group-focus-within/sidebar:opacity-100 md:-translate-x-1">
-                    <p className="text-sm font-semibold text-white truncate max-w-[160px]">{profile.displayName ?? 'Signed in'}</p>
-                    {profile.email ? (
-                      <p className="text-xs text-[#99AABB] truncate max-w-[160px]">{profile.email}</p>
-                    ) : null}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void signOutUser()}
-                  className="group/item relative flex h-12 w-full shrink-0 items-center gap-3 overflow-hidden rounded-2xl px-3 text-sm font-semibold text-[#99AABB] transition hover:bg-white/[0.08] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
-                >
-                  <LogOut className="size-5 shrink-0" aria-hidden="true" />
-                  <span className="whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:translate-x-0 group-hover/sidebar:opacity-100 group-focus-within/sidebar:translate-x-0 group-focus-within/sidebar:opacity-100 md:-translate-x-1">
-                    Sign out
-                  </span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {signInError ? (
-                  <p
-                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-[11px] leading-4 text-red-200 opacity-0 transition group-hover/sidebar:opacity-100 group-focus-within/sidebar:opacity-100"
-                    role="alert"
-                  >
-                    {signInError}
-                  </p>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearSignInError()
-                    void signInWithGoogle()
-                  }}
-                  disabled={(isLoading && !uid) || isSigningIn}
-                  className="group/item relative flex h-12 w-full shrink-0 items-center gap-3 overflow-hidden rounded-2xl px-3 text-sm font-semibold text-[#99AABB] transition hover:bg-white/[0.08] hover:text-white disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
-                >
-                  <User className="size-5 shrink-0" aria-hidden="true" />
-                  <span className="whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:translate-x-0 group-hover/sidebar:opacity-100 group-focus-within/sidebar:translate-x-0 group-focus-within/sidebar:opacity-100 md:-translate-x-1">
-                    {isSigningIn ? 'Signing in…' : 'Sign in'}
-                  </span>
-                </button>
-              </div>
-            )}
           </div>
         </nav>
       </aside>
@@ -185,30 +135,12 @@ export function AppLayout() {
         <div className="mx-auto flex min-h-16 max-w-lg items-stretch justify-around px-2">
           <NavItem to="/" label="Discover" icon={Clapperboard} end mobile />
           <NavItem to="/movies" label="Movies" icon={Film} mobile />
-          <NavItem to="/watchlist" label="Saved" icon={Bookmark} mobile />
-          <NavItem to="/history" label="History" icon={History} mobile />
-          <button
-            type="button"
-            onClick={() => {
-              if (uid) {
-                void signOutUser()
-                return
-              }
-              clearSignInError()
-              void signInWithGoogle()
-            }}
-            disabled={(isLoading && !uid) || isSigningIn}
-            className="flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium text-[#99AABB] transition hover:text-white disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
-            aria-label={uid ? 'Sign out' : 'Sign in'}
-          >
-            {uid ? <LogOut className="size-5" aria-hidden="true" /> : <User className="size-5" aria-hidden="true" />}
-            <span>{uid ? 'Sign out' : 'Sign in'}</span>
-          </button>
+          <NavItem to="/tv-shows" label="Shows" icon={Tv} mobile />
         </div>
       </nav>
 
       <footer className="hidden border-t border-white/[0.08] px-4 py-8 text-center text-sm text-[#99AABB] md:ml-[76px] md:block">
-        Rewind Video Club. Powered by TMDB data.
+        Powered by TMDB data. No account required.
       </footer>
       <SuperSearch
         isOpen={isSuperSearchOpen}

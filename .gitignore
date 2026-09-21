@@ -1,12 +1,5 @@
 .env
 .secrets/
-firebase-debug.log
-letterboxd-import-report*.json
-
-# Firebase credentials must stay local
-*-service-account*.json
-service-account*.json
-*-firebase-adminsdk-*.json
 
 # Logs
 logs

@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bookmark, ExternalLink, Play, Star } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { ExternalLink, Play, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
 import {
@@ -9,9 +9,6 @@ import {
   getSimilarMovies,
   queryKeys,
 } from '@/api/tmdbEndpoints'
-import { isMovieSaved, saveMovie, unsaveMovie, watchlistQueryKeys } from '@/api/watchlistClient'
-import { useAuth } from '@/auth/useAuth'
-import { LogViewingPanel } from '@/components/viewing/LogViewingPanel'
 import { CastRail } from '@/components/movie/CastRail'
 import { MoviePoster } from '@/components/movie/MoviePoster'
 import { MovieSection } from '@/components/movie/MovieSection'
@@ -23,9 +20,6 @@ import { parsePositiveIntegerParam } from '@/lib/routeParams'
 
 export function MovieDetailPage() {
   const { movieId = '' } = useParams()
-  const { user, uid, signInWithGoogle } = useAuth()
-  const firestoreUid = user?.uid
-  const queryClient = useQueryClient()
   const movieTmdbId = parsePositiveIntegerParam(movieId)
   const isValidMovieId = movieTmdbId !== null
 
@@ -48,40 +42,6 @@ export function MovieDetailPage() {
     queryKey: queryKeys.similar(movieTmdbId ?? movieId),
     queryFn: () => getSimilarMovies(movieTmdbId ?? ''),
     enabled: isValidMovieId,
-  })
-  const saved = useQuery({
-    queryKey: watchlistQueryKeys.movie(firestoreUid, movieTmdbId),
-    queryFn: () => isMovieSaved(firestoreUid!, movieTmdbId!),
-    enabled: Boolean(firestoreUid && movieTmdbId),
-  })
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      if (!movie || !movieTmdbId) return null
-      if (!firestoreUid) {
-        await signInWithGoogle()
-        return null
-      }
-
-      if (saved.data) {
-        await unsaveMovie(firestoreUid, movieTmdbId)
-      } else {
-        await saveMovie(firestoreUid, {
-          tmdbId: movieTmdbId,
-          title: movie.title,
-          releaseYear: getYear(movie.release_date),
-          posterPath: movie.poster_path,
-        })
-      }
-
-      return firestoreUid
-    },
-    onSuccess: async (activeUid) => {
-      if (!activeUid) return
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: watchlistQueryKeys.movie(activeUid, movieTmdbId) }),
-        queryClient.invalidateQueries({ queryKey: watchlistQueryKeys.all(activeUid) }),
-      ])
-    },
   })
 
   const movie = details.data
@@ -173,15 +133,6 @@ export function MovieDetailPage() {
               ))}
             </dl>
             <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending}
-                className="button-link button-link-accent"
-              >
-                <Bookmark className={saved.data ? 'size-4 fill-current' : 'size-4'} aria-hidden="true" />
-                {uid ? (saved.data ? 'Saved' : 'Save movie') : 'Sign in to save'}
-              </button>
               {magicLinkUrl ? (
                 <a className="button-link button-link-accent" href={magicLinkUrl} target="_blank" rel="noreferrer">
                   <ExternalLink className="size-4" aria-hidden="true" />
@@ -197,15 +148,6 @@ export function MovieDetailPage() {
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <LogViewingPanel
-          tmdbId={movie.id}
-          mediaType="movie"
-          title={movie.title}
-          releaseYear={movie.release_date ? Number(movie.release_date.slice(0, 4)) : null}
-        />
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">

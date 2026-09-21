@@ -10,7 +10,6 @@ import {
   getSimilarSeries,
   queryKeys,
 } from '@/api/tmdbEndpoints'
-import { LogViewingPanel } from '@/components/viewing/LogViewingPanel'
 import { CastRail } from '@/components/movie/CastRail'
 import { MoviePoster } from '@/components/movie/MoviePoster'
 import { MovieSection } from '@/components/movie/MovieSection'
@@ -162,15 +161,6 @@ export function SeriesDetailPage() {
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <LogViewingPanel
-          tmdbId={series.id}
-          mediaType="tv"
-          title={series.name}
-          releaseYear={series.first_air_date ? Number(series.first_air_date.slice(0, 4)) : null}
-        />
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
