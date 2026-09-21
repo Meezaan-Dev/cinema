@@ -6,6 +6,7 @@ import { getMovieDetails, queryKeys } from '@/api/tmdbEndpoints'
 import { getSavedMovies, watchlistQueryKeys } from '@/api/watchlistClient'
 import { useAuth } from '@/auth/useAuth'
 import { MoviePoster } from '@/components/movie/MoviePoster'
+import { AuthGate } from '@/components/ui/AuthGate'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { MovieGridSkeleton } from '@/components/ui/Skeleton'
 import { ErrorState } from '@/components/ui/StatusState'
@@ -61,16 +62,13 @@ export function WatchlistPage() {
       </div>
 
       {!isLoading && !user ? (
-        <div className="rounded-xl border border-white/[0.08] bg-[#1C2228]/70 p-6">
-          <Bookmark className="size-8 text-[#00E054]" aria-hidden="true" />
-          <h2 className="mt-4 text-xl font-semibold text-white">Sign in to save movies</h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-[#99AABB]">
-            Rewind saves your watchlist to your Google account so it can travel with you.
-          </p>
-          <button type="button" onClick={() => void signInWithGoogle()} className="button-link button-link-accent mt-5">
-            Sign in with Google
-          </button>
-        </div>
+        <AuthGate
+          icon={Bookmark}
+          title="Sign in to save movies"
+          message="Rewind saves your watchlist to your Google account so it can travel with you."
+          actionLabel="Sign in with Google"
+          onAction={() => void signInWithGoogle()}
+        />
       ) : null}
 
       {saved.isLoading ? <MovieGridSkeleton count={10} /> : null}

@@ -1,11 +1,12 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
-import { CalendarDays, MapPin, RotateCcw, Star } from 'lucide-react'
+import { CalendarDays, History, Import, MapPin, PencilLine, RotateCcw, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { getMovieDetails, queryKeys } from '@/api/tmdbEndpoints'
 import { getViewingHistory, viewingQueryKeys } from '@/api/viewingsClient'
+import { useAuth } from '@/auth/useAuth'
 import { MoviePoster } from '@/components/movie/MoviePoster'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { AuthGate } from '@/components/ui/AuthGate'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { ErrorState } from '@/components/ui/StatusState'
 import { formatRating, getYear } from '@/lib/formatters'
@@ -91,10 +92,45 @@ function ViewingRow({
   )
 }
 
+function HistoryStarterState() {
+  return (
+    <div className="rounded-xl border border-white/[0.08] bg-[#1C2228]/70 p-6">
+      <History className="size-8 text-[#00E054]" aria-hidden="true" />
+      <h2 className="mt-4 text-xl font-semibold text-white">No films logged yet</h2>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-[#99AABB]">
+        Start from the films you have already tracked, or build your Rewind history from here as you watch.
+      </p>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-white/[0.08] bg-[#14181C]/70 p-4">
+          <Import className="size-5 text-[#00E054]" aria-hidden="true" />
+          <h3 className="mt-3 text-base font-semibold text-white">Import Letterboxd data</h3>
+          <p className="mt-2 text-sm leading-6 text-[#99AABB]">
+            If you already have a Letterboxd export, import the diary zip from your terminal:
+          </p>
+          <code className="mt-3 block overflow-x-auto rounded-md border border-white/[0.08] bg-black/25 px-3 py-2 text-xs text-[#DDE7EE]">
+            npm run import:letterboxd -- &lt;export.zip&gt;
+          </code>
+        </div>
+
+        <div className="rounded-lg border border-white/[0.08] bg-[#14181C]/70 p-4">
+          <PencilLine className="size-5 text-[#00E054]" aria-hidden="true" />
+          <h3 className="mt-3 text-base font-semibold text-white">Log and rate films</h3>
+          <p className="mt-2 text-sm leading-6 text-[#99AABB]">
+            Use Rewind as your fresh movie log. As logging tools are added, this history will become your timeline of watched films, ratings, rewatches, and notes.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function HistoryPage() {
+  const { user, isLoading: isAuthLoading, signInWithGoogle } = useAuth()
   const history = useQuery({
     queryKey: viewingQueryKeys.history,
     queryFn: getViewingHistory,
+    enabled: Boolean(user),
   })
   const uniqueTmdbIds = Array.from(new Set((history.data ?? []).map((viewing) => viewing.tmdbId)))
 
@@ -121,12 +157,21 @@ export function HistoryPage() {
         </p>
       </div>
 
-      {history.isLoading ? <HistorySkeleton /> : null}
-      {history.isError ? <ErrorState error={history.error} onRetry={() => history.refetch()} /> : null}
-      {!history.isLoading && !history.isError && history.data?.length === 0 ? (
-        <EmptyState title="No viewing history yet" message="Import a Letterboxd diary to start building your Rewind history." />
+      {!isAuthLoading && !user ? (
+        <AuthGate
+          icon={History}
+          title="Sign in to view your history"
+          message="Rewind keeps your viewing history tied to your Google account so your log stays private and follows you."
+          actionLabel="Sign in with Google"
+          onAction={() => void signInWithGoogle()}
+        />
       ) : null}
-      {!history.isLoading && !history.isError && history.data?.length ? (
+      {isAuthLoading || history.isLoading ? <HistorySkeleton /> : null}
+      {user && history.isError ? <ErrorState error={history.error} onRetry={() => history.refetch()} /> : null}
+      {user && !history.isLoading && !history.isError && history.data?.length === 0 ? (
+        <HistoryStarterState />
+      ) : null}
+      {user && !history.isLoading && !history.isError && history.data?.length ? (
         <div className="space-y-4">
           {history.data.map((viewing) => (
             <ViewingRow key={viewing.id} viewing={viewing} movie={moviesById.get(viewing.tmdbId)} />
