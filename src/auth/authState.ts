@@ -4,7 +4,7 @@ import type { User } from 'firebase/auth'
 export type AuthContextValue = {
   user: User | null
   isLoading: boolean
-  signInWithGoogle: () => Promise<User>
+  signInWithGoogle: () => Promise<void>
   signOutUser: () => Promise<void>
 }
 

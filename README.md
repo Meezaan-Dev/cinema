@@ -72,13 +72,13 @@ TMDB_BASE_URL=https://api.themoviedb.org/3
 # Client-side TMDB image CDN (not a secret)
 VITE_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
 
-# Server-side Firebase Admin configuration
+# Firestore configuration
 FIREBASE_PROJECT_ID=rewind-video-club
 FIRESTORE_DATABASE_ID=rewind-db
-REWIND_OWNER_ID=personal
+REWIND_OWNER_ID=your_firebase_uid_for_imports
 
-# Local development uses your existing `firebase login` credentials by default.
-# Optional CI/service-account fallback:
+# Optional server-side fallback for import scripts or legacy API access.
+# User account data is read and written by the Firebase Web SDK with Firestore rules.
 FIREBASE_SERVICE_ACCOUNT_JSON=
 
 ```
@@ -89,14 +89,15 @@ Restart the dev server after changing env vars.
 | Configuration | Works without it |
 |---------------|------------------|
 | TMDB key only | Browse, search, details, trailers |
-| Firebase login or `FIREBASE_SERVICE_ACCOUNT_JSON` | Viewing history, Google sign-in, saved movies, and Letterboxd imports |
+| Firebase Auth + Firestore rules | Account-owned viewing history and saved movies |
+| Firebase login or `FIREBASE_SERVICE_ACCOUNT_JSON` | Letterboxd imports and server-side maintenance scripts |
 
 ## API routes
 
 | Route | Role |
 |-------|------|
 | `tmdb` | Secure proxy for TMDB API requests (server-side only) |
-| `viewings` | Firestore-backed viewing-history API |
+| `viewings` | Legacy/server-side viewing-history API for local maintenance |
 
 ## Scripts
 
@@ -112,7 +113,7 @@ npm run preview  # Preview production build
 ## Operational notes
 
 - **TMDB** credentials are server-side only, proxied through `/api/tmdb`. The API key is never exposed to the browser.
-- **Firestore** is accessed server-side through Firebase Admin. Local development uses your normal `firebase login` credentials; CI can use service-account credentials. Do not commit service-account credentials.
+- **Firestore** account data is accessed in the browser through Firebase Auth and owner-scoped security rules. Viewing history lives under `users/{uid}/viewings`; set `REWIND_OWNER_ID` to your Firebase UID when importing Letterboxd data into your account. Server-side Firebase access is only for imports or maintenance scripts; local development can use your normal `firebase login` credentials, and service-account credentials remain optional. Do not commit service-account credentials.
 - **Firebase Auth** uses Google sign-in. Signed-in users can read/write only their own `users/{uid}` data through Firestore rules.
 - **TMDB** is required for meaningful content; handle rate limits and network errors in the UI.
 - Third-party failure modes: TMDB rate limits. The UI surfaces recoverable errors instead of crashing.

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyB3UXfb2NWp4Y2Pwh8x2FV5sYhigr_34aQ',
@@ -14,4 +14,8 @@ const firebaseConfig = {
 export const firebaseApp = initializeApp(firebaseConfig)
 export const auth = getAuth(firebaseApp)
 export const googleProvider = new GoogleAuthProvider()
-export const db = getFirestore(firebaseApp, import.meta.env.VITE_FIRESTORE_DATABASE_ID || 'rewind-db')
+export const db = initializeFirestore(
+  firebaseApp,
+  { experimentalForceLongPolling: true },
+  import.meta.env.VITE_FIRESTORE_DATABASE_ID || 'rewind-db',
+)
