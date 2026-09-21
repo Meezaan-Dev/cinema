@@ -11,6 +11,7 @@ import {
 } from '@/api/tmdbEndpoints'
 import { isMovieSaved, saveMovie, unsaveMovie, watchlistQueryKeys } from '@/api/watchlistClient'
 import { useAuth } from '@/auth/useAuth'
+import { LogViewingPanel } from '@/components/viewing/LogViewingPanel'
 import { CastRail } from '@/components/movie/CastRail'
 import { MoviePoster } from '@/components/movie/MoviePoster'
 import { MovieSection } from '@/components/movie/MovieSection'
@@ -22,7 +23,8 @@ import { parsePositiveIntegerParam } from '@/lib/routeParams'
 
 export function MovieDetailPage() {
   const { movieId = '' } = useParams()
-  const { user, signInWithGoogle } = useAuth()
+  const { user, uid, signInWithGoogle } = useAuth()
+  const firestoreUid = user?.uid
   const queryClient = useQueryClient()
   const movieTmdbId = parsePositiveIntegerParam(movieId)
   const isValidMovieId = movieTmdbId !== null
@@ -48,22 +50,22 @@ export function MovieDetailPage() {
     enabled: isValidMovieId,
   })
   const saved = useQuery({
-    queryKey: watchlistQueryKeys.movie(user?.uid, movieTmdbId),
-    queryFn: () => isMovieSaved(user!.uid, movieTmdbId!),
-    enabled: Boolean(user && movieTmdbId),
+    queryKey: watchlistQueryKeys.movie(firestoreUid, movieTmdbId),
+    queryFn: () => isMovieSaved(firestoreUid!, movieTmdbId!),
+    enabled: Boolean(firestoreUid && movieTmdbId),
   })
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!movie || !movieTmdbId) return null
-      if (!user) {
+      if (!firestoreUid) {
         await signInWithGoogle()
         return null
       }
 
       if (saved.data) {
-        await unsaveMovie(user.uid, movieTmdbId)
+        await unsaveMovie(firestoreUid, movieTmdbId)
       } else {
-        await saveMovie(user.uid, {
+        await saveMovie(firestoreUid, {
           tmdbId: movieTmdbId,
           title: movie.title,
           releaseYear: getYear(movie.release_date),
@@ -71,11 +73,10 @@ export function MovieDetailPage() {
         })
       }
 
-      return user.uid
+      return firestoreUid
     },
-    onSuccess: async (uid) => {
-      if (!uid) return
-      const activeUid = uid ?? user?.uid
+    onSuccess: async (activeUid) => {
+      if (!activeUid) return
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: watchlistQueryKeys.movie(activeUid, movieTmdbId) }),
         queryClient.invalidateQueries({ queryKey: watchlistQueryKeys.all(activeUid) }),
@@ -179,7 +180,7 @@ export function MovieDetailPage() {
                 className="button-link button-link-accent"
               >
                 <Bookmark className={saved.data ? 'size-4 fill-current' : 'size-4'} aria-hidden="true" />
-                {user ? (saved.data ? 'Saved' : 'Save movie') : 'Sign in to save'}
+                {uid ? (saved.data ? 'Saved' : 'Save movie') : 'Sign in to save'}
               </button>
               {magicLinkUrl ? (
                 <a className="button-link button-link-accent" href={magicLinkUrl} target="_blank" rel="noreferrer">
@@ -196,6 +197,15 @@ export function MovieDetailPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <LogViewingPanel
+          tmdbId={movie.id}
+          mediaType="movie"
+          title={movie.title}
+          releaseYear={movie.release_date ? Number(movie.release_date.slice(0, 4)) : null}
+        />
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">

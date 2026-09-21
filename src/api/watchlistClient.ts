@@ -11,7 +11,8 @@ import {
   type Timestamp,
 } from 'firebase/firestore'
 
-import { db } from '@/lib/firebase'
+import { getDb } from '@/lib/firebase'
+import { writeWatchlistCache } from '@/lib/queryLocalCache'
 
 export type SavedMovie = {
   tmdbId: number
@@ -35,7 +36,7 @@ export const watchlistQueryKeys = {
 }
 
 function watchlistDoc(uid: string, tmdbId: number) {
-  return doc(db, 'users', uid, 'watchlist', String(tmdbId))
+  return doc(getDb(), 'users', uid, 'watchlist', String(tmdbId))
 }
 
 function mapSavedMovie(id: string, data: SavedMovieDocument): SavedMovie {
@@ -76,6 +77,10 @@ export async function unsaveMovie(uid: string, tmdbId: number) {
 }
 
 export async function getSavedMovies(uid: string) {
-  const snapshot = await getDocs(query(collection(db, 'users', uid, 'watchlist'), orderBy('savedAt', 'desc')))
-  return snapshot.docs.map((item) => mapSavedMovie(item.id, item.data() as SavedMovieDocument))
+  const snapshot = await getDocs(
+    query(collection(getDb(), 'users', uid, 'watchlist'), orderBy('savedAt', 'desc')),
+  )
+  const movies = snapshot.docs.map((item) => mapSavedMovie(item.id, item.data() as SavedMovieDocument))
+  writeWatchlistCache(uid, movies)
+  return movies
 }

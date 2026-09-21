@@ -5,10 +5,11 @@ import {
   classifyTmdbMatch,
   parseLetterboxdZip,
   toFirestoreViewingInput,
-  type LetterboxdViewingImport,
+  type LetterboxdViewingImportWithId,
   type TmdbMatchResult,
   type TmdbSearchCandidate,
 } from '../api/letterboxdImport.js'
+import { buildViewingId } from '../api/rewindDomain.js'
 import { createViewingRepository } from '../api/viewingRepository.js'
 
 type TmdbSearchResponse = {
@@ -72,7 +73,7 @@ function toTmdbCandidates(body: TmdbSearchResponse) {
   })
 }
 
-async function searchTmdb(entry: LetterboxdViewingImport) {
+async function searchTmdb(entry: LetterboxdViewingImportWithId) {
   const apiKey = requireEnv('TMDB_API_KEY')
   const url = new URL(`${tmdbBaseUrl()}/search/movie`)
   url.searchParams.set('api_key', apiKey)
@@ -142,9 +143,11 @@ async function main() {
       continue
     }
 
-    const result = await repository.upsertViewing(entry.id, toFirestoreViewingInput(entry, match))
+    const viewingId = entry.id ?? buildViewingId(entry.sourceKey)
+    const input = toFirestoreViewingInput(entry, match)
+    const result = await repository.upsertViewing(viewingId, input)
     matched += 1
-    unknownLocations += 1
+    if (input.location === 'unknown') unknownLocations += 1
     if (result.created) {
       created += 1
     } else {

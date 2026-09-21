@@ -27,8 +27,24 @@ service cloud.firestore {
         && request.resource.data.savedAt is timestamp;
     }
 
-    function validViewing() {
-      return hasOnlyFields([
+    function validViewingFieldKeys() {
+      return request.resource.data.keys().hasOnly([
+        'tmdbId',
+        'mediaType',
+        'watchedAt',
+        'location',
+        'rating',
+        'rewatch',
+        'review',
+        'tags',
+        'source',
+        'sourceUri',
+        'sourceKey',
+        'importTitle',
+        'importYear',
+        'createdAt',
+        'updatedAt'
+      ]) || request.resource.data.keys().hasOnly([
         'tmdbId',
         'watchedAt',
         'location',
@@ -43,11 +59,15 @@ service cloud.firestore {
         'importYear',
         'createdAt',
         'updatedAt'
-      ])
+      ]);
+    }
+
+    function validViewing() {
+      return validViewingFieldKeys()
       && request.resource.data.tmdbId is number
       && request.resource.data.watchedAt is timestamp
       && request.resource.data.location in ['cinema', 'home', 'other', 'unknown']
-      && (request.resource.data.rating == null || request.resource.data.rating is number)
+      && (request.resource.data.rating == null || (request.resource.data.rating is number && request.resource.data.rating >= 0 && request.resource.data.rating <= 5))
       && request.resource.data.rewatch is bool
       && validNullableString('review', 5000)
       && request.resource.data.tags is list
@@ -62,24 +82,41 @@ service cloud.firestore {
       && request.resource.data.updatedAt is timestamp;
     }
 
-    // Assumed data model:
     // users/{uid}/watchlist/{tmdbId}
     // users/{uid}/viewings/{viewingId}
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
-
-      match /watchlist/{tmdbId} {
-        allow read, delete: if isOwner(userId);
-        allow create, update: if isOwner(userId) && validWatchlistMovie();
-      }
-
-      match /viewings/{viewingId} {
-        allow read, delete: if isOwner(userId);
-        allow create, update: if isOwner(userId) && validViewing();
-      }
+    match /users/{userId}/watchlist/{tmdbId} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && validWatchlistMovie();
     }
 
-    // Deny everything else by default.
+    match /users/{userId}/viewings/{viewingId} {
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && validViewing()
+        && request.resource.data.keys().hasOnly([
+          'tmdbId',
+          'mediaType',
+          'watchedAt',
+          'location',
+          'rating',
+          'rewatch',
+          'review',
+          'tags',
+          'source',
+          'sourceUri',
+          'sourceKey',
+          'importTitle',
+          'importYear',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.mediaType in ['movie', 'tv'];
+      allow update: if isOwner(userId) && validViewing() && (
+        !('mediaType' in request.resource.data)
+        || request.resource.data.mediaType in ['movie', 'tv']
+      );
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

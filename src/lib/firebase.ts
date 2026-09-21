@@ -1,6 +1,11 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider } from 'firebase/auth'
-import { initializeFirestore } from 'firebase/firestore'
+import {
+  GoogleAuthProvider,
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+  initializeAuth,
+} from 'firebase/auth'
+import { initializeFirestore, type Firestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyB3UXfb2NWp4Y2Pwh8x2FV5sYhigr_34aQ',
@@ -12,10 +17,23 @@ const firebaseConfig = {
 }
 
 export const firebaseApp = initializeApp(firebaseConfig)
-export const auth = getAuth(firebaseApp)
+export const auth = initializeAuth(firebaseApp, {
+  persistence: browserLocalPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver,
+})
 export const googleProvider = new GoogleAuthProvider()
-export const db = initializeFirestore(
-  firebaseApp,
-  { experimentalForceLongPolling: true },
-  import.meta.env.VITE_FIRESTORE_DATABASE_ID || 'rewind-db',
-)
+
+let firestoreDb: Firestore | null = null
+
+export function getDb() {
+  if (!firestoreDb) {
+    firestoreDb = initializeFirestore(
+      firebaseApp,
+      {
+        experimentalAutoDetectLongPolling: true,
+      },
+      import.meta.env.VITE_FIRESTORE_DATABASE_ID || 'rewind-db',
+    )
+  }
+  return firestoreDb
+}
