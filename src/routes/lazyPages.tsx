@@ -3,9 +3,11 @@ import { lazy, Suspense, type ReactNode } from 'react'
 import { MovieGridSkeleton } from '@/components/ui/Skeleton'
 
 export const HomePage = lazy(() => import('@/pages/HomePage').then((module) => ({ default: module.HomePage })))
+export const HistoryPage = lazy(() => import('@/pages/HistoryPage').then((module) => ({ default: module.HistoryPage })))
 export const MoviesPage = lazy(() => import('@/pages/MoviesPage').then((module) => ({ default: module.MoviesPage })))
 export const PeoplePage = lazy(() => import('@/pages/PeoplePage').then((module) => ({ default: module.PeoplePage })))
 export const TVShowsPage = lazy(() => import('@/pages/TVShowsPage').then((module) => ({ default: module.TVShowsPage })))
+export const WatchlistPage = lazy(() => import('@/pages/WatchlistPage').then((module) => ({ default: module.WatchlistPage })))
 export const MovieDetailPage = lazy(() =>
   import('@/pages/MovieDetailPage').then((module) => ({ default: module.MovieDetailPage })),
 )

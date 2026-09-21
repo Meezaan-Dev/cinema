@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { ExternalLink, Play, Star } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Bookmark, ExternalLink, Play, Star } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
 import {
@@ -9,6 +9,8 @@ import {
   getSimilarMovies,
   queryKeys,
 } from '@/api/tmdbEndpoints'
+import { isMovieSaved, saveMovie, unsaveMovie, watchlistQueryKeys } from '@/api/watchlistClient'
+import { useAuth } from '@/auth/useAuth'
 import { CastRail } from '@/components/movie/CastRail'
 import { MoviePoster } from '@/components/movie/MoviePoster'
 import { MovieSection } from '@/components/movie/MovieSection'
@@ -20,6 +22,8 @@ import { parsePositiveIntegerParam } from '@/lib/routeParams'
 
 export function MovieDetailPage() {
   const { movieId = '' } = useParams()
+  const { user, signInWithGoogle } = useAuth()
+  const queryClient = useQueryClient()
   const movieTmdbId = parsePositiveIntegerParam(movieId)
   const isValidMovieId = movieTmdbId !== null
 
@@ -42,6 +46,37 @@ export function MovieDetailPage() {
     queryKey: queryKeys.similar(movieTmdbId ?? movieId),
     queryFn: () => getSimilarMovies(movieTmdbId ?? ''),
     enabled: isValidMovieId,
+  })
+  const saved = useQuery({
+    queryKey: watchlistQueryKeys.movie(user?.uid, movieTmdbId),
+    queryFn: () => isMovieSaved(user!.uid, movieTmdbId!),
+    enabled: Boolean(user && movieTmdbId),
+  })
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!movie || !movieTmdbId) return null
+      const activeUser = user ?? (await signInWithGoogle())
+
+      if (saved.data) {
+        await unsaveMovie(activeUser.uid, movieTmdbId)
+      } else {
+        await saveMovie(activeUser.uid, {
+          tmdbId: movieTmdbId,
+          title: movie.title,
+          releaseYear: getYear(movie.release_date),
+          posterPath: movie.poster_path,
+        })
+      }
+
+      return activeUser.uid
+    },
+    onSuccess: async (uid) => {
+      const activeUid = uid ?? user?.uid
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: watchlistQueryKeys.movie(activeUid, movieTmdbId) }),
+        queryClient.invalidateQueries({ queryKey: watchlistQueryKeys.all(activeUid) }),
+      ])
+    },
   })
 
   const movie = details.data
@@ -133,6 +168,15 @@ export function MovieDetailPage() {
               ))}
             </dl>
             <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending}
+                className="button-link button-link-accent"
+              >
+                <Bookmark className={saved.data ? 'size-4 fill-current' : 'size-4'} aria-hidden="true" />
+                {user ? (saved.data ? 'Saved' : 'Save movie') : 'Sign in to save'}
+              </button>
               {magicLinkUrl ? (
                 <a className="button-link button-link-accent" href={magicLinkUrl} target="_blank" rel="noreferrer">
                   <ExternalLink className="size-4" aria-hidden="true" />

@@ -8,7 +8,7 @@ export function NotFoundPage() {
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <StatusState
         title="Page not found"
-        message="That screen is not part of Cinema. Head home or search for a title instead."
+        message="That screen is not part of Rewind. Head home or search for a title instead."
       />
       <div className="mt-5 flex justify-center gap-3">
         <Link to="/">

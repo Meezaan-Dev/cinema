@@ -5,6 +5,7 @@ import path from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import tmdbHandler from './api/tmdb'
+import viewingsHandler from './api/viewings'
 
 function setProcessEnvFromVite(name: string, value: string | undefined) {
   if (!process.env[name] && value) {
@@ -77,12 +78,18 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   setProcessEnvFromVite('TMDB_API_KEY', env.TMDB_API_KEY || env.VITE_TMDB_API_KEY)
   setProcessEnvFromVite('TMDB_BASE_URL', env.TMDB_BASE_URL || env.VITE_TMDB_BASE_URL)
+  setProcessEnvFromVite('FIREBASE_PROJECT_ID', env.FIREBASE_PROJECT_ID)
+  setProcessEnvFromVite('FIRESTORE_DATABASE_ID', env.FIRESTORE_DATABASE_ID)
+  setProcessEnvFromVite('REWIND_OWNER_ID', env.REWIND_OWNER_ID || env.ABSOLUTE_CINEMA_OWNER_ID)
+  setProcessEnvFromVite('FIREBASE_SERVICE_ACCOUNT_JSON', env.FIREBASE_SERVICE_ACCOUNT_JSON)
+  setProcessEnvFromVite('GOOGLE_APPLICATION_CREDENTIALS', env.GOOGLE_APPLICATION_CREDENTIALS)
 
   return {
     plugins: [
       react(),
       tailwindcss(),
       createJsonDevApi('/api/tmdb', tmdbHandler),
+      createJsonDevApi('/api/viewings', viewingsHandler),
     ],
     resolve: {
       alias: {
