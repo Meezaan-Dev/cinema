@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function hasOnlyFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function validNullableString(field, maxLength) {
+      return !(field in request.resource.data)
+        || request.resource.data[field] == null
+        || (request.resource.data[field] is string && request.resource.data[field].size() <= maxLength);
+    }
+
+    function validWatchlistMovie() {
+      return hasOnlyFields(['tmdbId', 'title', 'releaseYear', 'posterPath', 'savedAt'])
+        && request.resource.data.tmdbId is number
+        && request.resource.data.tmdbId > 0
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 220
+        && validNullableString('releaseYear', 12)
+        && validNullableString('posterPath', 180)
+        && request.resource.data.savedAt is timestamp;
+    }
+
+    function validViewing() {
+      return hasOnlyFields([
+        'tmdbId',
+        'watchedAt',
+        'location',
+        'rating',
+        'rewatch',
+        'review',
+        'tags',
+        'source',
+        'sourceUri',
+        'sourceKey',
+        'importTitle',
+        'importYear',
+        'createdAt',
+        'updatedAt'
+      ])
+      && request.resource.data.tmdbId is number
+      && request.resource.data.watchedAt is timestamp
+      && request.resource.data.location in ['cinema', 'home', 'other', 'unknown']
+      && (request.resource.data.rating == null || request.resource.data.rating is number)
+      && request.resource.data.rewatch is bool
+      && validNullableString('review', 5000)
+      && request.resource.data.tags is list
+      && request.resource.data.tags.size() <= 50
+      && request.resource.data.source in ['letterboxd', 'rewind']
+      && validNullableString('sourceUri', 500)
+      && request.resource.data.sourceKey is string
+      && request.resource.data.sourceKey.size() > 0
+      && validNullableString('importTitle', 220)
+      && (request.resource.data.importYear == null || request.resource.data.importYear is number)
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.updatedAt is timestamp;
+    }
+
+    // Assumed data model:
+    // users/{uid}/watchlist/{tmdbId}
+    // users/{uid}/viewings/{viewingId}
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /watchlist/{tmdbId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validWatchlistMovie();
+      }
+
+      match /viewings/{viewingId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validViewing();
+      }
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

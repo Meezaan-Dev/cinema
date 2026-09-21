@@ -1,0 +1,19 @@
+{
+  "auth": {
+    "authorizedDomains": ["localhost", "rewind-video-club.firebaseapp.com"],
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Rewind",
+        "supportEmail": "meezaandavids365@gmail.com"
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json",
+    "edition": "enterprise",
+    "dataAccessMode": "FIRESTORE_NATIVE",
+    "database": "rewind-db",
+    "location": "africa-south1"
+  }
+}

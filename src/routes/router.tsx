@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { RouteErrorPage } from '@/pages/RouteErrorPage'
 import {
   HomePage,
+  HistoryPage,
   LazyRoute,
   MovieDetailPage,
   MoviesPage,
@@ -13,6 +14,7 @@ import {
   SearchPage,
   SeriesDetailPage,
   TVShowsPage,
+  WatchlistPage,
 } from '@/routes/lazyPages'
 
 export const router = createBrowserRouter([
@@ -22,6 +24,8 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <LazyRoute><HomePage /></LazyRoute> },
+      { path: 'history', element: <LazyRoute><HistoryPage /></LazyRoute> },
+      { path: 'watchlist', element: <LazyRoute><WatchlistPage /></LazyRoute> },
       { path: 'movies', element: <LazyRoute><MoviesPage /></LazyRoute> },
       { path: 'tv-shows', element: <LazyRoute><TVShowsPage /></LazyRoute> },
       { path: 'people', element: <LazyRoute><PeoplePage /></LazyRoute> },

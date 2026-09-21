@@ -1,8 +1,8 @@
-# Cinema
+# Rewind
 
-Cinema is a focused movie and TV discovery experience powered by TMDB. Browse trending content, search titles, and explore detailed pages with cast and trailers.
+Rewind is a personal movie companion powered by TMDB and your own viewing history. Browse trending content, search titles, explore detailed pages, and review what you have watched.
 
-No accounts. No watchlists. No setup beyond a TMDB key.
+No authentication yet. Firestore stores personal viewing-history data through server-side APIs and the developer-side Letterboxd importer.
 
 ## What you can do
 
@@ -13,11 +13,23 @@ No accounts. No watchlists. No setup beyond a TMDB key.
 - Movie and TV detail pages: overview, genres, cast, trailers, similar titles, metadata
 - **Magic Link** (PlayIMDb) and **View on IMDb** when TMDB provides an IMDb ID
 
+### History
+- Import Letterboxd diary exports with `npm run import:letterboxd -- <export.zip>`
+- Store viewings in Firestore under `users/{ownerId}/viewings/{viewingId}`
+- View personal history at `/history`
+
+### Watchlist
+- Sign in with Google
+- Save movies from movie detail pages
+- View saved movies at `/watchlist`
+
 ## Routes
 
 | Path | Purpose |
 |------|---------|
 | `/` | Discover home |
+| `/history` | Personal viewing history |
+| `/watchlist` | Saved movies |
 | `/movies` | Browse movies |
 | `/tv-shows` | Browse TV series |
 | `/search` | Unified search |
@@ -60,6 +72,15 @@ TMDB_BASE_URL=https://api.themoviedb.org/3
 # Client-side TMDB image CDN (not a secret)
 VITE_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
 
+# Server-side Firebase Admin configuration
+FIREBASE_PROJECT_ID=rewind-video-club
+FIRESTORE_DATABASE_ID=rewind-db
+REWIND_OWNER_ID=personal
+
+# Local development uses your existing `firebase login` credentials by default.
+# Optional CI/service-account fallback:
+FIREBASE_SERVICE_ACCOUNT_JSON=
+
 ```
 
 Restart the dev server after changing env vars.  
@@ -68,17 +89,20 @@ Restart the dev server after changing env vars.
 | Configuration | Works without it |
 |---------------|------------------|
 | TMDB key only | Browse, search, details, trailers |
+| Firebase login or `FIREBASE_SERVICE_ACCOUNT_JSON` | Viewing history, Google sign-in, saved movies, and Letterboxd imports |
 
 ## API routes
 
 | Route | Role |
 |-------|------|
 | `tmdb` | Secure proxy for TMDB API requests (server-side only) |
+| `viewings` | Firestore-backed viewing-history API |
 
 ## Scripts
 
 ```bash
 npm run dev      # Vite + local /api stubs
+npm run import:letterboxd -- <export.zip>
 npm run build    # Typecheck + production bundle
 npm run lint     # ESLint
 npm run test     # Vitest (API route unit tests)
@@ -88,6 +112,8 @@ npm run preview  # Preview production build
 ## Operational notes
 
 - **TMDB** credentials are server-side only, proxied through `/api/tmdb`. The API key is never exposed to the browser.
+- **Firestore** is accessed server-side through Firebase Admin. Local development uses your normal `firebase login` credentials; CI can use service-account credentials. Do not commit service-account credentials.
+- **Firebase Auth** uses Google sign-in. Signed-in users can read/write only their own `users/{uid}` data through Firestore rules.
 - **TMDB** is required for meaningful content; handle rate limits and network errors in the UI.
 - Third-party failure modes: TMDB rate limits. The UI surfaces recoverable errors instead of crashing.
 
@@ -103,6 +129,8 @@ npm audit --omit=dev
 Smoke-test:
 
 - [ ] Discover home loads trending, popular, and coming soon sections
+- [ ] History loads imported Firestore viewings
+- [ ] Google sign-in works and a movie can be saved to Watchlist
 - [ ] Search movies and TV with filters
 - [ ] Movie detail: trailer, cast, similar, Magic Link, IMDb link
 - [ ] TV detail: seasons, cast, trailer, similar, Magic Link
