@@ -212,6 +212,7 @@ function encodeViewing(input: FirestoreViewingInput, createdAt: Date, updatedAt:
       sourceKey: encodeString(input.sourceKey),
       importTitle: encodeString(input.importTitle),
       importYear: encodeNullableNumber(input.importYear),
+      ...(input.mediaType ? { mediaType: encodeString(input.mediaType) } : {}),
       createdAt: encodeTimestamp(createdAt),
       updatedAt: encodeTimestamp(updatedAt),
     },

@@ -64,7 +64,8 @@ export function AppLayout() {
   const location = useLocation()
   const isDetailPage = /^\/(movie|tv|person)\//.test(location.pathname)
   const [isSuperSearchOpen, setIsSuperSearchOpen] = useState(false)
-  const { user, isLoading, signInWithGoogle, signOutUser } = useAuth()
+  const { profile, uid, isLoading, isSigningIn, signInError, signInWithGoogle, signOutUser, clearSignInError } =
+    useAuth()
 
   return (
     <div className="min-h-svh bg-[#14181C] text-white">
@@ -110,25 +111,25 @@ export function AppLayout() {
             <NavItem to="/history" label="History" icon={History} sidebar />
           </div>
           <div className="mt-auto">
-            {user ? (
+            {profile ? (
               <div className="group/item relative flex w-full flex-col gap-2">
                 <div className="flex items-center gap-3 rounded-2xl px-3 py-2">
-                  {user.photoURL ? (
+                  {profile.photoURL ? (
                     <img
-                      src={user.photoURL}
+                      src={profile.photoURL}
                       alt=""
                       referrerPolicy="no-referrer"
                       className="size-8 shrink-0 rounded-full bg-[#1C2228] object-cover ring-1 ring-white/10"
                     />
                   ) : (
                     <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#00E054]/20 text-sm font-bold text-[#00E054]">
-                      {(user.displayName ?? user.email ?? 'U')[0].toUpperCase()}
+                      {(profile.displayName ?? profile.email ?? 'U')[0].toUpperCase()}
                     </div>
                   )}
                   <div className="whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:translate-x-0 group-hover/sidebar:opacity-100 group-focus-within/sidebar:translate-x-0 group-focus-within/sidebar:opacity-100 md:-translate-x-1">
-                    <p className="text-sm font-semibold text-white truncate max-w-[160px]">{user.displayName ?? 'Signed in'}</p>
-                    {user.email ? (
-                      <p className="text-xs text-[#99AABB] truncate max-w-[160px]">{user.email}</p>
+                    <p className="text-sm font-semibold text-white truncate max-w-[160px]">{profile.displayName ?? 'Signed in'}</p>
+                    {profile.email ? (
+                      <p className="text-xs text-[#99AABB] truncate max-w-[160px]">{profile.email}</p>
                     ) : null}
                   </div>
                 </div>
@@ -144,17 +145,30 @@ export function AppLayout() {
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => void signInWithGoogle()}
-                disabled={isLoading}
-                className="group/item relative flex h-12 w-full shrink-0 items-center gap-3 overflow-hidden rounded-2xl px-3 text-sm font-semibold text-[#99AABB] transition hover:bg-white/[0.08] hover:text-white disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
-              >
-                <User className="size-5 shrink-0" aria-hidden="true" />
-                <span className="whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:translate-x-0 group-hover/sidebar:opacity-100 group-focus-within/sidebar:translate-x-0 group-focus-within/sidebar:opacity-100 md:-translate-x-1">
-                  Sign in
-                </span>
-              </button>
+              <div className="flex flex-col gap-2">
+                {signInError ? (
+                  <p
+                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-[11px] leading-4 text-red-200 opacity-0 transition group-hover/sidebar:opacity-100 group-focus-within/sidebar:opacity-100"
+                    role="alert"
+                  >
+                    {signInError}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearSignInError()
+                    void signInWithGoogle()
+                  }}
+                  disabled={(isLoading && !uid) || isSigningIn}
+                  className="group/item relative flex h-12 w-full shrink-0 items-center gap-3 overflow-hidden rounded-2xl px-3 text-sm font-semibold text-[#99AABB] transition hover:bg-white/[0.08] hover:text-white disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
+                >
+                  <User className="size-5 shrink-0" aria-hidden="true" />
+                  <span className="whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:translate-x-0 group-hover/sidebar:opacity-100 group-focus-within/sidebar:translate-x-0 group-focus-within/sidebar:opacity-100 md:-translate-x-1">
+                    {isSigningIn ? 'Signing in…' : 'Sign in'}
+                  </span>
+                </button>
+              </div>
             )}
           </div>
         </nav>
@@ -175,13 +189,20 @@ export function AppLayout() {
           <NavItem to="/history" label="History" icon={History} mobile />
           <button
             type="button"
-            onClick={() => void (user ? signOutUser() : signInWithGoogle())}
-            disabled={isLoading}
+            onClick={() => {
+              if (uid) {
+                void signOutUser()
+                return
+              }
+              clearSignInError()
+              void signInWithGoogle()
+            }}
+            disabled={(isLoading && !uid) || isSigningIn}
             className="flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium text-[#99AABB] transition hover:text-white disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
-            aria-label={user ? 'Sign out' : 'Sign in'}
+            aria-label={uid ? 'Sign out' : 'Sign in'}
           >
-            {user ? <LogOut className="size-5" aria-hidden="true" /> : <User className="size-5" aria-hidden="true" />}
-            <span>{user ? 'Sign out' : 'Sign in'}</span>
+            {uid ? <LogOut className="size-5" aria-hidden="true" /> : <User className="size-5" aria-hidden="true" />}
+            <span>{uid ? 'Sign out' : 'Sign in'}</span>
           </button>
         </div>
       </nav>

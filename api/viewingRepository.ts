@@ -99,6 +99,7 @@ export function createFirestoreViewingRepository(
           sourceKey: input.sourceKey,
           importTitle: input.importTitle,
           importYear: input.importYear,
+          ...(input.mediaType ? { mediaType: input.mediaType } : {}),
           createdAt: existing.exists ? existing.get('createdAt') : now,
           updatedAt: now,
         },

@@ -88,7 +88,7 @@ describe('viewing identity and Firestore mapping', () => {
       watchedAt: '2023-09-13',
     })
 
-    expect(sourceKey).toBe('letterboxd:https://boxd.it/4Qh6VB')
+    expect(sourceKey).toBe('letterboxd:https://boxd.it/4Qh6VB:2023-09-13')
     expect(buildViewingId(sourceKey)).toBe(buildViewingId(sourceKey))
     expect(buildViewingId(sourceKey)).toMatch(/^vw_[a-f0-9]{32}$/)
   })
@@ -113,7 +113,7 @@ describe('viewing identity and Firestore mapping', () => {
     expect(buildViewingId(first)).toBe(buildViewingId(second))
   })
 
-  it('maps imported Letterboxd viewings to unknown viewing location', () => {
+  it('maps cinema tags from Letterboxd diary rows to cinema location', () => {
     const [viewing] = joinDiaryWithReviews(parseDiaryCsv(diaryCsv), parseReviewsCsv(reviewsCsv))
     const input = toFirestoreViewingInput(viewing, {
       status: 'matched',
@@ -122,7 +122,7 @@ describe('viewing identity and Firestore mapping', () => {
       year: 2023,
     })
 
-    expect(input.location).toBe('unknown')
+    expect(input.location).toBe('cinema')
     expect(input.source).toBe('letterboxd')
     expect(input.review).toBe('Amazing\nstill thinking about it')
   })
