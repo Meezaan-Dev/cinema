@@ -1,57 +1,76 @@
-import { AppError, type AppErrorCode } from '@/lib/errors'
+import {
+  collection,
+  getDocs,
+  orderBy,
+  query,
+  type Timestamp,
+} from 'firebase/firestore'
+
+import { db } from '@/lib/firebase'
+import { AppError } from '@/lib/errors'
 import type { RewindViewing } from '@/types/viewing'
 
 export const viewingQueryKeys = {
-  history: ['viewings', 'history'] as const,
+  history: (uid: string | undefined) => ['viewings', 'history', uid] as const,
 }
 
-export class ViewingsError extends AppError {
-  constructor(code: AppErrorCode, message: string, status?: number) {
-    super(code, message, status)
+class ViewingsError extends AppError {
+  constructor(message = 'Viewing history is not available right now.') {
+    super('network', message)
     this.name = 'ViewingsError'
   }
 }
 
-function isProxyError(
-  body: unknown,
-): body is { error: { message: string; code: string; status: number } } {
-  return typeof body === 'object' && body !== null && 'error' in body
+type ViewingDocument = {
+  tmdbId?: unknown
+  watchedAt?: Timestamp
+  location?: unknown
+  rating?: unknown
+  rewatch?: unknown
+  review?: unknown
+  tags?: unknown
+  source?: unknown
+  sourceUri?: unknown
+  sourceKey?: unknown
+  importTitle?: unknown
+  importYear?: unknown
+  createdAt?: Timestamp
+  updatedAt?: Timestamp
 }
 
-function isViewingsResponse(body: unknown): body is { data: { viewings: RewindViewing[] } } {
-  return (
-    typeof body === 'object' &&
-    body !== null &&
-    'data' in body &&
-    typeof (body as { data?: unknown }).data === 'object' &&
-    (body as { data: { viewings?: unknown } }).data !== null &&
-    Array.isArray((body as { data: { viewings?: unknown } }).data.viewings)
-  )
+function timestampToIso(value: Timestamp | undefined) {
+  return value?.toDate().toISOString() ?? new Date(0).toISOString()
 }
 
-export async function getViewingHistory() {
-  let response: Response
+function stringArray(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+}
+
+function mapViewing(id: string, data: ViewingDocument): RewindViewing {
+  return {
+    id,
+    tmdbId: typeof data.tmdbId === 'number' ? data.tmdbId : 0,
+    watchedAt: timestampToIso(data.watchedAt),
+    location: data.location === 'cinema' || data.location === 'home' || data.location === 'other' || data.location === 'unknown' ? data.location : 'unknown',
+    rating: typeof data.rating === 'number' ? data.rating : null,
+    rewatch: data.rewatch === true,
+    review: typeof data.review === 'string' ? data.review : null,
+    tags: stringArray(data.tags),
+    source: data.source === 'rewind' ? 'rewind' : 'letterboxd',
+    sourceUri: typeof data.sourceUri === 'string' ? data.sourceUri : null,
+    sourceKey: typeof data.sourceKey === 'string' ? data.sourceKey : '',
+    importTitle: typeof data.importTitle === 'string' ? data.importTitle : '',
+    importYear: typeof data.importYear === 'number' ? data.importYear : null,
+    createdAt: timestampToIso(data.createdAt),
+    updatedAt: timestampToIso(data.updatedAt),
+  }
+}
+
+export async function getViewingHistory(uid: string) {
   try {
-    response = await fetch('/api/viewings')
+    const snapshot = await getDocs(query(collection(db, 'users', uid, 'viewings'), orderBy('watchedAt', 'desc')))
+    return snapshot.docs.map((item) => mapViewing(item.id, item.data() as ViewingDocument))
   } catch {
-    throw new ViewingsError('network', 'The app could not reach the viewing-history API.')
+    throw new ViewingsError()
   }
-
-  let body: unknown
-  try {
-    body = await response.json()
-  } catch {
-    throw new ViewingsError('invalid-json', 'The server returned an invalid viewing-history response.')
-  }
-
-  if (isProxyError(body)) {
-    const { message, code, status } = body.error
-    throw new ViewingsError(code as AppErrorCode, message, status)
-  }
-
-  if (!isViewingsResponse(body)) {
-    throw new ViewingsError('invalid-data', 'The server returned an unexpected viewing-history shape.')
-  }
-
-  return body.data.viewings
 }

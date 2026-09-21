@@ -128,8 +128,8 @@ function HistoryStarterState() {
 export function HistoryPage() {
   const { user, isLoading: isAuthLoading, signInWithGoogle } = useAuth()
   const history = useQuery({
-    queryKey: viewingQueryKeys.history,
-    queryFn: getViewingHistory,
+    queryKey: viewingQueryKeys.history(user?.uid),
+    queryFn: () => getViewingHistory(user!.uid),
     enabled: Boolean(user),
   })
   const uniqueTmdbIds = Array.from(new Set((history.data ?? []).map((viewing) => viewing.tmdbId)))

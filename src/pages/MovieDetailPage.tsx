@@ -55,12 +55,15 @@ export function MovieDetailPage() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!movie || !movieTmdbId) return null
-      const activeUser = user ?? (await signInWithGoogle())
+      if (!user) {
+        await signInWithGoogle()
+        return null
+      }
 
       if (saved.data) {
-        await unsaveMovie(activeUser.uid, movieTmdbId)
+        await unsaveMovie(user.uid, movieTmdbId)
       } else {
-        await saveMovie(activeUser.uid, {
+        await saveMovie(user.uid, {
           tmdbId: movieTmdbId,
           title: movie.title,
           releaseYear: getYear(movie.release_date),
@@ -68,9 +71,10 @@ export function MovieDetailPage() {
         })
       }
 
-      return activeUser.uid
+      return user.uid
     },
     onSuccess: async (uid) => {
+      if (!uid) return
       const activeUid = uid ?? user?.uid
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: watchlistQueryKeys.movie(activeUid, movieTmdbId) }),
