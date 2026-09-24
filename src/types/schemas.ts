@@ -108,27 +108,27 @@ export const tmdbSeasonSchema = z.object({
   season_number: z.number().int().catch(0),
 })
 
-export const tmdbSeriesDetailsSchema = z
-  .object({
-    id: z.number().int(),
-    name: z.string().catch('Untitled series'),
-    overview: z.string().catch(''),
-    poster_path: nullablePathSchema,
-    backdrop_path: nullablePathSchema,
-    first_air_date: z.string().catch(''),
-    vote_average: z.number().catch(0),
-    vote_count: z.number().catch(0),
-    popularity: z.number().catch(0),
-    genres: z.array(tmdbGenreSchema).catch([]),
-    status: z.string().catch(''),
-    number_of_seasons: z.number().int().catch(0),
-    number_of_episodes: z.number().int().catch(0),
-    seasons: z.array(tmdbSeasonSchema).catch([]),
-  })
-  .transform((series) => ({
-    ...series,
-    media_type: 'tv' as const,
-  }))
+const tmdbSeriesDetailsBaseSchema = z.object({
+  id: z.number().int(),
+  name: z.string().catch('Untitled series'),
+  overview: z.string().catch(''),
+  poster_path: nullablePathSchema,
+  backdrop_path: nullablePathSchema,
+  first_air_date: z.string().catch(''),
+  vote_average: z.number().catch(0),
+  vote_count: z.number().catch(0),
+  popularity: z.number().catch(0),
+  genres: z.array(tmdbGenreSchema).catch([]),
+  status: z.string().catch(''),
+  number_of_seasons: z.number().int().catch(0),
+  number_of_episodes: z.number().int().catch(0),
+  seasons: z.array(tmdbSeasonSchema).catch([]),
+})
+
+export const tmdbSeriesDetailsSchema = tmdbSeriesDetailsBaseSchema.transform((series) => ({
+  ...series,
+  media_type: 'tv' as const,
+}))
 
 export const tmdbCastMemberSchema = z.object({
   id: z.number().int(),
@@ -166,6 +166,34 @@ export const tmdbExternalIdsSchema = z.object({
   id: z.number().int(),
   imdb_id: nullableExternalIdSchema,
 })
+
+export const tmdbMovieDetailsBundleSchema = tmdbMovieDetailsSchema.extend({
+  credits: tmdbCreditsSchema.catch({ id: 0, cast: [] }),
+  videos: tmdbVideosSchema.catch({ id: 0, results: [] }),
+  recommendations: tmdbPagedResponseSchema(tmdbMovieSchema).catch({
+    page: 1,
+    results: [],
+    total_pages: 1,
+    total_results: 0,
+  }),
+})
+
+export const tmdbSeriesDetailsBundleSchema = tmdbSeriesDetailsBaseSchema
+  .extend({
+    credits: tmdbCreditsSchema.catch({ id: 0, cast: [] }),
+    videos: tmdbVideosSchema.catch({ id: 0, results: [] }),
+    recommendations: tmdbPagedResponseSchema(tmdbSeriesSchema).catch({
+      page: 1,
+      results: [],
+      total_pages: 1,
+      total_results: 0,
+    }),
+    external_ids: tmdbExternalIdsSchema.catch({ id: 0, imdb_id: null }),
+  })
+  .transform((series) => ({
+    ...series,
+    media_type: 'tv' as const,
+  }))
 
 export const tmdbPersonSearchResultSchema = z.object({
   id: z.number().int(),

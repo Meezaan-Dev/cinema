@@ -5,11 +5,7 @@ import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import {
-  getSeriesCredits,
-  getSeriesDetails,
-  getSeriesExternalIds,
-  getSeriesVideos,
-  getSimilarSeries,
+  getSeriesDetailsBundle,
   queryKeys,
 } from '@/api/tmdbEndpoints'
 import CastRail from '@/components/movie/CastRail.vue'
@@ -33,38 +29,18 @@ const isValidSeriesId = computed(() => seriesTmdbId.value !== null)
 
 const details = useQuery({
   queryKey: computed(() => queryKeys.seriesDetail(seriesTmdbId.value ?? seriesId.value)),
-  queryFn: () => getSeriesDetails(seriesTmdbId.value ?? ''),
-  enabled: isValidSeriesId,
-})
-const externalIds = useQuery({
-  queryKey: computed(() => queryKeys.seriesExternalIds(seriesTmdbId.value ?? seriesId.value)),
-  queryFn: () => getSeriesExternalIds(seriesTmdbId.value ?? ''),
-  enabled: isValidSeriesId,
-})
-const credits = useQuery({
-  queryKey: computed(() => queryKeys.seriesCredits(seriesTmdbId.value ?? seriesId.value)),
-  queryFn: () => getSeriesCredits(seriesTmdbId.value ?? ''),
-  enabled: isValidSeriesId,
-})
-const videos = useQuery({
-  queryKey: computed(() => queryKeys.seriesVideos(seriesTmdbId.value ?? seriesId.value)),
-  queryFn: () => getSeriesVideos(seriesTmdbId.value ?? ''),
-  enabled: isValidSeriesId,
-})
-const similar = useQuery({
-  queryKey: computed(() => queryKeys.similarSeries(seriesTmdbId.value ?? seriesId.value)),
-  queryFn: () => getSimilarSeries(seriesTmdbId.value ?? ''),
+  queryFn: () => getSeriesDetailsBundle(seriesTmdbId.value ?? ''),
   enabled: isValidSeriesId,
 })
 
 const series = computed(() => details.data.value)
 const backdrop = computed(() => imageUrl(series.value?.backdrop_path, 'original'))
-const imdbUrl = computed(() => buildImdbUrl(externalIds.data.value?.imdb_id))
-const magicLinkUrl = computed(() => buildMagicLinkUrl(externalIds.data.value?.imdb_id))
+const imdbUrl = computed(() => buildImdbUrl(series.value?.external_ids.imdb_id))
+const magicLinkUrl = computed(() => buildMagicLinkUrl(series.value?.external_ids.imdb_id))
 const trailerKey = computed(() => {
   const candidate =
-    videos.data.value?.results.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ??
-    videos.data.value?.results.find((video) => video.site === 'YouTube')
+    series.value?.videos.results.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ??
+    series.value?.videos.results.find((video) => video.site === 'YouTube')
   return sanitizeYoutubeKey(candidate?.key)
 })
 </script>
@@ -136,7 +112,7 @@ const trailerKey = computed(() => {
     <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <h2 class="text-2xl font-semibold text-white">Cast</h2>
       <div class="mt-4">
-        <CastRail :cast="credits.data.value?.cast.slice(0, 12) ?? []" :is-loading="credits.isLoading.value" />
+        <CastRail :cast="series.credits.cast.slice(0, 12)" :is-loading="details.isLoading.value" />
       </div>
     </section>
 
@@ -187,11 +163,11 @@ const trailerKey = computed(() => {
 
     <MovieSection
       title="Similar Shows"
-      :movies="similar.data.value?.results.slice(0, 10)"
-      :is-loading="similar.isLoading.value"
-      :is-error="similar.isError.value"
-      :error="similar.error.value"
-      :on-retry="() => similar.refetch()"
+      :movies="series.recommendations.results.slice(0, 10)"
+      :is-loading="details.isLoading.value"
+      :is-error="details.isError.value"
+      :error="details.error.value"
+      :on-retry="() => details.refetch()"
       explore-to="/tv-shows"
     />
 

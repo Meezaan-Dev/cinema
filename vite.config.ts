@@ -35,7 +35,7 @@ type DevApiResponse = {
   setHeader: (name: string, value: string) => void
 }
 
-function createJsonDevApi(pathname: string, handler: (req: { method?: string; body?: unknown; headers?: IncomingMessage['headers'] }, res: DevApiResponse) => Promise<void>): Plugin {
+function createJsonDevApi(pathname: string, handler: (req: { method?: string; body?: unknown; url?: string; headers?: IncomingMessage['headers'] }, res: DevApiResponse) => Promise<void>): Plugin {
   return {
     name: `cinema-dev-api-${pathname}`,
     configureServer(server: ViteDevServer) {
@@ -59,7 +59,7 @@ function createJsonDevApi(pathname: string, handler: (req: { method?: string; bo
         }
 
         try {
-          await handler({ method: req.method, body, headers: req.headers }, response)
+          await handler({ method: req.method, body, url: req.url, headers: req.headers }, response)
         } catch (error) {
           console.error(`Local API route failed: ${pathname}`, error)
           if (!res.headersSent) {

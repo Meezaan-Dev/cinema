@@ -23,6 +23,7 @@ const previousFocusRef = ref<HTMLElement | null>(null)
 const debouncedQuery = useDebounce(query, 250)
 const hasPendingQuery = computed(() => query.value.trim() !== debouncedQuery.value.trim())
 const trimmedQuery = computed(() => debouncedQuery.value.trim())
+const hasMeaningfulQuery = computed(() => trimmedQuery.value.length >= 2)
 
 const isOpen = computed(() => ui.isSuperSearchOpen)
 
@@ -42,16 +43,16 @@ const search = useQuery({
       people: people.results,
     })
   },
-  enabled: computed(() => isOpen.value && Boolean(trimmedQuery.value)),
+  enabled: computed(() => isOpen.value && hasMeaningfulQuery.value),
 })
 
 const results = computed(() => {
-  if (trimmedQuery.value) return search.data.value ?? []
+  if (trimmedQuery.value) return hasMeaningfulQuery.value ? search.data.value ?? [] : []
   return normalizeSuperSearchResults({ titles: trending.data.value?.results ?? [] })
 })
 
-const isLoading = computed(() => hasPendingQuery.value || (trimmedQuery.value ? search.isLoading.value : trending.isLoading.value))
-const isError = computed(() => (trimmedQuery.value ? search.isError.value : trending.isError.value))
+const isLoading = computed(() => hasPendingQuery.value || (hasMeaningfulQuery.value ? search.isLoading.value : !trimmedQuery.value && trending.isLoading.value))
+const isError = computed(() => (hasMeaningfulQuery.value ? search.isError.value : !trimmedQuery.value && trending.isError.value))
 const activeResult = computed(() => results.value[activeIndex.value] ?? results.value[0])
 
 const quickActions = [

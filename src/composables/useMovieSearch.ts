@@ -26,9 +26,13 @@ function mergeResponses(
   }
 }
 
-export function useMovieSearch(query: Ref<string>, filters: Ref<DiscoverParams>, mediaType: Ref<SearchMediaType>) {
+type UseMovieSearchOptions = {
+  enabled?: Ref<boolean>
+}
+
+export function useMovieSearch(query: Ref<string>, filters: Ref<DiscoverParams>, mediaType: Ref<SearchMediaType>, options: UseMovieSearchOptions = {}) {
   const trimmed = computed(() => sanitizeQuery(query.value))
-  const hasQuery = computed(() => Boolean(trimmed.value))
+  const hasQuery = computed(() => trimmed.value.length >= 2)
 
   const queryKey = computed(() => {
     const f = filters.value
@@ -46,6 +50,7 @@ export function useMovieSearch(query: Ref<string>, filters: Ref<DiscoverParams>,
 
   return useQuery({
     queryKey,
+    enabled: options.enabled,
     queryFn: async () => {
       const f = filters.value
       const q = trimmed.value
