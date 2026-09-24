@@ -23,6 +23,7 @@ const mediaTypeOptions: Array<{ value: SearchMediaType; label: string }> = [
 const route = useRoute()
 const query = ref(sanitizeQuery(typeof route.query.q === 'string' ? route.query.q : ''))
 const mediaType = ref<SearchMediaType>('both')
+const hasFilterIntent = ref(false)
 const filters = ref<Required<Pick<DiscoverParams, 'genre' | 'year' | 'minRating' | 'sortBy'>>>({
   genre: '',
   year: '',
@@ -32,6 +33,7 @@ const filters = ref<Required<Pick<DiscoverParams, 'genre' | 'year' | 'minRating'
 
 const sanitizedQuery = computed(() => sanitizeQuery(query.value))
 const debouncedQuery = useDebounce(sanitizedQuery)
+const hasMeaningfulQuery = computed(() => debouncedQuery.value.trim().length >= 2)
 
 const genres = useQuery({ queryKey: queryKeys.genres, queryFn: getGenres })
 
@@ -42,11 +44,12 @@ const safeFilters = computed(() => ({
   sortBy: sanitizeSortBy(filters.value.sortBy),
 }))
 
-const search = useMovieSearch(debouncedQuery, safeFilters, mediaType)
+const canRunSearch = computed(() => hasMeaningfulQuery.value || (!debouncedQuery.value.trim() && hasFilterIntent.value))
+const search = useMovieSearch(debouncedQuery, safeFilters, mediaType, { enabled: canRunSearch })
 
 const movies = computed(() => {
   const results = search.data.value?.results ?? []
-  if (!debouncedQuery.value.trim()) return results
+  if (!hasMeaningfulQuery.value) return results
   return results
     .filter((movie) => (safeFilters.value.minRating ? movie.vote_average >= Number(safeFilters.value.minRating) : true))
     .filter((movie) => (safeFilters.value.genre ? movie.genre_ids?.includes(Number(safeFilters.value.genre)) : true))
@@ -57,15 +60,23 @@ const movies = computed(() => {
     })
 })
 
-const showEmptyPrompt = computed(() => !debouncedQuery.value.trim() && !search.isLoading.value)
+const showEmptyPrompt = computed(() => !canRunSearch.value && !search.isLoading.value)
 
 function onFilterChange(updates: { genre?: string; year?: string; minRating?: string; sortBy?: string }) {
+  hasFilterIntent.value = true
   filters.value = {
     ...filters.value,
     genre: updates.genre !== undefined ? sanitizeGenre(updates.genre, genres.data.value?.genres) : filters.value.genre,
     year: updates.year !== undefined ? sanitizeYear(updates.year) : filters.value.year,
     minRating: updates.minRating !== undefined ? sanitizeRating(updates.minRating) : filters.value.minRating,
     sortBy: updates.sortBy !== undefined ? sanitizeSortBy(updates.sortBy) : filters.value.sortBy,
+  }
+}
+
+function setMediaType(value: SearchMediaType) {
+  mediaType.value = value
+  if (!debouncedQuery.value.trim()) {
+    hasFilterIntent.value = true
   }
 }
 </script>
@@ -98,7 +109,7 @@ function onFilterChange(updates: { genre?: string; year?: string; minRating?: st
             :class="`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054] lg:flex-none ${
               mediaType === option.value ? 'bg-[#00E054] text-[#14181C]' : 'text-[#99AABB] hover:bg-white/5 hover:text-white'
             }`"
-            @click="mediaType = option.value"
+            @click="setMediaType(option.value)"
           >
             {{ option.label }}
           </button>
@@ -125,10 +136,10 @@ function onFilterChange(updates: { genre?: string; year?: string; minRating?: st
       <EmptyState
         v-if="showEmptyPrompt && !search.isError.value"
         title="Start typing to search"
-        message="Search movies and TV shows by title. Results update as you type."
+        message="Enter at least 2 characters, or use filters to browse."
       />
       <EmptyState
-        v-if="!search.isLoading.value && !search.isError.value && debouncedQuery.trim() && movies.length === 0"
+        v-if="!search.isLoading.value && !search.isError.value && hasMeaningfulQuery && movies.length === 0"
         title="No matches"
         message="Try a broader search, switch between movies and TV shows, or lower the rating filter."
       />

@@ -4,12 +4,14 @@ import {
   tmdbExternalIdsSchema,
   tmdbGenresResponseSchema,
   tmdbMovieDetailsSchema,
+  tmdbMovieDetailsBundleSchema,
   tmdbMovieSchema,
   tmdbPagedResponseSchema,
   tmdbPersonCombinedCreditsSchema,
   tmdbPersonDetailsSchema,
   tmdbPersonSearchResultSchema,
   tmdbSeriesDetailsSchema,
+  tmdbSeriesDetailsBundleSchema,
   tmdbSeriesSchema,
   tmdbTrendingTitlesResponseSchema,
   tmdbVideosSchema,
@@ -20,11 +22,13 @@ import type {
   TmdbGenre,
   TmdbMovie,
   TmdbMovieDetails,
+  TmdbMovieDetailsBundle,
   TmdbPagedResponse,
   TmdbPersonCombinedCredits,
   TmdbPersonDetails,
   TmdbPersonSearchResult,
   TmdbSeriesDetails,
+  TmdbSeriesDetailsBundle,
   TmdbVideos,
 } from '@/types/tmdb'
 
@@ -203,8 +207,20 @@ export function getMovieDetails(movieId: string | number) {
   return tmdbRequest<TmdbMovieDetails>(`/movie/${movieId}`, {}, tmdbMovieDetailsSchema)
 }
 
+export function getMovieDetailsBundle(movieId: string | number) {
+  return tmdbRequest<TmdbMovieDetailsBundle>(`/movie/${movieId}`, {
+    append_to_response: 'credits,videos,recommendations',
+  }, tmdbMovieDetailsBundleSchema)
+}
+
 export function getSeriesDetails(seriesId: string | number) {
   return tmdbRequest<TmdbSeriesDetails>(`/tv/${seriesId}`, {}, tmdbSeriesDetailsSchema)
+}
+
+export function getSeriesDetailsBundle(seriesId: string | number) {
+  return tmdbRequest<TmdbSeriesDetailsBundle>(`/tv/${seriesId}`, {
+    append_to_response: 'credits,videos,recommendations,external_ids',
+  }, tmdbSeriesDetailsBundleSchema)
 }
 
 export function getSeriesExternalIds(seriesId: string | number) {

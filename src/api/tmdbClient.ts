@@ -33,11 +33,11 @@ export async function tmdbRequest<T>(
 
   let response: Response;
   try {
-    response = await fetch("/api/tmdb", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ endpoint, params: cleanParams }),
+    const searchParams = new URLSearchParams({ endpoint });
+    Object.entries(cleanParams).forEach(([key, value]) => {
+      searchParams.set(key, value);
     });
+    response = await fetch(`/api/tmdb?${searchParams.toString()}`);
   } catch {
     throw new TmdbError("network", "The app could not reach the server API.");
   }

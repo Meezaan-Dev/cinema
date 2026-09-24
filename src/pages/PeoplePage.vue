@@ -18,11 +18,12 @@ const query = ref(sanitizeQuery(typeof route.query.q === 'string' ? route.query.
 const sanitizedQuery = computed(() => sanitizeQuery(query.value))
 const debouncedQuery = useDebounce(sanitizedQuery)
 const trimmedQuery = computed(() => debouncedQuery.value.trim())
+const hasMeaningfulQuery = computed(() => trimmedQuery.value.length >= 2)
 
 const people = useQuery({
   queryKey: computed(() => queryKeys.searchPeople(trimmedQuery.value)),
   queryFn: () => searchPeople(trimmedQuery.value),
-  enabled: computed(() => Boolean(trimmedQuery.value)),
+  enabled: hasMeaningfulQuery,
 })
 
 const results = computed(() =>
@@ -72,12 +73,12 @@ function knownFor(person: TmdbPersonSearchResult) {
       </div>
       <ErrorState v-if="people.isError.value" :error="people.error.value" :on-retry="() => people.refetch()" />
       <EmptyState
-        v-if="!trimmedQuery && !people.isLoading.value"
+        v-if="!hasMeaningfulQuery && !people.isLoading.value"
         title="Start typing to search"
-        message="Search actors, directors, writers, and other film people."
+        message="Enter at least 2 characters to search actors, directors, writers, and other film people."
       />
       <EmptyState
-        v-if="!people.isLoading.value && !people.isError.value && trimmedQuery && results.length === 0"
+        v-if="!people.isLoading.value && !people.isError.value && hasMeaningfulQuery && results.length === 0"
         title="No people found"
         message="Try a broader name or check the spelling."
       />

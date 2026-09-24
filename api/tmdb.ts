@@ -1,9 +1,5 @@
-import {
-  parseJsonRequestBody,
-  type ApiRequest,
-  type ApiResponse,
-  type RequestParseResult,
-} from "./serverUtils.js";
+import { type ApiRequest, type ApiResponse } from "./serverUtils.js";
+import { isBlockedCrawlerUserAgent } from "./crawlerGuards.js";
 
 function env(name: string): string | undefined {
   const proc = (globalThis as Record<string, unknown>).process;
@@ -15,12 +11,6 @@ function env(name: string): string | undefined {
     return ((proc as Record<string, unknown>).env as Record<string, string | undefined>)[name];
   }
   return undefined;
-}
-
-function isRequestError<T>(
-  r: RequestParseResult<T>,
-): r is { ok: false; status: number; error: string } {
-  return !r.ok;
 }
 
 const ENDPOINT_PATTERNS = [
@@ -44,6 +34,7 @@ const MAX_QUERY_LENGTH = 200;
 const DISALLOWED_PARAM_PATTERN = /[<>&"']/;
 
 const SAFE_PARAM_KEYS = new Set([
+  "append_to_response",
   "query",
   "include_adult",
   "page",
@@ -55,6 +46,13 @@ const SAFE_PARAM_KEYS = new Set([
   "with_runtime.lte",
   "language",
   "region",
+]);
+
+const SAFE_APPEND_TO_RESPONSE_VALUES = new Set([
+  "credits",
+  "videos",
+  "recommendations",
+  "external_ids",
 ]);
 
 export function isValidEndpoint(endpoint: string): boolean {
@@ -84,6 +82,16 @@ export function validateParams(
       continue;
     }
 
+    if (key === "append_to_response") {
+      const values = str.split(",");
+      if (
+        values.length === 0 ||
+        values.some((value) => !SAFE_APPEND_TO_RESPONSE_VALUES.has(value))
+      ) {
+        return null;
+      }
+    }
+
     if (key === "include_adult") {
       if (str !== "true" && str !== "false") return null;
     }
@@ -96,6 +104,82 @@ export function validateParams(
   }
 
   return valid;
+}
+
+function requestHeader(req: ApiRequest, name: string) {
+  const value = req.headers?.[name] ?? req.headers?.[name.toLowerCase()];
+  return Array.isArray(value) ? value.join(" ") : value;
+}
+
+function getRequestSearchParams(req: ApiRequest) {
+  const rawUrl = req.url ?? "";
+  if (rawUrl.startsWith("?")) return new URLSearchParams(rawUrl.slice(1));
+
+  try {
+    return new URL(rawUrl || "/", "http://absolute-cinema.local").searchParams;
+  } catch {
+    return new URLSearchParams();
+  }
+}
+
+function paramsFromSearch(searchParams: URLSearchParams) {
+  const endpoint = searchParams.get("endpoint");
+  const params: Record<string, string> = {};
+
+  for (const [key, value] of searchParams.entries()) {
+    if (key === "endpoint") continue;
+    params[key] = value;
+  }
+
+  return { endpoint, params };
+}
+
+function cachePolicyForEndpoint(endpoint: string) {
+  if (/^\/genre\/(movie|tv)\/list$/.test(endpoint)) {
+    return { maxAge: 86_400, staleWhileRevalidate: 604_800 };
+  }
+
+  if (/^\/(movie|tv|person)\/\d+$/.test(endpoint)) {
+    return { maxAge: 21_600, staleWhileRevalidate: 86_400 };
+  }
+
+  if (
+    /^\/(movie|tv)\/\d+\/(credits|videos|recommendations|external_ids)$/.test(
+      endpoint,
+    ) ||
+    /^\/person\/\d+\/combined_credits$/.test(endpoint)
+  ) {
+    return { maxAge: 21_600, staleWhileRevalidate: 86_400 };
+  }
+
+  if (
+    /^\/trending\/(movie|all)\/week$/.test(endpoint) ||
+    /^\/(movie|tv)\/(popular|now_playing|top_rated|upcoming|on_the_air)$/.test(
+      endpoint,
+    ) ||
+    /^\/discover\/(movie|tv)$/.test(endpoint)
+  ) {
+    return { maxAge: 900, staleWhileRevalidate: 3_600 };
+  }
+
+  if (/^\/search\/(movie|tv|person)$/.test(endpoint)) {
+    return { maxAge: 60, staleWhileRevalidate: 300 };
+  }
+
+  return { maxAge: 300, staleWhileRevalidate: 900 };
+}
+
+function setCacheHeaders(res: ApiResponse, endpoint: string) {
+  const { maxAge, staleWhileRevalidate } = cachePolicyForEndpoint(endpoint);
+  res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+  res.setHeader(
+    "Vercel-CDN-Cache-Control",
+    `public, max-age=${maxAge}, stale-while-revalidate=${staleWhileRevalidate}`,
+  );
+}
+
+function setUncachedHeaders(res: ApiResponse) {
+  res.setHeader("Cache-Control", "no-store");
 }
 
 type TmdbErrorResponse = {
@@ -115,9 +199,16 @@ function errorResponse(
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
-  res.setHeader("Cache-Control", "no-store");
+  if (isBlockedCrawlerUserAgent(requestHeader(req, "user-agent"))) {
+    setUncachedHeaders(res);
+    res
+      .status(403)
+      .json(errorResponse("Crawler is not allowed.", "blocked-crawler", 403));
+    return;
+  }
 
-  if (req.method !== "POST") {
+  if (req.method !== "GET") {
+    setUncachedHeaders(res);
     res.status(405).json(errorResponse("Method not allowed", "method", 405));
     return;
   }
@@ -129,6 +220,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   );
 
   if (!apiKey) {
+    setUncachedHeaders(res);
     console.error(
       "TMDB proxy: Missing TMDB_API_KEY server environment variable.",
     );
@@ -144,24 +236,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return;
   }
 
-  const parsed = parseJsonRequestBody<{
-    endpoint?: unknown;
-    params?: Record<string, unknown>;
-  }>(req.body);
-  if (isRequestError(parsed)) {
-    res
-      .status(parsed.status)
-      .json(errorResponse(parsed.error, "invalid-request", parsed.status));
-    return;
-  }
-
-  const { endpoint, params = {} } = parsed.data;
+  const { endpoint, params = {} } = paramsFromSearch(getRequestSearchParams(req));
 
   if (
     typeof endpoint !== "string" ||
     !endpoint.startsWith("/") ||
     !isValidEndpoint(endpoint)
   ) {
+    setUncachedHeaders(res);
     res
       .status(400)
       .json(errorResponse("Invalid TMDB endpoint.", "invalid-endpoint", 400));
@@ -170,6 +252,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const safeParams = validateParams(params);
   if (!safeParams) {
+    setUncachedHeaders(res);
     res
       .status(400)
       .json(
@@ -189,6 +272,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
     tmdbResponse = await fetch(url.toString());
   } catch (err) {
+    setUncachedHeaders(res);
     console.error("TMDB proxy: Network error", {
       endpoint,
       error: String(err),
@@ -200,6 +284,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (!tmdbResponse.ok) {
+    setUncachedHeaders(res);
     const errorCode =
       tmdbResponse.status === 401 || tmdbResponse.status === 403
         ? "auth"
@@ -235,6 +320,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
     json = await tmdbResponse.json();
   } catch {
+    setUncachedHeaders(res);
     console.error("TMDB proxy: Invalid JSON response", { endpoint });
     res
       .status(502)
@@ -243,5 +329,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   const successResponse: TmdbSuccessResponse = { data: json };
+  setCacheHeaders(res, endpoint);
   res.status(200).json(successResponse);
 }

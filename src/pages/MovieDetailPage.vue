@@ -5,10 +5,7 @@ import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import {
-  getMovieCredits,
-  getMovieDetails,
-  getMovieVideos,
-  getSimilarMovies,
+  getMovieDetailsBundle,
   queryKeys,
 } from '@/api/tmdbEndpoints'
 import CastRail from '@/components/movie/CastRail.vue'
@@ -28,30 +25,15 @@ const isValidMovieId = computed(() => movieTmdbId.value !== null)
 
 const details = useQuery({
   queryKey: computed(() => queryKeys.detail(movieTmdbId.value ?? movieId.value)),
-  queryFn: () => getMovieDetails(movieTmdbId.value ?? ''),
-  enabled: isValidMovieId,
-})
-const credits = useQuery({
-  queryKey: computed(() => queryKeys.credits(movieTmdbId.value ?? movieId.value)),
-  queryFn: () => getMovieCredits(movieTmdbId.value ?? ''),
-  enabled: isValidMovieId,
-})
-const videos = useQuery({
-  queryKey: computed(() => queryKeys.videos(movieTmdbId.value ?? movieId.value)),
-  queryFn: () => getMovieVideos(movieTmdbId.value ?? ''),
-  enabled: isValidMovieId,
-})
-const similar = useQuery({
-  queryKey: computed(() => queryKeys.similar(movieTmdbId.value ?? movieId.value)),
-  queryFn: () => getSimilarMovies(movieTmdbId.value ?? ''),
+  queryFn: () => getMovieDetailsBundle(movieTmdbId.value ?? ''),
   enabled: isValidMovieId,
 })
 
 const movie = computed(() => details.data.value)
 const trailerKey = computed(() => {
   const candidate =
-    videos.data.value?.results.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ??
-    videos.data.value?.results.find((video) => video.site === 'YouTube')
+    movie.value?.videos.results.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ??
+    movie.value?.videos.results.find((video) => video.site === 'YouTube')
   return sanitizeYoutubeKey(candidate?.key)
 })
 const backdrop = computed(() => imageUrl(movie.value?.backdrop_path, 'original'))
@@ -123,7 +105,7 @@ const detailItems = computed(() =>
     <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <h2 class="text-2xl font-semibold text-white">Cast</h2>
       <div class="mt-4">
-        <CastRail :cast="credits.data.value?.cast.slice(0, 12) ?? []" :is-loading="credits.isLoading.value" />
+        <CastRail :cast="movie.credits.cast.slice(0, 12)" :is-loading="details.isLoading.value" />
       </div>
     </section>
 
@@ -150,11 +132,11 @@ const detailItems = computed(() =>
 
     <MovieSection
       title="Similar Movies"
-      :movies="similar.data.value?.results.slice(0, 10)"
-      :is-loading="similar.isLoading.value"
-      :is-error="similar.isError.value"
-      :error="similar.error.value"
-      :on-retry="() => similar.refetch()"
+      :movies="movie.recommendations.results.slice(0, 10)"
+      :is-loading="details.isLoading.value"
+      :is-error="details.isError.value"
+      :error="details.error.value"
+      :on-retry="() => details.refetch()"
     />
 
     <section class="mx-auto max-w-7xl px-4 pb-12 sm:px-6">

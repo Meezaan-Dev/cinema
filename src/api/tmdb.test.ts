@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { isBlockedCrawlerUserAgent } from '../../api/crawlerGuards.ts'
 import { isValidEndpoint, validateParams } from '../../api/tmdb.ts'
 
 describe('isValidEndpoint', () => {
@@ -80,6 +81,16 @@ describe('validateParams', () => {
     expect(result).toEqual({ page: '1', include_adult: 'false' })
   })
 
+  it('accepts safe append_to_response values', () => {
+    const result = validateParams({ append_to_response: 'credits,videos,recommendations,external_ids' })
+    expect(result).toEqual({ append_to_response: 'credits,videos,recommendations,external_ids' })
+  })
+
+  it('rejects unsafe append_to_response values', () => {
+    expect(validateParams({ append_to_response: 'credits,account_states' })).toBeNull()
+    expect(validateParams({ append_to_response: '../credits' })).toBeNull()
+  })
+
   it('strips undefined, null, and empty strings', () => {
     const result = validateParams({ page: 1, query: undefined, extra: '', nothing: null })
     expect(result).toEqual({ page: '1' })
@@ -128,5 +139,18 @@ describe('validateParams', () => {
   it('returns empty object for empty params', () => {
     const result = validateParams({})
     expect(result).toEqual({})
+  })
+})
+
+describe('isBlockedCrawlerUserAgent', () => {
+  it('blocks Meta external crawler user agents case-insensitively', () => {
+    expect(isBlockedCrawlerUserAgent('Meta-ExternalAgent/1.1')).toBe(true)
+    expect(isBlockedCrawlerUserAgent('Mozilla/5.0 compatible; meta-externalfetcher/1.1')).toBe(true)
+  })
+
+  it('does not block normal crawler user agents', () => {
+    expect(isBlockedCrawlerUserAgent('facebookexternalhit/1.1')).toBe(false)
+    expect(isBlockedCrawlerUserAgent('Googlebot/2.1')).toBe(false)
+    expect(isBlockedCrawlerUserAgent(undefined)).toBe(false)
   })
 })

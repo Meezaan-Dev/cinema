@@ -1,7 +1,13 @@
 {
   "buildCommand": "npm run build",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/movies", "destination": "/index.html" },
+    { "source": "/tv-shows", "destination": "/index.html" },
+    { "source": "/people", "destination": "/index.html" },
+    { "source": "/search", "destination": "/index.html" },
+    { "source": "/movie/:movieId", "destination": "/index.html" },
+    { "source": "/tv/:seriesId", "destination": "/index.html" },
+    { "source": "/person/:personId", "destination": "/index.html" }
   ]
 }

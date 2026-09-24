@@ -41,6 +41,12 @@ export type TmdbMovieDetails = TmdbMovie & {
   imdb_id: string | null
 }
 
+export type TmdbMovieDetailsBundle = TmdbMovieDetails & {
+  credits: TmdbCredits
+  videos: TmdbVideos
+  recommendations: TmdbPagedResponse<TmdbMovie>
+}
+
 export type TmdbSeason = {
   id: number
   name: string
@@ -67,6 +73,13 @@ export type TmdbSeriesDetails = {
   number_of_episodes: number
   seasons: TmdbSeason[]
   media_type: 'tv'
+}
+
+export type TmdbSeriesDetailsBundle = TmdbSeriesDetails & {
+  credits: TmdbCredits
+  videos: TmdbVideos
+  recommendations: TmdbPagedResponse<TmdbMovie>
+  external_ids: TmdbExternalIds
 }
 
 export type TmdbCastMember = {
