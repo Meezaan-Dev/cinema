@@ -139,7 +139,7 @@ export const tmdbCastMemberSchema = z.object({
 })
 
 export const tmdbCreditsSchema = z.object({
-  id: z.number().int(),
+  id: z.number().int().catch(0),
   cast: z.array(tmdbCastMemberSchema).catch([]),
 })
 
@@ -158,7 +158,7 @@ export const tmdbVideoSchema = z
   }))
 
 export const tmdbVideosSchema = z.object({
-  id: z.number().int(),
+  id: z.number().int().catch(0),
   results: z.array(tmdbVideoSchema).catch([]),
 })
 
