@@ -5,6 +5,7 @@ import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { getGenres, queryKeys, type DiscoverParams } from '@/api/tmdbEndpoints'
+import UsherMascot from '@/components/brand/UsherMascot.vue'
 import MovieCard from '@/components/movie/MovieCard.vue'
 import SearchFilters from '@/components/search/SearchFilters.vue'
 import { useDebounce } from '@/composables/useDebounce'
@@ -83,31 +84,34 @@ function setMediaType(value: SearchMediaType) {
 
 <template>
   <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-    <div class="mb-6 max-w-3xl">
-      <p class="text-xs font-medium uppercase tracking-[0.24em] text-[#99AABB]">Search</p>
-      <h1 class="mt-2 text-4xl font-bold tracking-tight text-white">Find movies & TV shows</h1>
-      <p class="mt-3 text-base text-[#99AABB]">Instant search across TMDB with filters and suggestions.</p>
+    <div class="relative mb-6 overflow-hidden rounded-3xl border border-[var(--brand-border)] bg-[linear-gradient(135deg,rgba(255,241,199,0.08),rgba(13,27,47,0.86))] p-5 sm:p-7">
+      <UsherMascot variant="corner" />
+      <div class="relative max-w-3xl">
+        <p class="brand-kicker">Usher search</p>
+        <h1 class="mt-2 text-4xl font-bold tracking-tight text-[var(--text-primary)]">Find movies & TV shows</h1>
+        <p class="mt-3 text-base text-[var(--text-secondary)]">Tell me the title, then tune the projector with filters.</p>
+      </div>
     </div>
 
     <div class="space-y-4">
-      <div class="grid gap-3 rounded-2xl border border-white/[0.08] bg-[#1C2228] p-3 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div class="grid gap-3 rounded-3xl border border-[var(--brand-border)] bg-[var(--surface)] p-3 lg:grid-cols-[1fr_auto] lg:items-center">
         <label class="relative block">
           <span class="sr-only">Search movies and TV shows</span>
-          <Search class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#99AABB]" aria-hidden="true" />
+          <Search class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[var(--accent-gold)]" aria-hidden="true" />
           <input
             v-model="query"
-            class="field h-14 w-full rounded-xl border-white/[0.08] bg-[#202830] !pl-12 !pr-4 text-base"
+            class="field h-14 w-full rounded-xl border-[var(--brand-border)] bg-[var(--surface-elevated)] !pl-12 !pr-4 text-base"
             placeholder="Search for Breaking Bad, Dune, Parasite..."
             autofocus
           />
         </label>
-        <div class="flex rounded-xl border border-white/[0.08] bg-[#14181C] p-1" aria-label="Search media type">
+        <div class="flex rounded-xl border border-[var(--brand-border)] bg-[var(--bg)] p-1" aria-label="Search media type">
           <button
             v-for="option in mediaTypeOptions"
             :key="option.value"
             type="button"
-            :class="`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054] lg:flex-none ${
-              mediaType === option.value ? 'bg-[#00E054] text-[#14181C]' : 'text-[#99AABB] hover:bg-white/5 hover:text-white'
+            :class="`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)] lg:flex-none ${
+              mediaType === option.value ? 'bg-[var(--accent-gold)] text-[#071326]' : 'text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]'
             }`"
             @click="setMediaType(option.value)"
           >
@@ -116,8 +120,8 @@ function setMediaType(value: SearchMediaType) {
         </div>
       </div>
 
-      <p v-if="debouncedQuery.trim()" class="text-sm text-[#99AABB]">
-        Showing results for <span class="font-medium text-white">&ldquo;{{ debouncedQuery }}&rdquo;</span>
+      <p v-if="debouncedQuery.trim()" class="text-sm text-[var(--text-secondary)]">
+        The usher found results for <span class="font-medium text-[var(--text-primary)]">&ldquo;{{ debouncedQuery }}&rdquo;</span>
       </p>
 
       <SearchFilters
@@ -135,13 +139,13 @@ function setMediaType(value: SearchMediaType) {
       <ErrorState v-if="search.isError.value" :error="search.error.value" :on-retry="() => search.refetch()" />
       <EmptyState
         v-if="showEmptyPrompt && !search.isError.value"
-        title="Start typing to search"
-        message="Enter at least 2 characters, or use filters to browse."
+        title="Tell me what to cue"
+        message="Enter at least 2 characters, or use filters and I will open a reel for you."
       />
       <EmptyState
         v-if="!search.isLoading.value && !search.isError.value && hasMeaningfulQuery && movies.length === 0"
-        title="No matches"
-        message="Try a broader search, switch between movies and TV shows, or lower the rating filter."
+        title="No matches in this reel yet"
+        message="Try a broader title, switch between movies and TV shows, or lower the rating filter."
       />
       <div v-if="!search.isLoading.value && !search.isError.value && movies.length > 0" class="movie-grid">
         <MovieCard v-for="movie in movies" :key="`${movie.media_type ?? 'movie'}-${movie.id}`" :movie="movie" />

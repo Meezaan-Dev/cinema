@@ -21,15 +21,15 @@ const sortOptions = [
 </script>
 
 <template>
-  <div class="grid gap-3 rounded-3xl border border-white/[0.07] bg-white/[0.045] p-4 sm:grid-cols-2 lg:grid-cols-4">
-    <label class="space-y-2 text-sm font-medium text-slate-300">
+  <div class="usher-panel grid gap-3 rounded-3xl p-4 sm:grid-cols-2 lg:grid-cols-4">
+    <label class="space-y-2 text-sm font-medium text-[var(--text-secondary)]">
       <span>Genre</span>
       <select class="field" :value="genre" @change="emit('change', { genre: ($event.target as HTMLSelectElement).value })">
         <option value="">Any genre</option>
         <option v-for="item in genres" :key="item.id" :value="item.id">{{ item.name }}</option>
       </select>
     </label>
-    <label class="space-y-2 text-sm font-medium text-slate-300">
+    <label class="space-y-2 text-sm font-medium text-[var(--text-secondary)]">
       <span>Year</span>
       <input
         class="field"
@@ -40,7 +40,7 @@ const sortOptions = [
         @input="emit('change', { year: ($event.target as HTMLInputElement).value })"
       />
     </label>
-    <label class="space-y-2 text-sm font-medium text-slate-300">
+    <label class="space-y-2 text-sm font-medium text-[var(--text-secondary)]">
       <span>Minimum rating</span>
       <select class="field" :value="minRating" @change="emit('change', { minRating: ($event.target as HTMLSelectElement).value })">
         <option value="">Any rating</option>
@@ -49,7 +49,7 @@ const sortOptions = [
         <option value="8">8+</option>
       </select>
     </label>
-    <label class="space-y-2 text-sm font-medium text-slate-300">
+    <label class="space-y-2 text-sm font-medium text-[var(--text-secondary)]">
       <span>Sort by</span>
       <select class="field" :value="sortBy" @change="emit('change', { sortBy: ($event.target as HTMLSelectElement).value })">
         <option v-for="option in sortOptions" :key="option.value" :value="option.value">{{ option.label }}</option>

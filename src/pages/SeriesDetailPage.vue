@@ -8,6 +8,7 @@ import {
   getSeriesDetailsBundle,
   queryKeys,
 } from '@/api/tmdbEndpoints'
+import UsherMascot from '@/components/brand/UsherMascot.vue'
 import CastRail from '@/components/movie/CastRail.vue'
 import MoviePoster from '@/components/movie/MoviePoster.vue'
 import MovieSection from '@/components/movie/MovieSection.vue'
@@ -61,38 +62,47 @@ const trailerKey = computed(() => {
   <template v-else>
     <section class="relative overflow-hidden">
       <img v-if="backdrop" :src="backdrop" alt="" class="absolute inset-0 h-full w-full object-cover opacity-35" />
-      <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,24,28,.4),#14181C_90%)]" />
+      <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,19,38,.48),#071326_90%)]" />
       <div class="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_1fr] lg:py-14">
         <MoviePoster :path="series.poster_path" :title="series.name" class="w-full shadow-[0_24px_60px_rgba(0,0,0,.5)] sm:w-64 lg:w-full" size="w780" />
         <div class="max-w-3xl self-end">
-          <p class="text-sm font-medium uppercase tracking-[0.2em] text-[#99AABB]">{{ getYear(series.first_air_date) }} · {{ series.status || 'Status unknown' }}</p>
-          <h1 class="mt-3 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">{{ series.name }}</h1>
+          <p class="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent-gold)]">{{ getYear(series.first_air_date) }} · {{ series.status || 'Status unknown' }}</p>
+          <h1 class="mt-3 text-4xl font-bold leading-tight tracking-tight text-[var(--text-primary)] sm:text-5xl lg:text-6xl">{{ series.name }}</h1>
           <div class="mt-5 flex flex-wrap items-center gap-2">
-            <span v-for="genre in series.genres" :key="genre.id" class="rounded-full border border-white/[0.08] bg-[#1C2228] px-3 py-1 text-sm text-[#99AABB]">{{ genre.name }}</span>
-            <span class="inline-flex items-center gap-1 rounded-full bg-[#00E054] px-3 py-1 text-sm font-semibold text-[#14181C]">
+            <span v-for="genre in series.genres" :key="genre.id" class="rounded-full border border-[var(--brand-border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-secondary)]">{{ genre.name }}</span>
+            <span class="inline-flex items-center gap-1 rounded-full bg-[var(--accent-gold)] px-3 py-1 text-sm font-semibold text-[#071326]">
               <Star class="size-4 fill-current" aria-hidden="true" />
               {{ formatRating(series.vote_average) }}
             </span>
           </div>
-          <p class="mt-6 max-w-2xl text-base leading-7 text-[#99AABB]">{{ series.overview || 'No overview is available for this series yet.' }}</p>
+          <p class="mt-6 max-w-2xl text-base leading-7 text-[var(--text-secondary)]">{{ series.overview || 'No overview is available for this series yet.' }}</p>
+          <div class="usher-panel mt-6 flex max-w-3xl items-center gap-4 rounded-3xl p-4">
+            <UsherMascot variant="brand" class="size-14 shrink-0" />
+            <div>
+              <p class="brand-kicker">Usher note</p>
+              <p class="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+                {{ trailerKey ? 'The trailer is ready, and I found the season guide below.' : 'The season guide is ready below; TMDB does not have a trailer for this show yet.' }}
+              </p>
+            </div>
+          </div>
           <dl class="mt-6 grid max-w-2xl gap-3 sm:grid-cols-3">
-            <div class="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
-              <dt class="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">
+            <div class="rounded-xl border border-[var(--brand-border)] bg-[var(--surface)] p-4">
+              <dt class="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                 <CalendarDays class="size-4" aria-hidden="true" />
                 First aired
               </dt>
-              <dd class="mt-2 text-lg font-semibold text-white">{{ displayDate(series.first_air_date) }}</dd>
+              <dd class="mt-2 text-lg font-semibold text-[var(--text-primary)]">{{ displayDate(series.first_air_date) }}</dd>
             </div>
-            <div class="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
-              <dt class="text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">Seasons</dt>
-              <dd class="mt-2 text-lg font-semibold text-white">{{ series.number_of_seasons }}</dd>
+            <div class="rounded-xl border border-[var(--brand-border)] bg-[var(--surface)] p-4">
+              <dt class="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-secondary)]">Seasons</dt>
+              <dd class="mt-2 text-lg font-semibold text-[var(--text-primary)]">{{ series.number_of_seasons }}</dd>
             </div>
-            <div class="rounded-xl border border-white/[0.08] bg-[#1C2228] p-4">
-              <dt class="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[#99AABB]">
+            <div class="rounded-xl border border-[var(--brand-border)] bg-[var(--surface)] p-4">
+              <dt class="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-secondary)]">
                 <ListVideo class="size-4" aria-hidden="true" />
                 Episodes
               </dt>
-              <dd class="mt-2 text-lg font-semibold text-white">{{ series.number_of_episodes }}</dd>
+              <dd class="mt-2 text-lg font-semibold text-[var(--text-primary)]">{{ series.number_of_episodes }}</dd>
             </div>
           </dl>
           <div class="mt-6 flex flex-wrap gap-3">
@@ -110,14 +120,14 @@ const trailerKey = computed(() => {
     </section>
 
     <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <h2 class="text-2xl font-semibold text-white">Cast</h2>
+      <h2 class="text-2xl font-semibold text-[var(--text-primary)]">Cast</h2>
       <div class="mt-4">
         <CastRail :cast="series.credits.cast.slice(0, 12)" :is-loading="details.isLoading.value" />
       </div>
     </section>
 
     <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <h2 class="text-2xl font-semibold text-white">Trailer</h2>
+      <h2 class="text-2xl font-semibold text-[var(--text-primary)]">Trailer</h2>
       <div v-if="trailerKey" class="mt-4">
         <div class="aspect-video max-w-3xl overflow-hidden rounded-xl bg-black">
           <iframe
@@ -134,28 +144,28 @@ const trailerKey = computed(() => {
           <ExternalLink class="size-4" aria-hidden="true" />
         </a>
       </div>
-      <p v-else class="mt-3 text-sm text-[#99AABB]">No trailer is available from TMDB yet.</p>
+      <p v-else class="mt-3 text-sm text-[var(--text-secondary)]">No trailer is available from TMDB yet.</p>
     </section>
 
     <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <div class="mb-5">
-        <p class="text-xs font-medium uppercase tracking-[0.2em] text-[#99AABB]">Episode guide</p>
-        <h2 class="mt-1 text-2xl font-semibold tracking-tight text-white">Seasons</h2>
+        <p class="brand-kicker">Episode guide</p>
+        <h2 class="mt-1 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">Seasons</h2>
       </div>
       <StatusState v-if="series.seasons.length === 0" title="No seasons listed" message="TMDB does not have season information for this series yet." />
       <div v-else class="grid gap-4 md:grid-cols-2">
         <article
           v-for="season in series.seasons"
           :key="season.id"
-          class="grid grid-cols-[92px_1fr] gap-4 rounded-xl border border-white/[0.08] bg-[#1C2228] p-3 sm:grid-cols-[116px_1fr]"
+          class="grid grid-cols-[92px_1fr] gap-4 rounded-xl border border-[var(--brand-border)] bg-[var(--surface)] p-3 sm:grid-cols-[116px_1fr]"
         >
           <MoviePoster :path="season.poster_path" :title="season.name" class="w-full rounded-lg" size="w342" />
           <div class="min-w-0 py-1">
-            <h3 class="line-clamp-2 text-base font-semibold text-white">{{ season.name }}</h3>
-            <p class="mt-1 text-sm text-[#99AABB]">
+            <h3 class="line-clamp-2 text-base font-semibold text-[var(--text-primary)]">{{ season.name }}</h3>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">
               {{ season.episode_count }} {{ season.episode_count === 1 ? 'episode' : 'episodes' }} · {{ displayDate(season.air_date) }}
             </p>
-            <p v-if="season.overview" class="mt-3 line-clamp-3 text-sm leading-6 text-[#99AABB]">{{ season.overview }}</p>
+            <p v-if="season.overview" class="mt-3 line-clamp-3 text-sm leading-6 text-[var(--text-secondary)]">{{ season.overview }}</p>
           </div>
         </article>
       </div>
@@ -172,7 +182,7 @@ const trailerKey = computed(() => {
     />
 
     <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-      <RouterLink to="/" class="text-sm font-medium text-[#99AABB] hover:text-white">Back to Discover</RouterLink>
+      <RouterLink to="/" class="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Back to Discover</RouterLink>
     </div>
   </template>
 </template>

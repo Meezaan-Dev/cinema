@@ -28,26 +28,26 @@ const detailsPath = computed(() => (mediaType.value === 'tv' ? `/tv/${props.movi
   >
     <RouterLink
       :to="detailsPath"
-      class="block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#00E054]"
+      class="block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent-gold)]"
     >
-      <div class="relative aspect-[2/3] overflow-hidden rounded-xl bg-[#1C2228] shadow-[0_12px_40px_rgba(0,0,0,0.4)] ring-1 ring-white/[0.06] transition duration-300 group-hover:-translate-y-1 group-hover:ring-[#00E054]/30">
+      <div class="relative aspect-[2/3] overflow-hidden rounded-xl bg-[var(--surface)] shadow-[0_18px_48px_rgba(2,8,20,0.48)] ring-1 ring-[var(--brand-border)] transition duration-300 group-hover:-translate-y-1 group-hover:ring-[var(--accent-gold)]/40">
         <MoviePoster
           :path="movie.poster_path"
           :title="movie.title"
           class="w-full transition duration-500 group-hover:scale-[1.03]"
         />
-        <div class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold text-white backdrop-blur-md">
-          <Star class="mr-0.5 inline size-3 fill-[#00E054] text-[#00E054]" aria-hidden="true" />
+        <div class="absolute bottom-2 right-2 rounded-md bg-[#071326]/80 px-2 py-1 text-xs font-semibold text-[var(--accent-cream)] backdrop-blur-md">
+          <Star class="mr-0.5 inline size-3 fill-[var(--accent-gold)] text-[var(--accent-gold)]" aria-hidden="true" />
           {{ formatRating(movie.vote_average) }}
         </div>
-        <div v-if="mediaType === 'tv'" class="absolute bottom-2 left-2 rounded-md bg-[#00E054] px-2 py-0.5 text-xs font-semibold text-[#14181C]">
+        <div v-if="mediaType === 'tv'" class="absolute bottom-2 left-2 rounded-md bg-[var(--accent)] px-2 py-0.5 text-xs font-semibold text-[var(--accent-cream)]">
           TV
         </div>
       </div>
     </RouterLink>
     <div :class="cn('mt-2.5 space-y-0.5', compact && 'mt-2')">
-      <h3 class="line-clamp-2 min-h-9 text-sm font-medium leading-snug text-white">{{ movie.title }}</h3>
-      <p class="text-xs text-[#99AABB]">{{ getYear(movie.release_date) }}</p>
+      <h3 class="line-clamp-2 min-h-9 text-sm font-medium leading-snug text-[var(--text-primary)]">{{ movie.title }}</h3>
+      <p class="text-xs text-[var(--text-secondary)]">{{ getYear(movie.release_date) }}</p>
     </div>
   </motion.article>
 </template>

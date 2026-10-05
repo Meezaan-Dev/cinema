@@ -21,7 +21,7 @@ const src = computed(() => imageUrl(props.path, props.size))
 <template>
   <div
     v-if="!src"
-    :class="cn('grid aspect-[2/3] place-items-center rounded-2xl bg-white/[0.07] text-slate-500', $props.class)"
+    :class="cn('grid aspect-[2/3] place-items-center rounded-2xl bg-[var(--surface)] text-[var(--text-muted)] ring-1 ring-[var(--brand-border)]', $props.class)"
   >
     <ImageOff class="size-9" aria-hidden="true" />
     <span class="sr-only">No poster available for {{ title }}</span>
@@ -30,7 +30,7 @@ const src = computed(() => imageUrl(props.path, props.size))
     v-else
     :src="src"
     :alt="`${title} poster`"
-    :class="cn('aspect-[2/3] rounded-2xl bg-white/[0.055] object-contain', $props.class)"
+    :class="cn('aspect-[2/3] rounded-2xl bg-[var(--surface)] object-contain', $props.class)"
     loading="lazy"
   />
 </template>

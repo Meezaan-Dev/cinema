@@ -13,6 +13,7 @@ import {
   getUpcomingMovies,
   queryKeys,
 } from '@/api/tmdbEndpoints'
+import UsherMascot from '@/components/brand/UsherMascot.vue'
 import MovieSection from '@/components/movie/MovieSection.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import { formatRating, getYear, imageUrl } from '@/lib/formatters'
@@ -41,24 +42,31 @@ const heroPath = computed(() => {
 <template>
   <section class="relative overflow-hidden">
     <img v-if="heroImage" :src="heroImage" alt="" class="absolute inset-0 h-full w-full object-cover opacity-40" />
-    <div class="absolute inset-0 bg-[linear-gradient(90deg,#14181C_0%,rgba(20,24,28,.85)_40%,rgba(20,24,28,.3)_70%,rgba(20,24,28,.9)_100%)]" />
-    <div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#14181C] to-transparent" />
+    <div class="absolute inset-0 bg-[linear-gradient(90deg,#071326_0%,rgba(7,19,38,.9)_42%,rgba(7,19,38,.34)_72%,rgba(7,19,38,.94)_100%)]" />
+    <div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[var(--bg)] to-transparent" />
     <div class="relative mx-auto flex min-h-[70svh] max-w-7xl flex-col justify-end px-4 py-16 sm:px-6">
       <div v-if="hero" class="max-w-5xl">
-        <p class="text-xs font-medium uppercase tracking-[0.24em] text-[#99AABB]">Featured</p>
-        <h1 class="mt-3 text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl lg:whitespace-nowrap">{{ hero.title }}</h1>
-        <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-[#99AABB]">
+        <div class="mb-5 flex max-w-xl items-center gap-3 rounded-3xl border border-[var(--brand-border)] bg-[#071326]/70 p-3 backdrop-blur-xl">
+          <UsherMascot variant="brand" class="size-12 shrink-0" />
+          <div>
+            <p class="brand-kicker">Now cueing</p>
+            <p class="mt-1 text-sm text-[var(--text-secondary)]">I found tonight's feature from the latest reels.</p>
+          </div>
+        </div>
+        <p class="brand-kicker">Featured screening</p>
+        <h1 class="mt-3 text-4xl font-bold leading-tight tracking-tight text-[var(--text-primary)] sm:text-6xl lg:whitespace-nowrap">{{ hero.title }}</h1>
+        <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
           <span>{{ getYear(hero.release_date) }}</span>
           <template v-if="heroGenres?.length">
             <span aria-hidden="true">·</span>
             <span>{{ heroGenres.join(', ') }}</span>
           </template>
-          <span class="inline-flex items-center gap-1 rounded-md bg-[#00E054]/10 px-2 py-0.5 font-semibold text-[#00E054]">
+          <span class="inline-flex items-center gap-1 rounded-md bg-[var(--accent-gold)]/15 px-2 py-0.5 font-semibold text-[var(--accent-gold)]">
             <Star class="size-3.5 fill-current" aria-hidden="true" />
             {{ formatRating(hero.vote_average) }}
           </span>
         </div>
-        <p v-if="hero.overview" class="mt-5 max-w-xl text-base leading-7 text-[#99AABB] line-clamp-3">{{ hero.overview }}</p>
+        <p v-if="hero.overview" class="mt-5 max-w-xl text-base leading-7 text-[var(--text-secondary)] line-clamp-3">{{ hero.overview }}</p>
         <div class="mt-8 flex flex-wrap gap-3">
           <RouterLink :to="heroPath" class="button-link button-link-accent">
             View details
@@ -67,7 +75,7 @@ const heroPath = computed(() => {
           <RouterLink to="/search" class="button-link">Search titles</RouterLink>
         </div>
       </div>
-      <div v-else-if="trending.isLoading.value" class="h-48 animate-pulse rounded-2xl bg-[#1C2228]" />
+      <div v-else-if="trending.isLoading.value" class="h-48 animate-pulse rounded-2xl bg-[var(--surface)]" />
     </div>
   </section>
 

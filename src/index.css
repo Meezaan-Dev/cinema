@@ -5,14 +5,19 @@
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  --bg: #14181c;
-  --surface: #1c2228;
-  --surface-elevated: #202830;
-  --text-primary: #ffffff;
-  --text-secondary: #99aabb;
-  --accent: #00e054;
-  --accent-hover: #00c94a;
-  --border: rgba(255, 255, 255, 0.08);
+  --bg: #071326;
+  --surface: #0d1b2f;
+  --surface-elevated: #14243a;
+  --surface-soft: rgba(255, 247, 222, 0.055);
+  --text-primary: #fff7de;
+  --text-secondary: #b8c1cc;
+  --text-muted: #7f8b98;
+  --accent: #d84a3a;
+  --accent-hover: #ef6b57;
+  --accent-cream: #fff1c7;
+  --accent-gold: #f2c76e;
+  --brand-border: rgba(255, 241, 199, 0.12);
+  --border: rgba(255, 241, 199, 0.1);
   background: var(--bg);
   color: var(--text-primary);
   font-synthesis: none;
@@ -56,7 +61,7 @@ img {
 }
 
 ::selection {
-  background: rgba(0, 224, 84, 0.28);
+  background: rgba(216, 74, 58, 0.34);
 }
 
 .field {
@@ -75,12 +80,12 @@ img {
 }
 
 .field::placeholder {
-  color: #5c6b7a;
+  color: var(--text-muted);
 }
 
 .field:focus {
-  border-color: rgba(0, 224, 84, 0.5);
-  box-shadow: 0 0 0 4px rgba(0, 224, 84, 0.12);
+  border-color: rgba(242, 199, 110, 0.58);
+  box-shadow: 0 0 0 4px rgba(242, 199, 110, 0.13);
   background: var(--surface-elevated);
 }
 
@@ -220,12 +225,12 @@ img {
 }
 
 .cast-nav-button:hover {
-  border-color: rgba(0, 224, 84, 0.35);
+  border-color: rgba(242, 199, 110, 0.36);
   background: var(--surface-elevated);
 }
 
 .cast-nav-button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-gold);
   outline-offset: 2px;
 }
 
@@ -251,21 +256,37 @@ img {
 
 .button-link:hover {
   background: var(--surface-elevated);
-  color: #fff;
+  color: var(--accent-cream);
 }
 
 .button-link:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-gold);
   outline-offset: 2px;
 }
 
 .button-link-accent {
-  border-color: transparent;
-  background: var(--accent);
-  color: #14181c;
+  border-color: rgba(242, 199, 110, 0.4);
+  background: linear-gradient(135deg, var(--accent-cream), var(--accent-gold));
+  color: #071326;
 }
 
 .button-link-accent:hover {
-  background: var(--accent-hover);
-  color: #14181c;
+  background: linear-gradient(135deg, #fff8df, #ffd77c);
+  color: #071326;
+}
+
+.usher-panel {
+  border: 1px solid var(--brand-border);
+  background:
+    radial-gradient(circle at top right, rgba(242, 199, 110, 0.15), transparent 34%),
+    linear-gradient(135deg, rgba(255, 241, 199, 0.08), rgba(13, 27, 47, 0.94));
+  box-shadow: 0 24px 70px rgba(2, 8, 20, 0.34);
+}
+
+.brand-kicker {
+  color: var(--accent-gold);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }

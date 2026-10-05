@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 
 import { discoverMovies, getGenres, queryKeys, type DiscoverParams } from '@/api/tmdbEndpoints'
+import UsherMascot from '@/components/brand/UsherMascot.vue'
 import MovieCard from '@/components/movie/MovieCard.vue'
 import SearchFilters from '@/components/search/SearchFilters.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -44,10 +45,13 @@ function onFilterChange(updates: { genre?: string; year?: string; minRating?: st
 
 <template>
   <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-    <div class="mb-6 max-w-3xl">
-      <p class="text-xs font-medium uppercase tracking-[0.24em] text-[#99AABB]">Browse</p>
-      <h1 class="mt-2 text-4xl font-bold tracking-tight text-white">Movies</h1>
-      <p class="mt-3 text-base text-[#99AABB]">Explore popular, top-rated, and newly released films.</p>
+    <div class="relative mb-6 overflow-hidden rounded-3xl border border-[var(--brand-border)] bg-[linear-gradient(135deg,rgba(255,241,199,0.08),rgba(13,27,47,0.86))] p-5 sm:p-7">
+      <UsherMascot variant="corner" />
+      <div class="relative max-w-3xl">
+        <p class="brand-kicker">Browse</p>
+        <h1 class="mt-2 text-4xl font-bold tracking-tight text-[var(--text-primary)]">Movies</h1>
+        <p class="mt-3 text-base text-[var(--text-secondary)]">Explore popular, top-rated, and newly released films from the front row.</p>
+      </div>
     </div>
 
     <SearchFilters
@@ -64,8 +68,8 @@ function onFilterChange(updates: { genre?: string; year?: string; minRating?: st
       <ErrorState v-if="discover.isError.value" :error="discover.error.value" :on-retry="() => discover.refetch()" />
       <EmptyState
         v-if="!discover.isLoading.value && !discover.isError.value && discover.data.value?.results.length === 0"
-        title="No movies found"
-        message="Try adjusting your filters."
+        title="No movies in this reel"
+        message="Try adjusting the usher controls."
       />
       <div v-if="!discover.isLoading.value && !discover.isError.value && discover.data.value?.results.length" class="movie-grid">
         <MovieCard v-for="movie in discover.data.value.results" :key="movie.id" :movie="movie" />

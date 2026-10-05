@@ -6,6 +6,7 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getTrendingAll, queryKeys, searchMovies, searchPeople, searchSeries } from '@/api/tmdbEndpoints'
+import UsherMascot from '@/components/brand/UsherMascot.vue'
 import { useDebounce } from '@/composables/useDebounce'
 import { imageUrl } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -131,7 +132,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
   <AnimatePresence>
     <motion.div
       v-if="isOpen"
-      class="fixed inset-0 z-50 bg-black/65 px-3 py-4 backdrop-blur-md sm:px-6 sm:py-10"
+      class="fixed inset-0 z-50 bg-[#020812]/75 px-3 py-4 backdrop-blur-md sm:px-6 sm:py-10"
       :initial="{ opacity: 0 }"
       :animate="{ opacity: 1 }"
       :exit="{ opacity: 0 }"
@@ -142,20 +143,27 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
         role="dialog"
         aria-modal="true"
         aria-labelledby="super-search-title"
-        class="mx-auto flex max-h-[min(760px,calc(100svh-2rem))] max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/[0.1] bg-[#14181C] shadow-[0_28px_90px_rgba(0,0,0,0.58)]"
+        class="mx-auto flex max-h-[min(760px,calc(100svh-2rem))] max-w-2xl flex-col overflow-hidden rounded-3xl border border-[var(--brand-border)] bg-[var(--bg)] shadow-[0_28px_90px_rgba(0,0,0,0.64)]"
         :initial="{ opacity: 0, y: -18, scale: 0.98 }"
         :animate="{ opacity: 1, y: 0, scale: 1 }"
         :exit="{ opacity: 0, y: -12, scale: 0.98 }"
         :transition="{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }"
         @mousedown.stop
       >
-        <div class="border-b border-white/[0.08] p-3">
+        <div class="border-b border-[var(--brand-border)] p-3">
           <h2 id="super-search-title" class="sr-only">Super Search</h2>
+          <div class="mb-3 flex items-center gap-3 rounded-2xl bg-white/[0.035] p-3">
+            <UsherMascot variant="brand" class="size-12 shrink-0" />
+            <div>
+              <p class="brand-kicker">Cinema command</p>
+              <p class="mt-1 text-sm text-[var(--text-secondary)]">Search the room for titles, people, and quick routes.</p>
+            </div>
+          </div>
           <label class="relative block">
-            <Search class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#99AABB]" aria-hidden="true" />
+            <Search class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[var(--accent-gold)]" aria-hidden="true" />
             <input
               ref="inputRef"
-              class="field h-14 rounded-xl border-white/[0.08] bg-[#202830] !pl-12 !pr-12 text-base"
+              class="field h-14 rounded-xl border-[var(--brand-border)] bg-[var(--surface-elevated)] !pl-12 !pr-12 text-base"
               placeholder="Search movies, TV shows, and people..."
               :value="query"
               aria-controls="super-search-results"
@@ -167,7 +175,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
             />
             <button
               type="button"
-              class="absolute right-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-lg text-[#99AABB] transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
+              class="absolute right-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-lg text-[var(--text-secondary)] transition hover:bg-white/5 hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]"
               aria-label="Close super search"
               @click="closeSearch"
             >
@@ -176,33 +184,33 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
           </label>
         </div>
 
-        <div class="flex items-center justify-between gap-3 border-b border-white/[0.08] px-4 py-2 text-xs text-[#99AABB]">
+        <div class="flex items-center justify-between gap-3 border-b border-[var(--brand-border)] px-4 py-2 text-xs text-[var(--text-secondary)]">
           <span>{{ trimmedQuery ? 'Search results' : 'Trending now' }}</span>
           <span class="hidden sm:inline">Arrow keys to move • Enter to open • Esc to close</span>
         </div>
 
-        <div class="border-b border-white/[0.08] p-2">
+        <div class="border-b border-[var(--brand-border)] p-2">
           <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button
               v-for="{ to, label, icon: Icon } in quickActions"
               :key="to"
               type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-semibold text-[#99AABB] transition hover:bg-white/[0.07] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
+              class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--brand-border)] bg-white/[0.035] px-3 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-white/[0.07] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]"
               @click="openPath(to)"
             >
-              <component :is="Icon" class="size-4 text-[#00E054]" aria-hidden="true" />
+              <component :is="Icon" class="size-4 text-[var(--accent-gold)]" aria-hidden="true" />
               <span class="truncate">{{ label }}</span>
             </button>
           </div>
         </div>
 
         <div id="super-search-results" role="listbox" class="min-h-72 overflow-y-auto p-2">
-          <div v-if="isLoading" class="grid min-h-64 place-items-center text-sm text-[#99AABB]">Searching...</div>
-          <div v-else-if="isError" class="grid min-h-64 place-items-center px-6 text-center text-sm text-[#99AABB]">
+          <div v-if="isLoading" class="grid min-h-64 place-items-center text-sm text-[var(--text-secondary)]">Cueing the projector...</div>
+          <div v-else-if="isError" class="grid min-h-64 place-items-center px-6 text-center text-sm text-[var(--text-secondary)]">
             The search service could not be reached. Try again in a moment.
           </div>
-          <div v-else-if="results.length === 0" class="grid min-h-64 place-items-center px-6 text-center text-sm text-[#99AABB]">
-            No matches found. Try a broader title or name.
+          <div v-else-if="results.length === 0" class="grid min-h-64 place-items-center px-6 text-center text-sm text-[var(--text-secondary)]">
+            No matches in this reel. Try a broader title or name.
           </div>
           <div v-else class="space-y-1">
             <button
@@ -214,8 +222,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
               :aria-selected="index === activeIndex"
               :class="
                 cn(
-                  'grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl p-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
-                  index === activeIndex ? 'bg-white/[0.09]' : 'hover:bg-white/[0.055]',
+                  'grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl p-2.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]',
+                  index === activeIndex ? 'bg-[var(--accent-cream)]/10 ring-1 ring-[var(--accent-gold)]/25' : 'hover:bg-white/[0.055]',
                 )
               "
               @mouseenter="activeIndex = index"
@@ -227,7 +235,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
                 alt=""
                 :class="
                   cn(
-                    'size-14 shrink-0 bg-white/[0.06] object-cover ring-1 ring-white/[0.08]',
+                    'size-14 shrink-0 bg-white/[0.06] object-cover ring-1 ring-[var(--brand-border)]',
                     result.kind === 'person' ? 'rounded-full' : 'rounded-lg',
                   )
                 "
@@ -235,21 +243,21 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
               />
               <div
                 v-else
-                class="grid size-14 shrink-0 place-items-center rounded-lg bg-white/[0.06] text-[#99AABB] ring-1 ring-white/[0.08]"
+                class="grid size-14 shrink-0 place-items-center rounded-lg bg-white/[0.06] text-[var(--text-secondary)] ring-1 ring-[var(--brand-border)]"
               >
                 <UserRound v-if="result.kind === 'person'" class="size-5" aria-hidden="true" />
                 <Search v-else class="size-5" aria-hidden="true" />
               </div>
               <span class="min-w-0">
-                <span class="block truncate text-sm font-semibold text-white">{{ result.title }}</span>
-                <span class="mt-0.5 block truncate text-xs text-[#99AABB]">{{ result.subtitle }}</span>
-                <span v-if="result.description" class="mt-1 block truncate text-xs text-[#6F7F8F]">{{ result.description }}</span>
+                <span class="block truncate text-sm font-semibold text-[var(--text-primary)]">{{ result.title }}</span>
+                <span class="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">{{ result.subtitle }}</span>
+                <span v-if="result.description" class="mt-1 block truncate text-xs text-[var(--text-muted)]">{{ result.description }}</span>
               </span>
-              <span v-if="typeof result.rating === 'number'" class="inline-flex items-center gap-1 text-xs font-semibold text-white">
-                <Star class="size-3 fill-[#00E054] text-[#00E054]" aria-hidden="true" />
+              <span v-if="typeof result.rating === 'number'" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-primary)]">
+                <Star class="size-3 fill-[var(--accent-gold)] text-[var(--accent-gold)]" aria-hidden="true" />
                 {{ result.rating.toFixed(1) }}
               </span>
-              <span v-else class="text-xs font-semibold text-[#00E054]">Person</span>
+              <span v-else class="text-xs font-semibold text-[var(--accent-gold)]">Person</span>
             </button>
           </div>
         </div>
