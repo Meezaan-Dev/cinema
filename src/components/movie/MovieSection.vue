@@ -31,12 +31,12 @@ const isHorizontal = computed(() => props.horizontal || props.carousel)
   <section class="mx-auto max-w-7xl px-4 py-9 sm:px-6">
     <div class="mb-5 flex items-end justify-between gap-4">
       <div>
-        <p v-if="eyebrow" class="text-xs font-medium uppercase tracking-[0.2em] text-[#99AABB]">{{ eyebrow }}</p>
-        <h2 class="mt-1 text-2xl font-semibold tracking-tight text-white">{{ title }}</h2>
+        <p v-if="eyebrow" class="brand-kicker">{{ eyebrow }}</p>
+        <h2 class="mt-1 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">{{ title }}</h2>
       </div>
       <RouterLink
         :to="exploreTo"
-        class="rounded-full px-3 py-1.5 text-sm font-medium text-[#99AABB] transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]"
+        class="rounded-full px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] transition hover:bg-white/5 hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]"
       >
         Explore
       </RouterLink>

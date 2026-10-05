@@ -32,16 +32,16 @@ defineProps<{
               : 'inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition',
           (end ? isExactActive : isActive)
             ? mobile
-              ? 'text-[#00E054]'
+              ? 'text-[var(--accent-gold)]'
               : sidebar
-                ? 'bg-[#00E054]/10 text-[#00E054] ring-1 ring-[#00E054]/25'
-                : 'bg-[#00E054] text-[#14181C]'
+                ? 'bg-[var(--accent-cream)]/12 text-[var(--accent-cream)] ring-1 ring-[var(--accent-gold)]/35'
+                : 'bg-[var(--accent-cream)] text-[#071326]'
             : mobile
-              ? 'text-[#99AABB] hover:text-white'
+              ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               : sidebar
-                ? 'text-[#99AABB] hover:bg-white/[0.08] hover:text-white'
-                : 'text-[#99AABB] hover:bg-white/5 hover:text-white',
-          !mobile && 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00E054]',
+                ? 'text-[var(--text-secondary)] hover:bg-white/[0.08] hover:text-[var(--text-primary)]'
+                : 'text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]',
+          !mobile && 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]',
         )
       "
       @click="navigate"
