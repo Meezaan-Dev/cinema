@@ -10,8 +10,10 @@ import {
 } from '@/api/tmdbEndpoints'
 import UsherMascot from '@/components/brand/UsherMascot.vue'
 import CastRail from '@/components/movie/CastRail.vue'
+import CinemaShowtimes from '@/components/movie/CinemaShowtimes.vue'
 import MoviePoster from '@/components/movie/MoviePoster.vue'
 import MovieSection from '@/components/movie/MovieSection.vue'
+import WatchProviders from '@/components/movie/WatchProviders.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import StatusState from '@/components/ui/StatusState.vue'
@@ -111,6 +113,9 @@ const detailItems = computed(() =>
         </div>
       </div>
     </section>
+
+    <WatchProviders media-type="movie" :id="movie.id" />
+    <CinemaShowtimes :movie-id="movie.id" />
 
     <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <h2 class="text-2xl font-semibold text-[var(--text-primary)]">Cast</h2>

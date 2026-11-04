@@ -22,6 +22,7 @@ const ENDPOINT_PATTERNS = [
   /^\/genre\/(movie|tv)\/list$/,
   /^\/movie\/\d+\/(credits|videos|recommendations)$/,
   /^\/tv\/\d+\/(credits|videos|recommendations|external_ids)$/,
+  /^\/(movie|tv)\/\d+\/watch\/providers$/,
   /^\/movie\/\d+$/,
   /^\/tv\/\d+$/,
   /^\/person\/\d+$/,
@@ -137,6 +138,10 @@ function paramsFromSearch(searchParams: URLSearchParams) {
 function cachePolicyForEndpoint(endpoint: string) {
   if (/^\/genre\/(movie|tv)\/list$/.test(endpoint)) {
     return { maxAge: 86_400, staleWhileRevalidate: 604_800 };
+  }
+
+  if (/^\/(movie|tv)\/\d+\/watch\/providers$/.test(endpoint)) {
+    return { maxAge: 3_600, staleWhileRevalidate: 21_600 };
   }
 
   if (/^\/(movie|tv|person)\/\d+$/.test(endpoint)) {

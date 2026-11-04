@@ -167,6 +167,27 @@ export const tmdbExternalIdsSchema = z.object({
   imdb_id: nullableExternalIdSchema,
 })
 
+const tmdbWatchProviderSchema = z.object({
+  provider_id: z.number().int(),
+  provider_name: z.string(),
+  logo_path: nullablePathSchema,
+  display_priority: z.number().int().catch(0),
+})
+
+const tmdbWatchRegionSchema = z.object({
+  link: z.string().nullable().catch(null),
+  flatrate: z.array(tmdbWatchProviderSchema).optional().default([]),
+  free: z.array(tmdbWatchProviderSchema).optional().default([]),
+  ads: z.array(tmdbWatchProviderSchema).optional().default([]),
+  rent: z.array(tmdbWatchProviderSchema).optional().default([]),
+  buy: z.array(tmdbWatchProviderSchema).optional().default([]),
+})
+
+export const tmdbWatchProvidersResponseSchema = z.object({
+  id: z.number().int(),
+  results: z.object({ ZA: tmdbWatchRegionSchema.optional() }),
+})
+
 export const tmdbMovieDetailsBundleSchema = tmdbMovieDetailsSchema.extend({
   credits: tmdbCreditsSchema.catch({ id: 0, cast: [] }),
   videos: tmdbVideosSchema.catch({ id: 0, results: [] }),

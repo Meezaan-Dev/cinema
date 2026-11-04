@@ -39,6 +39,20 @@ export function buildMagicLinkUrl(id: string | null | undefined) {
   return imdbId ? `https://www.playimdb.com/title/${imdbId}/` : undefined
 }
 
+export function buildTmdbWatchUrl(link: string | null | undefined, mediaType: 'movie' | 'tv', id: number) {
+  if (!link) return null
+
+  try {
+    const url = new URL(link)
+    if (url.origin !== 'https://www.themoviedb.org') return null
+    const path = url.pathname.match(/^\/(movie|tv)\/(\d+)(?:-[^/]+)?\/watch$/)
+    if (!path || path[1] !== mediaType || Number(path[2]) !== id) return null
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 export function sanitizeDisplayText(value: string | null | undefined, maxLength = 500) {
   if (!value || typeof value !== 'string') return ''
   return value.trim().replace(/\s+/g, ' ').slice(0, maxLength)

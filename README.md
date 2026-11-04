@@ -11,6 +11,8 @@ No accounts. No watchlists. No setup beyond a TMDB key.
 - Dedicated browse pages for movies and TV shows with genre, year, rating, and sort filters
 - Unified search across movies and TV with instant debounced results
 - Movie and TV detail pages: overview, genres, cast, trailers, similar titles, metadata
+- South African watch options on movie and TV detail pages: streaming, free, ad-supported, rental, and purchase listings from TMDB/JustWatch
+- Movie detail cinema times for Ster-Kinekor Blue Route, Nu Metro Canal Walk, and Nu Metro Cavendish Square; choose branches and browse the next seven days
 - **Magic Link** (PlayIMDb) and **View on IMDb** when TMDB provides an IMDb ID
 
 ## Routes
@@ -76,6 +78,7 @@ Restart the dev server after changing env vars.
 | Route | Role |
 |-------|------|
 | `tmdb` | Secure proxy for TMDB API requests (server-side only) |
+| `cinema-showtimes` | Server-side checks of the three fixed Cape Town cinema branches |
 
 ## Scripts
 
@@ -91,6 +94,8 @@ npm run preview  # Preview production build
 
 - **TMDB** credentials are server-side only, proxied through `/api/tmdb`. The API key is never exposed to the browser.
 - **TMDB** is required for meaningful content; handle rate limits and network errors in the UI.
+- Watch listings are specific to South Africa and may change. TMDB provides a watch page link rather than direct streaming-platform links.
+- Cinema listings are checked on the chains' public sites, cached for five minutes, and linked to the official film page when a match is confirmed. Branch choices are saved in this browser. If a site cannot be read or a title match is uncertain, the movie page says so and links to the official site.
 - Third-party failure modes: TMDB rate limits. The UI surfaces recoverable errors instead of crashing.
 
 ## Maintenance checklist
@@ -108,3 +113,5 @@ Smoke-test:
 - [ ] Search movies and TV with filters
 - [ ] Movie detail: trailer, cast, similar, Magic Link, IMDb link
 - [ ] TV detail: seasons, cast, trailer, similar, Magic Link
+- [ ] Movie and TV detail: South African watch options, empty state, TMDB link, JustWatch credit
+- [ ] Movie detail: three cinema branches, date choices, showtimes, official links, and unavailable/uncertain states

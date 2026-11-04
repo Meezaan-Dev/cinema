@@ -81,6 +81,21 @@ describe('tmdbHandler', () => {
     })
   })
 
+  it('caches watch providers for one hour', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ id: 123, results: {} }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await invoke({
+      method: 'GET',
+      url: '/api/tmdb?endpoint=%2Fmovie%2F123%2Fwatch%2Fproviders',
+      headers: { 'user-agent': 'Mozilla/5.0' },
+    })
+
+    expect(result.statusCode).toBe(200)
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/movie/123/watch/providers?')
+    expect(result.headers.get('Vercel-CDN-Cache-Control')).toBe('public, max-age=3600, stale-while-revalidate=21600')
+  })
+
   it('rejects POST requests before calling TMDB', async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
