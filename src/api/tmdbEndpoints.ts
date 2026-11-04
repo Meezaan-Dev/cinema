@@ -15,6 +15,7 @@ import {
   tmdbSeriesSchema,
   tmdbTrendingTitlesResponseSchema,
   tmdbVideosSchema,
+  tmdbWatchProvidersResponseSchema,
 } from '@/types/schemas'
 import type {
   TmdbCredits,
@@ -30,6 +31,7 @@ import type {
   TmdbSeriesDetails,
   TmdbSeriesDetailsBundle,
   TmdbVideos,
+  TmdbWatchProvidersResponse,
 } from '@/types/tmdb'
 
 export type DiscoverParams = {
@@ -62,6 +64,7 @@ export const queryKeys = {
   discoverAll: (filters: DiscoverParams) => ['all', 'discover', filters] as const,
   detail: (movieId: string | number) => ['movie', movieId] as const,
   seriesDetail: (seriesId: string | number) => ['series', seriesId] as const,
+  watchProviders: (mediaType: 'movie' | 'tv', id: number) => [mediaType, id, 'watch-providers'] as const,
   seriesExternalIds: (seriesId: string | number) => ['series', seriesId, 'external-ids'] as const,
   credits: (movieId: string | number) => ['movie', movieId, 'credits'] as const,
   seriesCredits: (seriesId: string | number) => ['series', seriesId, 'credits'] as const,
@@ -221,6 +224,14 @@ export function getSeriesDetailsBundle(seriesId: string | number) {
   return tmdbRequest<TmdbSeriesDetailsBundle>(`/tv/${seriesId}`, {
     append_to_response: 'credits,videos,recommendations,external_ids',
   }, tmdbSeriesDetailsBundleSchema)
+}
+
+export function getWatchProviders(mediaType: 'movie' | 'tv', id: number) {
+  return tmdbRequest<TmdbWatchProvidersResponse>(
+    `/${mediaType}/${id}/watch/providers`,
+    {},
+    tmdbWatchProvidersResponseSchema,
+  )
 }
 
 export function getSeriesExternalIds(seriesId: string | number) {

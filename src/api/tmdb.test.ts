@@ -54,6 +54,8 @@ describe('isValidEndpoint', () => {
     expect(isValidEndpoint('/tv/456/recommendations')).toBe(true)
     expect(isValidEndpoint('/tv/456/external_ids')).toBe(true)
     expect(isValidEndpoint('/person/789/combined_credits')).toBe(true)
+    expect(isValidEndpoint('/movie/123/watch/providers')).toBe(true)
+    expect(isValidEndpoint('/tv/456/watch/providers')).toBe(true)
   })
 
   it('rejects unknown endpoints', () => {
@@ -72,6 +74,8 @@ describe('isValidEndpoint', () => {
     expect(isValidEndpoint('/movie/abc')).toBe(false)
     expect(isValidEndpoint('/tv/<script>')).toBe(false)
     expect(isValidEndpoint('/person/abc')).toBe(false)
+    expect(isValidEndpoint('/movie/abc/watch/providers')).toBe(false)
+    expect(isValidEndpoint('/tv/abc/watch/providers')).toBe(false)
   })
 })
 

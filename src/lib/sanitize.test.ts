@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildImdbUrl,
   buildMagicLinkUrl,
+  buildTmdbWatchUrl,
   sanitizeDisplayText,
   sanitizeImdbId,
   sanitizeTmdbImagePath,
@@ -34,6 +35,20 @@ describe('sanitize helpers', () => {
     expect(buildImdbUrl('tt0137523')).toBe('https://www.imdb.com/title/tt0137523/')
     expect(buildMagicLinkUrl('tt0137523')).toBe('https://www.playimdb.com/title/tt0137523/')
     expect(buildImdbUrl('bad-id')).toBeUndefined()
+  })
+
+  it('accepts only the TMDB watch link for the current title', () => {
+    expect(buildTmdbWatchUrl('https://www.themoviedb.org/movie/123/watch?locale=ZA', 'movie', 123))
+      .toBe('https://www.themoviedb.org/movie/123/watch?locale=ZA')
+    expect(buildTmdbWatchUrl('https://www.themoviedb.org/movie/123-some-title/watch?locale=ZA', 'movie', 123))
+      .toBe('https://www.themoviedb.org/movie/123-some-title/watch?locale=ZA')
+    expect(buildTmdbWatchUrl('https://www.themoviedb.org/tv/456/watch?locale=ZA', 'tv', 456))
+      .toBe('https://www.themoviedb.org/tv/456/watch?locale=ZA')
+    expect(buildTmdbWatchUrl(null, 'movie', 123)).toBeNull()
+    expect(buildTmdbWatchUrl('https://evil.test/movie/123/watch', 'movie', 123)).toBeNull()
+    expect(buildTmdbWatchUrl('https://www.themoviedb.org:444/movie/123/watch', 'movie', 123)).toBeNull()
+    expect(buildTmdbWatchUrl('javascript:alert(1)', 'movie', 123)).toBeNull()
+    expect(buildTmdbWatchUrl('https://www.themoviedb.org/movie/456/watch', 'movie', 123)).toBeNull()
   })
 
   it('accepts only valid YouTube keys', () => {

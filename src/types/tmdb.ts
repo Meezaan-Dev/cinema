@@ -114,6 +114,27 @@ export type TmdbExternalIds = {
   imdb_id: string | null
 }
 
+export type TmdbWatchProvider = {
+  provider_id: number
+  provider_name: string
+  logo_path: string | null
+  display_priority: number
+}
+
+export type TmdbWatchRegion = {
+  link: string | null
+  flatrate: TmdbWatchProvider[]
+  free: TmdbWatchProvider[]
+  ads: TmdbWatchProvider[]
+  rent: TmdbWatchProvider[]
+  buy: TmdbWatchProvider[]
+}
+
+export type TmdbWatchProvidersResponse = {
+  id: number
+  results: { ZA?: TmdbWatchRegion }
+}
+
 export type TmdbPersonDetails = {
   id: number
   name: string

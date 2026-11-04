@@ -5,6 +5,7 @@ import path from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import tmdbHandler from './api/tmdb'
+import cinemaShowtimesHandler from './api/cinema-showtimes'
 
 function setProcessEnvFromVite(name: string, value: string | undefined) {
   if (!process.env[name] && value) {
@@ -83,6 +84,7 @@ export default defineConfig(({ mode }) => {
       vue(),
       tailwindcss(),
       createJsonDevApi('/api/tmdb', tmdbHandler),
+      createJsonDevApi('/api/cinema-showtimes', cinemaShowtimesHandler),
     ],
     resolve: {
       alias: {
