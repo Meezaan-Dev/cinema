@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Clapperboard, Film, Search, Tv, Users } from 'lucide-vue-next'
+import { Clapperboard, Film, Search, Tv, TvMinimalPlay, Users } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
@@ -79,6 +79,7 @@ const isDetailPage = computed(() => /^\/(movie|tv|person)\//.test(route.path))
 
         <div class="mt-auto flex flex-col gap-3 pb-3">
           <NavItem to="/search" label="Search" :icon="Search" sidebar />
+          <NavItem to="/streaming" label="Streaming" :icon="TvMinimalPlay" sidebar />
           <NavItem to="/movies" label="Movies" :icon="Film" sidebar />
           <NavItem to="/tv-shows" label="Shows" :icon="Tv" sidebar />
           <NavItem to="/people" label="People" :icon="Users" sidebar />
@@ -101,6 +102,7 @@ const isDetailPage = computed(() => /^\/(movie|tv|person)\//.test(route.path))
     >
       <div class="mx-auto flex min-h-16 max-w-lg items-stretch justify-around px-2">
         <NavItem to="/" label="Discover" :icon="Clapperboard" end mobile />
+        <NavItem to="/streaming" label="Streaming" :icon="TvMinimalPlay" mobile />
         <NavItem to="/movies" label="Movies" :icon="Film" mobile />
         <NavItem to="/tv-shows" label="Shows" :icon="Tv" mobile />
         <NavItem to="/people" label="People" :icon="Users" mobile />

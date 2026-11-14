@@ -140,6 +140,30 @@ describe('validateParams', () => {
     expect(validateParams({ password: 'hack' })).toBeNull()
   })
 
+  it('accepts valid streaming provider and date filter params', () => {
+    const result = validateParams({
+      with_watch_providers: '9|119',
+      watch_region: 'US',
+      with_watch_monetization_types: 'flatrate',
+      'primary_release_date.lte': '2026-11-14',
+      'vote_count.gte': 10,
+    })
+    expect(result).toEqual({
+      with_watch_providers: '9|119',
+      watch_region: 'US',
+      with_watch_monetization_types: 'flatrate',
+      'primary_release_date.lte': '2026-11-14',
+      'vote_count.gte': '10',
+    })
+  })
+
+  it('rejects invalid streaming provider and date values', () => {
+    expect(validateParams({ with_watch_providers: '8; drop tables' })).toBeNull()
+    expect(validateParams({ watch_region: 'USA' })).toBeNull()
+    expect(validateParams({ 'primary_release_date.lte': 'not-a-date' })).toBeNull()
+    expect(validateParams({ 'vote_count.gte': -5 })).toBeNull()
+  })
+
   it('returns empty object for empty params', () => {
     const result = validateParams({})
     expect(result).toEqual({})

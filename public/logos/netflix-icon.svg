@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 551.11 1000" width="100%" height="100%">
+  <defs>
+    <linearGradient id="netflix-grad-left" x1="78.23" y1="423.77" x2="221.66" y2="365.09" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b1060f" />
+      <stop offset="0.55" stop-color="#7b010c" />
+      <stop offset="1" stop-color="#e50914" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="netflix-grad-right" x1="456.36" y1="521.56" x2="309.68" y2="583.49" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b1060f" />
+      <stop offset="0.63" stop-color="#7b010c" />
+      <stop offset="1" stop-color="#b1060f" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  <path d="M-1.15-1.15L2.3 1002.67C75.58 988.56 133.2 990.1 198.23 984.23V0Z" fill="url(#netflix-grad-left)" />
+  <path d="M353.82 0H553.2L555.51 1000.37L352.67 966.94Z" fill="url(#netflix-grad-right)" />
+  <path d="M1.15 0C5.76 11.52 346.9 981.93 346.9 981.93C402.96 981.53 478.12 990.68 552.05 999.22L197.08 0Z" fill="#e50914" />
+</svg>

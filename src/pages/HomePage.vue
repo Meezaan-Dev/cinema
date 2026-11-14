@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
-import { ArrowRight, Star } from 'lucide-vue-next'
+import { ArrowRight, Star, TvMinimalPlay } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
@@ -14,9 +14,11 @@ import {
   queryKeys,
 } from '@/api/tmdbEndpoints'
 import UsherMascot from '@/components/brand/UsherMascot.vue'
+import PlatformLogo from '@/components/brand/PlatformLogo.vue'
 import MovieSection from '@/components/movie/MovieSection.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import { formatRating, getYear, imageUrl } from '@/lib/formatters'
+import { STREAMING_PLATFORM_LIST } from '@/lib/streamingPlatforms'
 
 const genresQuery = useQuery({ queryKey: queryKeys.genres, queryFn: getGenres })
 const trending = useQuery({ queryKey: queryKeys.trending, queryFn: getTrendingMovies })
@@ -93,6 +95,58 @@ const heroPath = computed(() => {
     :on-retry="() => trending.refetch()"
     carousel
   />
+
+  <!-- Streaming Platforms Spotlight -->
+  <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+    <div class="relative overflow-hidden rounded-3xl border border-[var(--brand-border)] bg-[linear-gradient(135deg,rgba(255,241,199,0.06),rgba(13,27,47,0.85))] p-6 sm:p-8">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div class="inline-flex items-center gap-2 rounded-full border border-[var(--brand-border)] bg-[var(--surface)] px-3 py-1 text-xs font-semibold text-[var(--accent-gold)]">
+            <TvMinimalPlay class="size-3.5" aria-hidden="true" />
+            <span>Platform Screenings</span>
+          </div>
+          <h2 class="mt-3 text-2xl font-bold tracking-tight text-[var(--text-primary)] sm:text-3xl">
+            Stream by Platform
+          </h2>
+          <p class="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
+            Explore dedicated hubs for What's New, Trending Now, and Top Rated on your favorite services.
+          </p>
+        </div>
+        <RouterLink to="/streaming" class="button-link shrink-0">
+          Open Streaming Hub
+          <ArrowRight class="size-4" aria-hidden="true" />
+        </RouterLink>
+      </div>
+
+      <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <RouterLink
+          v-for="platform in STREAMING_PLATFORM_LIST"
+          :key="platform.id"
+          :to="`/streaming?platform=${platform.id}`"
+          :class="[
+            'group flex flex-col justify-between rounded-2xl border p-4 transition duration-200 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]',
+            platform.borderClass,
+            'bg-[var(--surface)]/70 hover:bg-[var(--surface)]',
+          ]"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex h-7 items-center">
+              <PlatformLogo
+                :platform="platform.id"
+                :variant="platform.id === 'netflix' ? 'icon' : 'full'"
+                class="h-5 w-auto max-w-[80px]"
+              />
+            </div>
+            <ArrowRight class="size-4 text-[var(--text-secondary)] opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden="true" />
+          </div>
+          <div class="mt-4">
+            <p class="font-bold text-[var(--text-primary)]">{{ platform.name }}</p>
+            <p class="mt-0.5 text-xs text-[var(--text-secondary)]">What's New & Trending</p>
+          </div>
+        </RouterLink>
+      </div>
+    </div>
+  </section>
   <MovieSection
     title="Popular Movies"
     eyebrow="Browse"

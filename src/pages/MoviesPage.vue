@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { discoverMovies, getGenres, queryKeys, type DiscoverParams } from '@/api/tmdbEndpoints'
 import UsherMascot from '@/components/brand/UsherMascot.vue'
@@ -9,36 +10,55 @@ import SearchFilters from '@/components/search/SearchFilters.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import MovieGridSkeleton from '@/components/ui/MovieGridSkeleton.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
-import { sanitizeGenre, sanitizeRating, sanitizeSortBy, sanitizeYear } from '@/lib/filterValidation'
+import { sanitizeGenre, sanitizePlatform, sanitizeRating, sanitizeSortBy, sanitizeYear } from '@/lib/filterValidation'
+import { getPlatformProviderId } from '@/lib/streamingPlatforms'
 
-const filters = ref<Required<Pick<DiscoverParams, 'genre' | 'year' | 'minRating' | 'sortBy'>>>({
+const route = useRoute()
+
+const filters = ref({
   genre: '',
   year: '',
   minRating: '',
   sortBy: 'popularity.desc',
+  platform: sanitizePlatform(typeof route.query.platform === 'string' ? route.query.platform : ''),
 })
+
+watch(
+  () => route.query.platform,
+  (newPlatform) => {
+    if (typeof newPlatform === 'string') {
+      filters.value.platform = sanitizePlatform(newPlatform)
+    }
+  },
+)
 
 const genres = useQuery({ queryKey: queryKeys.genres, queryFn: getGenres })
 
-const safeFilters = computed(() => ({
-  genre: sanitizeGenre(filters.value.genre, genres.data.value?.genres),
-  year: filters.value.year.length === 4 ? sanitizeYear(filters.value.year) : '',
-  minRating: sanitizeRating(filters.value.minRating),
-  sortBy: sanitizeSortBy(filters.value.sortBy),
-}))
+const safeFilters = computed<DiscoverParams>(() => {
+  const providerId = getPlatformProviderId(filters.value.platform)
+  return {
+    genre: sanitizeGenre(filters.value.genre, genres.data.value?.genres),
+    year: filters.value.year.length === 4 ? sanitizeYear(filters.value.year) : '',
+    minRating: sanitizeRating(filters.value.minRating),
+    sortBy: sanitizeSortBy(filters.value.sortBy),
+    watchProvider: providerId,
+    watchRegion: providerId ? 'US' : undefined,
+  }
+})
 
 const discover = useQuery({
   queryKey: computed(() => queryKeys.discover(safeFilters.value)),
   queryFn: () => discoverMovies(safeFilters.value),
 })
 
-function onFilterChange(updates: { genre?: string; year?: string; minRating?: string; sortBy?: string }) {
+function onFilterChange(updates: { genre?: string; year?: string; minRating?: string; sortBy?: string; platform?: string }) {
   filters.value = {
     ...filters.value,
     genre: updates.genre !== undefined ? sanitizeGenre(updates.genre, genres.data.value?.genres) : filters.value.genre,
     year: updates.year !== undefined ? sanitizeYear(updates.year) : filters.value.year,
     minRating: updates.minRating !== undefined ? sanitizeRating(updates.minRating) : filters.value.minRating,
     sortBy: updates.sortBy !== undefined ? sanitizeSortBy(updates.sortBy) : filters.value.sortBy,
+    platform: updates.platform !== undefined ? sanitizePlatform(updates.platform) : filters.value.platform,
   }
 }
 </script>
@@ -60,6 +80,7 @@ function onFilterChange(updates: { genre?: string; year?: string; minRating?: st
       :year="filters.year"
       :min-rating="filters.minRating"
       :sort-by="filters.sortBy"
+      :platform="filters.platform"
       @change="onFilterChange"
     />
 

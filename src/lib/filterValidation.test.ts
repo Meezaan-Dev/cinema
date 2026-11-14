@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   sanitizeGenre,
+  sanitizePlatform,
   sanitizeQuery,
   sanitizeRating,
   sanitizeSortBy,
@@ -43,5 +44,14 @@ describe('filter validation', () => {
     expect(sanitizeGenre('12', genres)).toBe('')
     expect(sanitizeGenre('abc', genres)).toBe('')
     expect(sanitizeGenre('878')).toBe('878')
+  })
+
+  it('validates streaming platform identifiers', () => {
+    expect(sanitizePlatform('netflix')).toBe('netflix')
+    expect(sanitizePlatform('disney')).toBe('disney')
+    expect(sanitizePlatform('prime')).toBe('prime')
+    expect(sanitizePlatform('apple')).toBe('apple')
+    expect(sanitizePlatform('hbo')).toBe('')
+    expect(sanitizePlatform('')).toBe('')
   })
 })

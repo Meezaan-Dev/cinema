@@ -1,16 +1,25 @@
 <script setup lang="ts">
 import type { TmdbGenre } from '@/types/tmdb'
+import { STREAMING_PLATFORM_LIST } from '@/lib/streamingPlatforms'
 
-defineProps<{
-  genres: TmdbGenre[]
-  genre: string
-  year: string
-  minRating: string
-  sortBy: string
-}>()
+withDefaults(
+  defineProps<{
+    genres: TmdbGenre[]
+    genre: string
+    year: string
+    minRating: string
+    sortBy: string
+    platform?: string
+    showPlatform?: boolean
+  }>(),
+  {
+    platform: '',
+    showPlatform: true,
+  },
+)
 
 const emit = defineEmits<{
-  change: [filters: { genre?: string; year?: string; minRating?: string; sortBy?: string }]
+  change: [filters: { genre?: string; year?: string; minRating?: string; sortBy?: string; platform?: string }]
 }>()
 
 const sortOptions = [
@@ -21,7 +30,19 @@ const sortOptions = [
 </script>
 
 <template>
-  <div class="usher-panel grid gap-3 rounded-3xl p-4 sm:grid-cols-2 lg:grid-cols-4">
+  <div
+    :class="[
+      'usher-panel grid gap-3 rounded-3xl p-4 sm:grid-cols-2',
+      showPlatform ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
+    ]"
+  >
+    <label v-if="showPlatform" class="space-y-2 text-sm font-medium text-[var(--text-secondary)]">
+      <span>Platform</span>
+      <select class="field" :value="platform" @change="emit('change', { platform: ($event.target as HTMLSelectElement).value })">
+        <option value="">Any platform</option>
+        <option v-for="plat in STREAMING_PLATFORM_LIST" :key="plat.id" :value="plat.id">{{ plat.name }}</option>
+      </select>
+    </label>
     <label class="space-y-2 text-sm font-medium text-[var(--text-secondary)]">
       <span>Genre</span>
       <select class="field" :value="genre" @change="emit('change', { genre: ($event.target as HTMLSelectElement).value })">
