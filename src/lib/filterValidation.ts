@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import type { TmdbGenre } from '@/types/tmdb'
+import { isStreamingPlatformId, type StreamingPlatformId } from '@/lib/streamingPlatforms'
 
 export const sortBySchema = z.enum([
   'popularity.desc',
@@ -36,4 +37,9 @@ export function sanitizeGenre(genre: string, genres: TmdbGenre[] = []) {
   if (!/^\d+$/.test(genre)) return ''
   if (genres.length === 0) return genre
   return genres.some((item) => String(item.id) === genre) ? genre : ''
+}
+
+export function sanitizePlatform(platform: string): StreamingPlatformId | '' {
+  if (!platform) return ''
+  return isStreamingPlatformId(platform) ? platform : ''
 }

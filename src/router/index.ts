@@ -15,6 +15,7 @@ export const router = createRouter({
         { path: '', name: 'home', component: () => import('@/pages/HomePage.vue') },
         { path: 'movies', name: 'movies', component: () => import('@/pages/MoviesPage.vue') },
         { path: 'tv-shows', name: 'tv-shows', component: () => import('@/pages/TVShowsPage.vue') },
+        { path: 'streaming', name: 'streaming', component: () => import('@/pages/StreamingPage.vue') },
         { path: 'people', name: 'people', component: () => import('@/pages/PeoplePage.vue') },
         { path: 'search', name: 'search', component: () => import('@/pages/SearchPage.vue') },
         { path: 'movie/:movieId', name: 'movie-detail', component: () => import('@/pages/MovieDetailPage.vue') },

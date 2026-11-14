@@ -47,6 +47,14 @@ const SAFE_PARAM_KEYS = new Set([
   "with_runtime.lte",
   "language",
   "region",
+  "with_watch_providers",
+  "watch_region",
+  "with_watch_monetization_types",
+  "primary_release_date.lte",
+  "primary_release_date.gte",
+  "first_air_date.lte",
+  "first_air_date.gte",
+  "vote_count.gte",
 ]);
 
 const SAFE_APPEND_TO_RESPONSE_VALUES = new Set([
@@ -99,6 +107,32 @@ export function validateParams(
 
     if (key === "sort_by") {
       if (!/^[a-z_]+\.[a-z]+$/.test(str)) return null;
+    }
+
+    if (key === "with_watch_providers") {
+      if (!/^[\d|,]+$/.test(str)) return null;
+    }
+
+    if (key === "watch_region") {
+      if (!/^[A-Za-z]{2}$/.test(str)) return null;
+    }
+
+    if (key === "with_watch_monetization_types") {
+      if (!/^[a-z|]+$/.test(str)) return null;
+    }
+
+    if (
+      key === "primary_release_date.lte" ||
+      key === "primary_release_date.gte" ||
+      key === "first_air_date.lte" ||
+      key === "first_air_date.gte"
+    ) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+    }
+
+    if (key === "vote_count.gte") {
+      const count = Number(str);
+      if (!Number.isInteger(count) || count < 0) return null;
     }
 
     valid[key] = str;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
 import { AnimatePresence, motion } from 'motion-v'
-import { Film, Search, SlidersHorizontal, Star, Tv, UserRound, Users, X } from 'lucide-vue-next'
+import { Film, Search, SlidersHorizontal, Star, Tv, TvMinimalPlay, UserRound, Users, X } from 'lucide-vue-next'
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -57,6 +57,7 @@ const isError = computed(() => (hasMeaningfulQuery.value ? search.isError.value 
 const activeResult = computed(() => results.value[activeIndex.value] ?? results.value[0])
 
 const quickActions = [
+  { to: '/streaming', label: 'Streaming', icon: TvMinimalPlay },
   { to: '/movies', label: 'Movies', icon: Film },
   { to: '/tv-shows', label: 'TV Shows', icon: Tv },
   { to: '/people', label: 'People', icon: Users },

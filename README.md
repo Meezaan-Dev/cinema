@@ -20,11 +20,14 @@ No accounts. No watchlists. No setup beyond a TMDB key.
 | Path | Purpose |
 |------|---------|
 | `/` | Discover home |
-| `/movies` | Browse movies |
-| `/tv-shows` | Browse TV series |
+| `/streaming` | Streaming Hub (Netflix, Disney+, Prime Video, Apple TV+) |
+| `/movies` | Browse movies with genre, year, rating, and platform filters |
+| `/tv-shows` | Browse TV series with genre, year, rating, and platform filters |
+| `/people` | Search actors and directors |
 | `/search` | Unified search |
 | `/movie/:id` | Movie detail |
 | `/tv/:id` | TV series detail |
+| `/person/:id` | Person profile and credits |
 
 ## Tech stack
 
