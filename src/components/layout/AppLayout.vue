@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Clapperboard, Film, Search, Tv, TvMinimalPlay, Users } from 'lucide-vue-next'
-import { computed } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { Clapperboard, Film, Search } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
 
 import UsherMascot from '@/components/brand/UsherMascot.vue'
 import NavItem from '@/components/layout/NavItem.vue'
@@ -10,10 +9,7 @@ import SuperSearch from '@/components/search/SuperSearch.vue'
 import { cn } from '@/lib/utils'
 import { useUiStore } from '@/stores/ui'
 
-const route = useRoute()
 const ui = useUiStore()
-
-const isDetailPage = computed(() => /^\/(movie|tv|person)\//.test(route.path))
 </script>
 
 <template>
@@ -39,18 +35,6 @@ const isDetailPage = computed(() => /^\/(movie|tv|person)\//.test(route.path))
             Cinema
           </a>
         </RouterLink>
-        <button
-          type="button"
-          class="inline-flex h-10 min-w-0 items-center gap-2 rounded-full border border-[var(--brand-border)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-elevated)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]"
-          aria-label="Open search"
-          @click="ui.openSuperSearch()"
-        >
-          <Search class="size-4" aria-hidden="true" />
-          <span>Search</span>
-          <kbd class="hidden rounded-md border border-[var(--brand-border)] bg-[var(--bg)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)] sm:inline">
-            Cmd/Ctrl K
-          </kbd>
-        </button>
       </nav>
     </header>
 
@@ -78,21 +62,16 @@ const isDetailPage = computed(() => /^\/(movie|tv|person)\//.test(route.path))
         </RouterLink>
 
         <div class="mt-auto flex flex-col gap-3 pb-3">
-          <NavItem to="/search" label="Search" :icon="Search" sidebar />
-          <NavItem to="/streaming" label="Streaming" :icon="TvMinimalPlay" sidebar />
-          <NavItem to="/movies" label="Movies" :icon="Film" sidebar />
-          <NavItem to="/tv-shows" label="Shows" :icon="Tv" sidebar />
-          <NavItem to="/people" label="People" :icon="Users" sidebar />
-        </div>
-
-        <div class="mb-2 overflow-hidden rounded-3xl border border-[var(--brand-border)] bg-white/[0.035] p-3 opacity-0 transition duration-200 group-hover/sidebar:opacity-100 group-focus-within/sidebar:opacity-100">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent-gold)]">Cinema mode</p>
-          <p class="mt-2 text-xs leading-5 text-[var(--text-secondary)]">I will keep the reels tidy while you browse.</p>
+          <NavItem to="/browse" label="Browse" :icon="Film" sidebar />
+          <button type="button" class="group/item flex h-12 w-full items-center gap-3 overflow-hidden rounded-2xl px-3 text-left text-sm font-semibold text-[var(--text-secondary)] transition hover:bg-white/[0.08] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]" @click="ui.openSuperSearch()">
+            <Search class="size-5 shrink-0" aria-hidden="true" />
+            <span class="whitespace-nowrap opacity-0 transition duration-200 group-hover/sidebar:opacity-100 group-focus-within/sidebar:opacity-100">Search</span>
+          </button>
         </div>
       </nav>
     </aside>
 
-    <main :class="cn('md:pl-[84px]', isDetailPage ? '' : 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0')">
+    <main class="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pl-[84px] md:pb-0">
       <RouteViewBoundary />
     </main>
 
@@ -102,10 +81,11 @@ const isDetailPage = computed(() => /^\/(movie|tv|person)\//.test(route.path))
     >
       <div class="mx-auto flex min-h-16 max-w-lg items-stretch justify-around px-2">
         <NavItem to="/" label="Discover" :icon="Clapperboard" end mobile />
-        <NavItem to="/streaming" label="Streaming" :icon="TvMinimalPlay" mobile />
-        <NavItem to="/movies" label="Movies" :icon="Film" mobile />
-        <NavItem to="/tv-shows" label="Shows" :icon="Tv" mobile />
-        <NavItem to="/people" label="People" :icon="Users" mobile />
+        <NavItem to="/browse" label="Browse" :icon="Film" mobile />
+        <button type="button" class="flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]" @click="ui.openSuperSearch()">
+          <Search class="size-5" aria-hidden="true" />
+          <span>Search</span>
+        </button>
       </div>
     </nav>
 

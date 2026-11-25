@@ -14,13 +14,18 @@ import type { TmdbMovie, TmdbPagedResponse } from '@/types/tmdb'
 
 export type SearchMediaType = 'movie' | 'series' | 'both'
 
-function mergeResponses(
+export function mergeResponses(
   first: TmdbPagedResponse<TmdbMovie>,
   second: TmdbPagedResponse<TmdbMovie>,
+  sortBy: string,
 ): TmdbPagedResponse<TmdbMovie> {
   return {
-    page: 1,
-    results: [...first.results, ...second.results].sort((a, b) => b.popularity - a.popularity),
+    page: first.page,
+    results: [...first.results, ...second.results].sort((a, b) => {
+      if (sortBy === 'vote_average.desc') return b.vote_average - a.vote_average
+      if (sortBy === 'primary_release_date.desc') return b.release_date.localeCompare(a.release_date)
+      return b.popularity - a.popularity
+    }),
     total_pages: Math.max(first.total_pages, second.total_pages),
     total_results: first.total_results + second.total_results,
   }
@@ -65,7 +70,7 @@ export function useMovieSearch(query: Ref<string>, filters: Ref<DiscoverParams>,
           hasQuery.value ? searchMovies(q, f) : discoverMovies(f),
           hasQuery.value ? searchSeries(q, f) : discoverSeries(f),
         ])
-        return mergeResponses(movies, series)
+        return mergeResponses(movies, series, f.sortBy || 'popularity.desc')
       }
 
       return hasQuery.value ? searchMovies(q, f) : discoverMovies(f)

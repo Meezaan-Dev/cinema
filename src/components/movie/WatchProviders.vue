@@ -31,10 +31,9 @@ const watchUrl = computed(() => buildTmdbWatchUrl(availability.value?.link, prop
 </script>
 
 <template>
-  <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6" aria-labelledby="where-to-watch-title">
+  <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6" aria-labelledby="where-to-watch-title">
     <div class="mb-5">
-      <p class="brand-kicker">South Africa</p>
-      <h2 id="where-to-watch-title" class="mt-1 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">Where to watch</h2>
+      <h2 id="where-to-watch-title" class="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">Where to watch in South Africa</h2>
     </div>
 
     <div v-if="query.isPending.value" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading watch options">

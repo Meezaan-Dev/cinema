@@ -36,7 +36,7 @@ const detailsPath = computed(() => (mediaType.value === 'tv' ? `/tv/${props.movi
           :title="movie.title"
           class="w-full transition duration-500 group-hover:scale-[1.03]"
         />
-        <div class="absolute bottom-2 right-2 rounded-md bg-[#071326]/80 px-2 py-1 text-xs font-semibold text-[var(--accent-cream)] backdrop-blur-md">
+        <div v-if="movie.vote_count > 0 && movie.vote_average > 0" class="absolute bottom-2 right-2 rounded-md bg-[#071326]/80 px-2 py-1 text-xs font-semibold text-[var(--accent-cream)] backdrop-blur-md">
           <Star class="mr-0.5 inline size-3 fill-[var(--accent-gold)] text-[var(--accent-gold)]" aria-hidden="true" />
           {{ formatRating(movie.vote_average) }}
         </div>

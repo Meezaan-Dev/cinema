@@ -7,24 +7,23 @@ No accounts. No watchlists. No setup beyond a TMDB key.
 ## What you can do
 
 ### Discovery
-- Letterboxd-inspired home feed: featured hero, trending rail, popular movies & TV, top rated, coming soon
-- Dedicated browse pages for movies and TV shows with genre, year, rating, and sort filters
-- Unified search across movies and TV with instant debounced results
+- Focused home feed: trending, popular movies, and popular shows
+- One browse page for movies and shows, with genre, year, rating, sort, and South African streaming-service filters
+- Quick search across titles and people, plus a separate title search with type and year filters
 - Movie and TV detail pages: overview, genres, cast, trailers, similar titles, metadata
 - South African watch options on movie and TV detail pages: streaming, free, ad-supported, rental, and purchase listings from TMDB/JustWatch
 - Movie detail cinema times for Ster-Kinekor Blue Route, Nu Metro Canal Walk, and Nu Metro Cavendish Square; choose branches and browse the next seven days
-- **Magic Link** (PlayIMDb) and **View on IMDb** when TMDB provides an IMDb ID
+- **Open on PlayIMDb** and **View on IMDb** when TMDB provides an IMDb ID
 
 ## Routes
 
 | Path | Purpose |
 |------|---------|
 | `/` | Discover home |
-| `/streaming` | Streaming Hub (Netflix, Disney+, Prime Video, Apple TV+) |
-| `/movies` | Browse movies with genre, year, rating, and platform filters |
-| `/tv-shows` | Browse TV series with genre, year, rating, and platform filters |
+| `/browse` | Browse movies and shows, optionally filtered to a South African streaming service |
+| `/streaming`, `/movies`, `/tv-shows` | Redirect to the equivalent Browse view |
 | `/people` | Search actors and directors |
-| `/search` | Unified search |
+| `/search` | Title search with type and year filters |
 | `/movie/:id` | Movie detail |
 | `/tv/:id` | TV series detail |
 | `/person/:id` | Person profile and credits |
@@ -112,9 +111,10 @@ npm audit --omit=dev
 
 Smoke-test:
 
-- [ ] Discover home loads trending, popular, and coming soon sections
-- [ ] Search movies and TV with filters
-- [ ] Movie detail: trailer, cast, similar, Magic Link, IMDb link
-- [ ] TV detail: seasons, cast, trailer, similar, Magic Link
+- [ ] Discover home loads trending, popular movies, and popular shows
+- [ ] Browse all titles, then filter by type, genre, and a South African streaming service
+- [ ] Quick search titles and people; open title search with the query preserved
+- [ ] Movie detail: watch options and cinema times before metadata, then trailer, cast, similar, PlayIMDb, IMDb
+- [ ] TV detail: watch options before metadata, then seasons, cast, trailer, similar, PlayIMDb
 - [ ] Movie and TV detail: South African watch options, empty state, TMDB link, JustWatch credit
 - [ ] Movie detail: three cinema branches, date choices, showtimes, official links, and unavailable/uncertain states
