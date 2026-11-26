@@ -21,7 +21,7 @@ const props = withDefaults(
     carousel?: boolean
     exploreTo?: string
   }>(),
-  { exploreTo: '/search' },
+  { exploreTo: '/browse' },
 )
 
 const isHorizontal = computed(() => props.horizontal || props.carousel)

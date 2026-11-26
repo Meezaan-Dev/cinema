@@ -8,7 +8,6 @@ import {
   getMovieDetailsBundle,
   queryKeys,
 } from '@/api/tmdbEndpoints'
-import UsherMascot from '@/components/brand/UsherMascot.vue'
 import CastRail from '@/components/movie/CastRail.vue'
 import CinemaShowtimes from '@/components/movie/CinemaShowtimes.vue'
 import MoviePoster from '@/components/movie/MoviePoster.vue'
@@ -48,7 +47,7 @@ const detailItems = computed(() =>
         { label: 'Release date', value: movie.value.release_date || 'Unknown' },
         { label: 'Status', value: movie.value.status || 'Unknown' },
         { label: 'Runtime', value: formatRuntime(movie.value.runtime) },
-        { label: 'TMDB rating', value: `${formatRating(movie.value.vote_average)} / 10` },
+        { label: 'TMDB rating', value: movie.value.vote_count > 0 ? `${formatRating(movie.value.vote_average)} / 10` : 'Not rated' },
       ]
     : [],
 )
@@ -71,51 +70,44 @@ const detailItems = computed(() =>
     <section class="relative overflow-hidden">
       <img v-if="backdrop" :src="backdrop" alt="" class="absolute inset-0 h-full w-full object-cover opacity-35" />
       <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,19,38,.48),#071326_90%)]" />
-      <div class="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-14 xl:grid-cols-[260px_minmax(0,1fr)]">
-        <MoviePoster :path="movie.poster_path" :title="movie.title" class="w-full shadow-[0_24px_60px_rgba(0,0,0,.5)] sm:w-64 lg:w-full" size="w780" />
+      <div class="relative mx-auto grid max-w-7xl grid-cols-[96px_minmax(0,1fr)] gap-4 px-4 py-6 sm:grid-cols-[180px_minmax(0,1fr)] sm:gap-8 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10 xl:grid-cols-[260px_minmax(0,1fr)]">
+        <MoviePoster :path="movie.poster_path" :title="movie.title" class="w-24 shadow-[0_24px_60px_rgba(0,0,0,.5)] sm:w-44 lg:w-full" size="w780" />
         <div class="min-w-0 self-end">
           <p class="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent-gold)]">{{ getYear(movie.release_date) }} · {{ formatRuntime(movie.runtime) }}</p>
-          <h1 class="mt-3 text-4xl font-bold leading-tight tracking-tight text-[var(--text-primary)] sm:text-5xl xl:text-[3.5rem]">{{ movie.title }}</h1>
+          <h1 class="mt-2 text-2xl font-bold leading-tight tracking-tight text-[var(--text-primary)] sm:text-5xl xl:text-[3.5rem]">{{ movie.title }}</h1>
           <p v-if="movie.tagline" class="mt-3 text-lg italic text-[var(--text-secondary)]">{{ movie.tagline }}</p>
-          <div class="mt-5 flex flex-wrap items-center gap-2">
-            <span v-for="genre in movie.genres" :key="genre.id" class="rounded-full border border-[var(--brand-border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-secondary)]">{{ genre.name }}</span>
-            <span class="inline-flex items-center gap-1 rounded-full bg-[var(--accent-gold)] px-3 py-1 text-sm font-semibold text-[#071326]">
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <span v-if="movie.vote_count > 0 && movie.vote_average > 0" class="inline-flex items-center gap-1 rounded-full bg-[var(--accent-gold)] px-3 py-1 text-sm font-semibold text-[#071326]">
               <Star class="size-4 fill-current" aria-hidden="true" />
               {{ formatRating(movie.vote_average) }}
             </span>
           </div>
-          <p class="mt-6 max-w-2xl text-base leading-7 text-[var(--text-secondary)]">{{ movie.overview || 'No overview is available for this movie yet.' }}</p>
-          <div class="usher-panel mt-6 flex max-w-3xl items-center gap-4 rounded-3xl p-4">
-            <UsherMascot variant="brand" class="size-14 shrink-0" />
-            <div>
-              <p class="brand-kicker">Usher note</p>
-              <p class="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
-                {{ trailerKey ? 'The trailer is ready, and I have the cast waiting below.' : 'The cast is ready below; TMDB does not have a trailer for this one yet.' }}
-              </p>
-            </div>
+        </div>
+        <div class="col-span-2 min-w-0 lg:col-span-1 lg:col-start-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span v-for="genre in movie.genres" :key="genre.id" class="rounded-full border border-[var(--brand-border)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--text-secondary)]">{{ genre.name }}</span>
           </div>
-          <dl class="mt-6 grid max-w-4xl gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div v-for="item in detailItems" :key="item.label" class="rounded-xl border border-[var(--brand-border)] bg-[var(--surface)]/85 p-4 backdrop-blur">
-              <dt class="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-secondary)]">{{ item.label }}</dt>
-              <dd class="mt-1 text-sm font-semibold text-[var(--text-primary)]">{{ item.value }}</dd>
-            </div>
-          </dl>
-          <div class="mt-6 flex flex-wrap gap-3">
-            <a v-if="magicLinkUrl" class="button-link button-link-accent" :href="magicLinkUrl" target="_blank" rel="noreferrer">
-              <ExternalLink class="size-4" aria-hidden="true" />
-              Magic Link
-            </a>
-            <a v-if="imdbUrl" class="button-link" :href="imdbUrl" target="_blank" rel="noreferrer">
-              <ExternalLink class="size-4" aria-hidden="true" />
-              View on IMDb
-            </a>
-          </div>
+          <p class="mt-4 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">{{ movie.overview || 'No overview is available for this movie yet.' }}</p>
         </div>
       </div>
     </section>
 
     <WatchProviders media-type="movie" :id="movie.id" />
     <CinemaShowtimes :movie-id="movie.id" />
+
+    <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <h2 class="text-2xl font-semibold text-[var(--text-primary)]">More details</h2>
+      <dl class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div v-for="item in detailItems" :key="item.label" class="rounded-xl border border-[var(--brand-border)] bg-[var(--surface)] p-4">
+          <dt class="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-secondary)]">{{ item.label }}</dt>
+          <dd class="mt-1 text-sm font-semibold text-[var(--text-primary)]">{{ item.value }}</dd>
+        </div>
+      </dl>
+      <div class="mt-5 flex flex-wrap gap-3">
+        <a v-if="magicLinkUrl" class="button-link" :href="magicLinkUrl" target="_blank" rel="noreferrer"><ExternalLink class="size-4" aria-hidden="true" /> Open on PlayIMDb</a>
+        <a v-if="imdbUrl" class="button-link" :href="imdbUrl" target="_blank" rel="noreferrer"><ExternalLink class="size-4" aria-hidden="true" /> View on IMDb</a>
+      </div>
+    </section>
 
     <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <h2 class="text-2xl font-semibold text-[var(--text-primary)]">Cast</h2>
@@ -152,6 +144,7 @@ const detailItems = computed(() =>
       :is-error="details.isError.value"
       :error="details.error.value"
       :on-retry="() => details.refetch()"
+      explore-to="/browse?type=movie"
     />
 
     <section class="mx-auto max-w-7xl px-4 pb-12 sm:px-6">

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import {
   STREAMING_PLATFORMS,
   STREAMING_PLATFORM_LIST,
-  getPlatformById,
   getPlatformProviderId,
   isStreamingPlatformId,
 } from './streamingPlatforms'
@@ -30,13 +29,8 @@ describe('streamingPlatforms', () => {
     expect(isStreamingPlatformId('prime')).toBe(true)
     expect(isStreamingPlatformId('apple')).toBe(true)
     expect(isStreamingPlatformId('hbo')).toBe(false)
+    expect(isStreamingPlatformId('__proto__')).toBe(false)
     expect(isStreamingPlatformId('')).toBe(false)
-  })
-
-  it('falls back to default platform when given invalid ID', () => {
-    expect(getPlatformById('netflix').id).toBe('netflix')
-    expect(getPlatformById('invalid-platform').id).toBe('netflix')
-    expect(getPlatformById(null).id).toBe('netflix')
   })
 
   it('retrieves provider ID correctly', () => {
@@ -46,10 +40,4 @@ describe('streamingPlatforms', () => {
     expect(getPlatformProviderId('')).toBeUndefined()
   })
 
-  it('provides svg logo paths for all platforms', () => {
-    for (const platform of STREAMING_PLATFORM_LIST) {
-      expect(platform.logoUrl).toMatch(/\.svg$/)
-      expect(platform.iconUrl).toMatch(/\.svg$/)
-    }
-  })
 })

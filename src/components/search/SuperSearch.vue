@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
 import { AnimatePresence, motion } from 'motion-v'
-import { Film, Search, SlidersHorizontal, Star, Tv, TvMinimalPlay, UserRound, Users, X } from 'lucide-vue-next'
+import { Search, Star, UserRound, X } from 'lucide-vue-next'
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { getTrendingAll, queryKeys, searchMovies, searchPeople, searchSeries } from '@/api/tmdbEndpoints'
-import UsherMascot from '@/components/brand/UsherMascot.vue'
 import { useDebounce } from '@/composables/useDebounce'
 import { imageUrl } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
+import { sanitizeQuery } from '@/lib/filterValidation'
 import { useUiStore } from '@/stores/ui'
 import { normalizeSuperSearchResults, type SuperSearchResult } from '@/components/search/superSearchResults'
 
@@ -56,18 +56,16 @@ const isLoading = computed(() => hasPendingQuery.value || (hasMeaningfulQuery.va
 const isError = computed(() => (hasMeaningfulQuery.value ? search.isError.value : !trimmedQuery.value && trending.isError.value))
 const activeResult = computed(() => results.value[activeIndex.value] ?? results.value[0])
 
-const quickActions = [
-  { to: '/streaming', label: 'Streaming', icon: TvMinimalPlay },
-  { to: '/movies', label: 'Movies', icon: Film },
-  { to: '/tv-shows', label: 'TV Shows', icon: Tv },
-  { to: '/people', label: 'People', icon: Users },
-  { to: '/search', label: 'Advanced search', icon: SlidersHorizontal },
-]
-
 function closeSearch() {
   query.value = ''
   activeIndex.value = 0
   ui.closeSuperSearch()
+}
+
+function openSearchPage() {
+  const q = sanitizeQuery(query.value)
+  closeSearch()
+  router.push({ path: '/search', query: q ? { q } : {} })
 }
 
 function openPath(path: string) {
@@ -152,20 +150,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
         @mousedown.stop
       >
         <div class="border-b border-[var(--brand-border)] p-3">
-          <h2 id="super-search-title" class="sr-only">Super Search</h2>
-          <div class="mb-3 flex items-center gap-3 rounded-2xl bg-white/[0.035] p-3">
-            <UsherMascot variant="brand" class="size-12 shrink-0" />
-            <div>
-              <p class="brand-kicker">Cinema command</p>
-              <p class="mt-1 text-sm text-[var(--text-secondary)]">Search the room for titles, people, and quick routes.</p>
-            </div>
-          </div>
-          <label class="relative block">
+          <h2 id="super-search-title" class="mb-3 text-lg font-semibold">Search titles and people</h2>
+          <div class="relative block">
             <Search class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[var(--accent-gold)]" aria-hidden="true" />
             <input
               ref="inputRef"
               class="field h-14 rounded-xl border-[var(--brand-border)] bg-[var(--surface-elevated)] !pl-12 !pr-12 text-base"
               placeholder="Search movies, TV shows, and people..."
+              aria-label="Search movies, TV shows, and people"
               :value="query"
               aria-controls="super-search-results"
               :aria-activedescendant="activeResult ? `super-search-result-${activeResult.key}` : undefined"
@@ -182,7 +174,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
             >
               <X class="size-4" aria-hidden="true" />
             </button>
-          </label>
+          </div>
         </div>
 
         <div class="flex items-center justify-between gap-3 border-b border-[var(--brand-border)] px-4 py-2 text-xs text-[var(--text-secondary)]">
@@ -190,19 +182,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
           <span class="hidden sm:inline">Arrow keys to move • Enter to open • Esc to close</span>
         </div>
 
-        <div class="border-b border-[var(--brand-border)] p-2">
-          <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <button
-              v-for="{ to, label, icon: Icon } in quickActions"
-              :key="to"
-              type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--brand-border)] bg-white/[0.035] px-3 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-white/[0.07] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]"
-              @click="openPath(to)"
-            >
-              <component :is="Icon" class="size-4 text-[var(--accent-gold)]" aria-hidden="true" />
-              <span class="truncate">{{ label }}</span>
-            </button>
-          </div>
+        <div class="border-b border-[var(--brand-border)] px-4 py-2">
+          <button type="button" class="text-sm font-medium text-[var(--accent-gold)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-gold)]" @click="openSearchPage">
+            Search with type and year filters
+          </button>
         </div>
 
         <div id="super-search-results" role="listbox" class="min-h-72 overflow-y-auto p-2">
@@ -254,11 +237,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleShortcut))
                 <span class="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">{{ result.subtitle }}</span>
                 <span v-if="result.description" class="mt-1 block truncate text-xs text-[var(--text-muted)]">{{ result.description }}</span>
               </span>
-              <span v-if="typeof result.rating === 'number'" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-primary)]">
+              <span v-if="typeof result.rating === 'number' && result.rating > 0" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-primary)]">
                 <Star class="size-3 fill-[var(--accent-gold)] text-[var(--accent-gold)]" aria-hidden="true" />
                 {{ result.rating.toFixed(1) }}
               </span>
-              <span v-else class="text-xs font-semibold text-[var(--accent-gold)]">Person</span>
+              <span v-else-if="result.kind === 'person'" class="text-xs font-semibold text-[var(--accent-gold)]">Person</span>
             </button>
           </div>
         </div>

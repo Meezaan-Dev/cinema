@@ -79,7 +79,7 @@ onUnmounted(() => {
   <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6" aria-labelledby="in-cinemas-title">
     <p class="brand-kicker">Cape Town</p>
     <h2 id="in-cinemas-title" class="mt-1 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">In cinemas</h2>
-    <p class="mt-2 text-sm text-[var(--text-secondary)]">Check screenings at your selected cinemas over the next seven days.</p>
+    <p class="mt-2 text-sm text-[var(--text-secondary)]">Check the three supported Cape Town branches over the next seven days.</p>
 
     <fieldset class="mt-5">
       <legend class="mb-2 text-sm font-semibold text-[var(--text-primary)]">Cinemas</legend>
